@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { runScheduler } from '@/lib/scheduler'
 import { type NextRequest } from 'next/server'
 import path from 'path'
 import { spawn } from 'child_process'
@@ -198,33 +199,23 @@ export async function POST(request: NextRequest) {
     } catch (solverError) {
       const errMessage = solverError instanceof Error ? solverError.message : String(solverError)
 
-      // Detect if python3 is simply not available
+      // Python not available — fall back to built-in JS scheduler
       if (
         errMessage.includes('ENOENT') ||
         errMessage.includes('not found') ||
         errMessage.includes('No such file')
       ) {
-        const durationMs = Date.now() - startTime
-
-        await prisma.solverLog.create({
-          data: {
-            scheduleId,
-            status: 'MOCK',
-            durationMs,
-            violations: 'Solver not configured (python3 or solver.py not found)',
-          },
+        solutionAssignments = runScheduler({
+          year: yr,
+          month: mo,
+          employees: problem.employees,
+          shiftTypes: problem.shiftTypes,
+          coverageRules: problem.coverageRules as import('@/lib/scheduler').SchedulerCoverageRule[],
+          dates: problem.dates as import('@/lib/scheduler').SchedulerDate[],
         })
-
-        return Response.json({
-          status: 'MOCK',
-          count: 0,
-          durationMs,
-          message:
-            'Solver not configured: python3 or solver/solver.py not found. No assignments were generated.',
-        })
+      } else {
+        throw solverError
       }
-
-      throw solverError
     }
 
     // Build a set of MANUAL assignment keys to avoid conflicts
