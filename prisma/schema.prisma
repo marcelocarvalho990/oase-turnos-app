@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Employee {
+  id                 String   @id @default(cuid())
+  name               String
+  shortName          String
+  workPercentage     Int
+  team               String   @default("2.OG")
+  role               String
+  canCoverOtherTeams Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  assignments           Assignment[]
+  absences              AbsenceRequest[]
+  preferences           ShiftPreference[]
+  userPin               UserPin?
+  swapRequestsSent      ShiftSwapRequest[] @relation("SwapRequester")
+  swapRequestsReceived  ShiftSwapRequest[] @relation("SwapTarget")
+
+  @@index([team])
+  @@index([isActive])
+}
+
+model ShiftType {
+  id              String  @id @default(cuid())
+  code            String  @unique
+  name            String
+  description     String?
+  startTime1      String
+  endTime1        String
+  startTime2      String?
+  endTime2        String?
+  durationMinutes Int
+  color           String
+  bgColor         String
+  textColor       String
+  borderColor     String
+  isAbsence       Boolean @default(false)
+  isWorkTime      Boolean @default(true)
+  sortOrder       Int     @default(0)
+  eligibleRoles   String  @default("[]")
+
+  assignments Assignment[]
+
+  @@index([isAbsence])
+}
+
+model Schedule {
+  id          String    @id @default(cuid())
+  year        Int
+  month       Int
+  team        String
+  status      String    @default("DRAFT")
+  generatedAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  assignments Assignment[]
+
+  @@unique([year, month, team])
+  @@index([year, month])
+}
+
+model Assignment {
+  id         String   @id @default(cuid())
+  scheduleId String
+  employeeId String
+  date       String
+  shiftCode  String
+  isExternal Boolean  @default(false)
+  origin     String   @default("MANUAL")
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  schedule Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  employee Employee  @relation(fields: [employeeId], references: [id])
+  shiftType ShiftType? @relation(fields: [shiftCode], references: [code])
+
+  @@unique([scheduleId, employeeId, date])
+  @@index([scheduleId])
+  @@index([employeeId])
+  @@index([date])
+}
+
+model AbsenceRequest {
+  id          String   @id @default(cuid())
+  employeeId  String
+  startDate   String
+  endDate     String
+  type        String
+  isHardBlock Boolean  @default(true)
+  status      String   @default("PENDING")
+  managerNote String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model UserPin {
+  id         String   @id @default(cuid())
+  employeeId String?  @unique
+  pin        String
+  createdAt  DateTime @default(now())
+
+  employee Employee? @relation(fields: [employeeId], references: [id])
+}
+
+model ShiftSwapRequest {
+  id               String   @id @default(cuid())
+  requesterId      String
+  targetEmployeeId String
+  requesterDate    String
+  targetDate       String
+  status           String   @default("PENDING")
+  requesterMessage String?
+  managerNote      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  requester      Employee @relation("SwapRequester", fields: [requesterId], references: [id])
+  targetEmployee Employee @relation("SwapTarget", fields: [targetEmployeeId], references: [id])
+
+  @@index([requesterId])
+  @@index([targetEmployeeId])
+  @@index([status])
+}
+
+model ShiftPreference {
+  id         String @id @default(cuid())
+  employeeId String
+  prefType   String
+  value      String
+  weight     Int    @default(1)
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+}
+
+model CoverageRule {
+  id         String @id @default(cuid())
+  team       String
+  shiftCode  String
+  dayType    String
+  minStaff   Int
+  idealStaff Int
+
+  @@unique([team, shiftCode, dayType])
+}
+
+model SolverLog {
+  id             String   @id @default(cuid())
+  scheduleId     String
+  status         String
+  durationMs     Int
+  objectiveValue Float?
+  violations     String?
+  createdAt      DateTime @default(now())
+}
