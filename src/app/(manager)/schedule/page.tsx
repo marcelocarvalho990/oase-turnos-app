@@ -56,7 +56,7 @@ export default async function SchedulePage({ searchParams }: PageProps) {
     }
   }
 
-  const parsedShiftTypes: ShiftType[] = shiftTypes.map(st => ({
+  const parsedShiftTypes: ShiftType[] = shiftTypes.map((st: typeof shiftTypes[0]) => ({
     ...st,
     eligibleRoles: JSON.parse(st.eligibleRoles || '[]'),
   }))
