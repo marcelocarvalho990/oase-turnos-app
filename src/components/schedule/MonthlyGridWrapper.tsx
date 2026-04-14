@@ -87,7 +87,6 @@ export default function MonthlyGridWrapper({
       })
       const data = await res.json()
       setGenerateResult({ status: data.status, count: data.count })
-      // Reload to get fresh data
       startTransition(() => router.refresh())
     } catch {
       setGenerateResult({ status: 'ERROR' })
@@ -95,6 +94,12 @@ export default function MonthlyGridWrapper({
       setIsGenerating(false)
     }
   }, [schedule.id, year, month, team, router])
+
+  const handleClear = useCallback(async () => {
+    await fetch(`/api/schedules/clear?scheduleId=${schedule.id}`, { method: 'DELETE' })
+    setGenerateResult(null)
+    startTransition(() => router.refresh())
+  }, [schedule.id, router])
 
   const handleMonthChange = useCallback((newYear: number, newMonth: number) => {
     router.push(`/schedule?year=${newYear}&month=${newMonth}&team=${team}`)
@@ -107,8 +112,10 @@ export default function MonthlyGridWrapper({
         month={month}
         team={team}
         scheduleStatus={schedule.status}
+        scheduleId={schedule.id}
         onMonthChange={handleMonthChange}
         onGenerate={handleGenerate}
+        onClear={handleClear}
         isGenerating={isGenerating}
         generateResult={generateResult}
       />

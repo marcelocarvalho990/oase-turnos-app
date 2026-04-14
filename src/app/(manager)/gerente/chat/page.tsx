@@ -114,7 +114,12 @@ export default function ChatPage() {
           { role: 'assistant', content: 'Ocorreu um erro ao contactar o assistente. Tenta novamente.' },
         ])
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.reply ?? '' }])
+        // Strip markdown bold/italic asterisks and hashes so output is plain text
+        const plain = (data.reply ?? '')
+          .replace(/\*\*(.+?)\*\*/g, '$1')
+          .replace(/\*(.+?)\*/g, '$1')
+          .replace(/^#{1,6}\s+/gm, '')
+        setMessages(prev => [...prev, { role: 'assistant', content: plain }])
       }
     } catch {
       setMessages(prev => [
