@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Calendar, FileText, LogOut, Globe } from 'lucide-react'
+import { Calendar, FileText, User, LogOut, Globe } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/colaborador/calendario', labelPt: 'O Meu Calendário', labelDe: 'Mein Kalender', icon: Calendar },
-  { href: '/colaborador/pedidos', labelPt: 'Os Meus Pedidos', labelDe: 'Meine Anfragen', icon: FileText },
+  { href: '/colaborador/pedidos',    labelPt: 'Os Meus Pedidos',  labelDe: 'Meine Anfragen', icon: FileText },
+  { href: '/colaborador/perfil',     labelPt: 'O Meu Perfil',     labelDe: 'Mein Profil',    icon: User },
 ]
 
 interface Props {
