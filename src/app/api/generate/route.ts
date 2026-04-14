@@ -88,7 +88,8 @@ interface ParsedEmployee {
 
 function parseInstructions(
   instructionsText: string,
-  employees: ParsedEmployee[]
+  employees: ParsedEmployee[],
+  allShiftCodes: string[]
 ): SchedulerConstraint[] {
   const constraints: SchedulerConstraint[] = []
   if (!instructionsText?.trim()) return constraints
@@ -98,17 +99,22 @@ function parseInstructions(
 
   for (const rule of rules) {
     const lower = rule.toLowerCase()
+    // Tokenise instruction into words for matching
+    const instrWords = lower.split(/\s+/)
 
-    // Find employee by partial name (case-insensitive)
-    const matchedEmp = employees.find(e =>
-      lower.includes(e.name.toLowerCase()) ||
-      lower.includes(e.shortName.toLowerCase())
-    )
+    // Find employee by matching any individual name word (≥3 chars) against instruction words
+    const matchedEmp = employees.find(e => {
+      const nameWords = [
+        ...e.name.toLowerCase().split(/\s+/),
+        ...e.shortName.toLowerCase().split(/\s+/),
+      ].filter(w => w.length >= 3)
+      return nameWords.some(nw => instrWords.includes(nw))
+    })
     if (!matchedEmp) continue
 
-    // Extract shift code (single uppercase letter or two letters)
-    const shiftMatch = rule.match(/\b(turno\s+)?([A-Z]{1,2})\b/)
-    const shiftCode = shiftMatch ? shiftMatch[2] : undefined
+    // Extract shift code — look for "turno X" first, then standalone uppercase letter
+    const shiftMatch = rule.match(/turno\s+([A-Z]{1,2})\b/) ?? rule.match(/\b([A-Z]{1,2})\b/)
+    const shiftCode = shiftMatch ? shiftMatch[1] : undefined
 
     // Extract number
     const numMatch = rule.match(/\b(\d+)\b/)
@@ -117,6 +123,13 @@ function parseInstructions(
     // Classify the rule
     if (/evitar|bloquear|proibir|sem turno/i.test(lower) && shiftCode) {
       constraints.push({ type: 'BLOCK_SHIFT', employeeId: matchedEmp.id, shiftCode })
+    } else if (/\bsó\b|\bapenas\b|\bsomente\b|\bexclusivamente\b/i.test(lower) && shiftCode) {
+      // "faz só turno F" → block all other shifts
+      for (const code of allShiftCodes) {
+        if (code !== shiftCode) {
+          constraints.push({ type: 'BLOCK_SHIFT', employeeId: matchedEmp.id, shiftCode: code })
+        }
+      }
     } else if (/m[áa]ximo|no m[áa]ximo|max/i.test(lower) && shiftCode && count !== undefined) {
       constraints.push({ type: 'MAX_SHIFT', employeeId: matchedEmp.id, shiftCode, count })
     } else if (/(m[íi]nimo|pelo menos|no m[íi]nimo|min).*?(fim|fds|fins)/i.test(lower) && count !== undefined) {
@@ -235,9 +248,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse natural language instructions into structured constraints
+    const workShiftCodes = shiftTypes.filter(st => !st.isAbsence).map(st => st.code)
     const parsedConstraints = parseInstructions(
       instructions ?? '',
-      employees.map(e => ({ id: e.id, name: e.name, shortName: e.shortName }))
+      employees.map(e => ({ id: e.id, name: e.name, shortName: e.shortName })),
+      workShiftCodes
     )
 
     const solverPath = path.join(process.cwd(), 'solver', 'solver.py')
@@ -312,12 +327,16 @@ export async function POST(request: NextRequest) {
 
     const durationMs = Date.now() - startTime
 
+    const logViolations = instructions
+      ? `[instructions] ${instructions}\n[parsed] ${JSON.stringify(parsedConstraints)}`
+      : undefined
+
     await prisma.solverLog.create({
       data: {
         scheduleId,
         status: 'FEASIBLE',
         durationMs,
-        ...(instructions ? { violations: `[instructions] ${instructions}` } : {}),
+        ...(logViolations ? { violations: logViolations } : {}),
       },
     })
 
