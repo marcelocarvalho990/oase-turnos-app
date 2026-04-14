@@ -3,6 +3,9 @@ import { runScheduler, type SchedulerConstraint } from '@/lib/scheduler'
 import { type NextRequest } from 'next/server'
 import path from 'path'
 import { spawn } from 'child_process'
+import Anthropic from '@anthropic-ai/sdk'
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 function getDayType(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00')
@@ -86,62 +89,74 @@ interface ParsedEmployee {
   shortName: string
 }
 
-function parseInstructions(
+async function parseInstructions(
   instructionsText: string,
   employees: ParsedEmployee[],
   allShiftCodes: string[]
-): SchedulerConstraint[] {
-  const constraints: SchedulerConstraint[] = []
-  if (!instructionsText?.trim()) return constraints
+): Promise<SchedulerConstraint[]> {
+  if (!instructionsText?.trim()) return []
 
-  // Split on · ; or newlines
-  const rules = instructionsText.split(/[·;\n]+/).map(r => r.trim()).filter(Boolean)
+  const employeeList = employees
+    .map(e => `- id: "${e.id}", nome: "${e.name}", abreviatura: "${e.shortName}"`)
+    .join('\n')
 
-  for (const rule of rules) {
-    const lower = rule.toLowerCase()
-    // Tokenise instruction into words for matching
-    const instrWords = lower.split(/\s+/)
+  const prompt = `És um assistente que converte instruções em português de um gestor de turnos em restrições estruturadas JSON.
 
-    // Find employee by matching any individual name word (≥3 chars) against instruction words
-    const matchedEmp = employees.find(e => {
-      const nameWords = [
-        ...e.name.toLowerCase().split(/\s+/),
-        ...e.shortName.toLowerCase().split(/\s+/),
-      ].filter(w => w.length >= 3)
-      return nameWords.some(nw => instrWords.includes(nw))
+Colaboradores disponíveis:
+${employeeList}
+
+Turnos disponíveis: ${allShiftCodes.join(', ')}
+
+Tipos de restrições possíveis:
+- BLOCK_SHIFT: o colaborador não pode fazer este turno
+- MAX_SHIFT: o colaborador pode fazer este turno no máximo N vezes
+- MIN_SHIFT: o colaborador deve fazer este turno pelo menos N vezes
+- MAX_WEEKENDS: o colaborador pode trabalhar no máximo N fins de semana
+- MIN_WEEKENDS: o colaborador deve trabalhar pelo menos N fins de semana
+
+Instruções do gestor:
+"${instructionsText}"
+
+Converte as instruções acima numa lista JSON de restrições. Cada restrição tem:
+{
+  "type": "BLOCK_SHIFT" | "MAX_SHIFT" | "MIN_SHIFT" | "MAX_WEEKENDS" | "MIN_WEEKENDS",
+  "employeeId": "<id exato do colaborador da lista acima>",
+  "shiftCode": "<código do turno, se aplicável>",
+  "count": <número, se aplicável>
+}
+
+Regras de interpretação:
+- "faz só turno F" ou "apenas turno F" ou "só manhãs" → BLOCK_SHIFT para todos os outros turnos
+- "evitar turno S" ou "sem tardes" → BLOCK_SHIFT para esse turno
+- "máximo 3 turnos F" → MAX_SHIFT com count:3
+- "mínimo 2 fins de semana" → MIN_WEEKENDS com count:2
+- "máximo 1 fim de semana" → MAX_WEEKENDS com count:1
+- Se o nome não corresponder a nenhum colaborador, ignora essa instrução
+- "manhã" ou "manhãs" refere-se ao turno F; "tarde" ou "tardes" refere-se ao turno S
+
+Responde APENAS com um array JSON válido, sem texto adicional. Se não houver restrições, responde com [].`
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
     })
-    if (!matchedEmp) continue
 
-    // Extract shift code — look for "turno X" first, then standalone uppercase letter
-    const shiftMatch = rule.match(/turno\s+([A-Z]{1,2})\b/) ?? rule.match(/\b([A-Z]{1,2})\b/)
-    const shiftCode = shiftMatch ? shiftMatch[1] : undefined
+    const text = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+    // Extract JSON array from response (handle possible markdown fences)
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return []
 
-    // Extract number
-    const numMatch = rule.match(/\b(\d+)\b/)
-    const count = numMatch ? parseInt(numMatch[1], 10) : undefined
-
-    // Classify the rule
-    if (/evitar|bloquear|proibir|sem turno/i.test(lower) && shiftCode) {
-      constraints.push({ type: 'BLOCK_SHIFT', employeeId: matchedEmp.id, shiftCode })
-    } else if (/\bsó\b|\bapenas\b|\bsomente\b|\bexclusivamente\b/i.test(lower) && shiftCode) {
-      // "faz só turno F" → block all other shifts
-      for (const code of allShiftCodes) {
-        if (code !== shiftCode) {
-          constraints.push({ type: 'BLOCK_SHIFT', employeeId: matchedEmp.id, shiftCode: code })
-        }
-      }
-    } else if (/m[áa]ximo|no m[áa]ximo|max/i.test(lower) && shiftCode && count !== undefined) {
-      constraints.push({ type: 'MAX_SHIFT', employeeId: matchedEmp.id, shiftCode, count })
-    } else if (/(m[íi]nimo|pelo menos|no m[íi]nimo|min).*?(fim|fds|fins)/i.test(lower) && count !== undefined) {
-      constraints.push({ type: 'MIN_WEEKENDS', employeeId: matchedEmp.id, count })
-    } else if (/(m[áa]ximo|no m[áa]ximo|max).*?(fim|fds|fins)/i.test(lower) && count !== undefined) {
-      constraints.push({ type: 'MAX_WEEKENDS', employeeId: matchedEmp.id, count })
-    } else if (/m[íi]nimo|pelo menos|no m[íi]nimo|min|deve fazer/i.test(lower) && shiftCode && count !== undefined) {
-      constraints.push({ type: 'MIN_SHIFT', employeeId: matchedEmp.id, shiftCode, count })
-    }
+    const parsed = JSON.parse(jsonMatch[0]) as SchedulerConstraint[]
+    // Validate each constraint has required fields
+    return parsed.filter(
+      c => c.type && c.employeeId && employees.some(e => e.id === c.employeeId)
+    )
+  } catch (err) {
+    console.error('[parseInstructions] AI parse failed:', err)
+    return []
   }
-
-  return constraints
 }
 
 export async function POST(request: NextRequest) {
@@ -247,9 +262,9 @@ export async function POST(request: NextRequest) {
       dates: dates.map((d) => ({ date: d, dayType: getDayType(d) })),
     }
 
-    // Parse natural language instructions into structured constraints
+    // Parse natural language instructions into structured constraints via AI
     const workShiftCodes = shiftTypes.filter(st => !st.isAbsence).map(st => st.code)
-    const parsedConstraints = parseInstructions(
+    const parsedConstraints = await parseInstructions(
       instructions ?? '',
       employees.map(e => ({ id: e.id, name: e.name, shortName: e.shortName })),
       workShiftCodes
