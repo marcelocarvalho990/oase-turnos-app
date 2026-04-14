@@ -79,7 +79,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Page header */}
       <div style={{ background: '#003A5D', padding: '20px 28px' }}>
-        <h1 style={{ fontFamily: "'Jost', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
+        <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
           O Meu Perfil
         </h1>
         <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em', fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -147,7 +147,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 justifyContent: 'center',
                 color: 'white',
                 fontSize: '1.4rem',
-                fontFamily: "'Jost', sans-serif",
+                fontFamily: "'Poppins', sans-serif",
                 flexShrink: 0,
               }}
             >

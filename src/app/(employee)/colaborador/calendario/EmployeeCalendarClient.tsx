@@ -57,7 +57,7 @@ export default function EmployeeCalendarClient({ employeeId, shiftTypes }: Props
       {/* Page header */}
       <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontFamily: "'Jost', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
+          <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {lang === 'pt' ? 'O Meu Calendário' : 'Mein Kalender'}
           </h1>
           <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -103,7 +103,7 @@ export default function EmployeeCalendarClient({ employeeId, shiftTypes }: Props
           {/* Day headers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#001E30' }}>
             {WEEKDAYS.map(d => (
-              <div key={d} style={{ padding: '8px 0', textAlign: 'center', fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', fontFamily: "'Jost', sans-serif", fontWeight: 600 }}>
+              <div key={d} style={{ padding: '8px 0', textAlign: 'center', fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>
                 {d}
               </div>
             ))}
