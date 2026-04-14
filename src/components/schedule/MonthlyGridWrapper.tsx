@@ -101,6 +101,15 @@ export default function MonthlyGridWrapper({
     startTransition(() => router.refresh())
   }, [schedule.id, router])
 
+  const handlePublish = useCallback(async () => {
+    await fetch('/api/schedules/publish', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scheduleId: schedule.id }),
+    })
+    startTransition(() => router.refresh())
+  }, [schedule.id, router])
+
   const handleMonthChange = useCallback((newYear: number, newMonth: number) => {
     router.push(`/schedule?year=${newYear}&month=${newMonth}&team=${team}`)
   }, [team, router])
@@ -116,6 +125,7 @@ export default function MonthlyGridWrapper({
         onMonthChange={handleMonthChange}
         onGenerate={handleGenerate}
         onClear={handleClear}
+        onPublish={handlePublish}
         isGenerating={isGenerating}
         generateResult={generateResult}
       />

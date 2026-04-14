@@ -8,6 +8,7 @@ interface ShiftType {
 }
 interface Assignment { date: string; shiftType: ShiftType | null }
 interface Props { employeeId: string; employeeName: string; shiftTypes: ShiftType[] }
+interface CalendarResponse { published: boolean; assignments: Assignment[] }
 
 const WEEKDAYS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const WEEKDAYS_DE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
@@ -20,6 +21,7 @@ export default function EmployeeCalendarClient({ employeeId, shiftTypes }: Props
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth() + 1)
   const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [published, setPublished] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
   const [lang, setLang] = useState<Lang>('pt')
 
@@ -30,7 +32,17 @@ export default function EmployeeCalendarClient({ employeeId, shiftTypes }: Props
     setLoading(true)
     fetch(`/api/employee/calendar?year=${year}&month=${month}`)
       .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setAssignments(data); setLoading(false) })
+      .then((data: CalendarResponse | Assignment[]) => {
+        // Handle both old (array) and new (object) response formats
+        if (Array.isArray(data)) {
+          setAssignments(data)
+          setPublished(true)
+        } else {
+          setAssignments(data.assignments ?? [])
+          setPublished(data.published ?? false)
+        }
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [year, month])
 
@@ -95,6 +107,26 @@ export default function EmployeeCalendarClient({ employeeId, shiftTypes }: Props
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Not published notice */}
+        {!loading && published === false && (
+          <div style={{
+            padding: '20px 24px', background: '#FFF7ED', border: '1px solid #FED7AA',
+            borderRadius: 8, marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <div style={{ fontSize: '1.2rem', lineHeight: 1 }}>📋</div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#92400E', marginBottom: 3 }}>
+                {lang === 'pt' ? 'Escala ainda não publicada' : 'Dienstplan noch nicht veröffentlicht'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#B45309', lineHeight: 1.5 }}>
+                {lang === 'pt'
+                  ? 'O gestor ainda não publicou a escala para este mês. Consulta mais tarde.'
+                  : 'Der Manager hat den Dienstplan für diesen Monat noch nicht veröffentlicht. Schau später nochmal.'}
+              </div>
+            </div>
           </div>
         )}
 

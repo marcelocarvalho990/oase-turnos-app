@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Zap, CheckCircle, AlertCircle, Trash2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Zap, CheckCircle, AlertCircle, Trash2, X, Send } from 'lucide-react'
 import { formatMonthYear, addMonths } from '@/lib/date-utils'
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
   onMonthChange: (year: number, month: number) => void
   onGenerate: (instructions?: string) => void
   onClear: () => void
+  onPublish: () => Promise<void>
   isGenerating: boolean
   generateResult: { status: string; count?: number } | null
 }
@@ -32,7 +33,7 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 export default function TopBar({
-  year, month, team, scheduleStatus, onMonthChange, onGenerate, onClear, isGenerating, generateResult,
+  year, month, team, scheduleStatus, onMonthChange, onGenerate, onClear, onPublish, isGenerating, generateResult,
 }: Props) {
   const prev = addMonths(year, month, -1)
   const next = addMonths(year, month, 1)
@@ -40,6 +41,7 @@ export default function TopBar({
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [instructions, setInstructions] = useState('')
   const [isClearing, setIsClearing] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
 
   function openGenerateModal() {
     setInstructions('')
@@ -63,6 +65,16 @@ export default function TopBar({
 
   const statusStyle = STATUS_STYLES[scheduleStatus] ?? STATUS_STYLES.DRAFT
   const hasGenerated = scheduleStatus === 'GENERATED' || scheduleStatus === 'PUBLISHED'
+  const isPublished = scheduleStatus === 'PUBLISHED'
+
+  async function handlePublish() {
+    setIsPublishing(true)
+    try {
+      await onPublish()
+    } finally {
+      setIsPublishing(false)
+    }
+  }
 
   return (
     <>
@@ -136,6 +148,44 @@ export default function TopBar({
             <Trash2 size={14} />
             Apagar
           </button>
+        )}
+
+        {/* Publish button — visible when GENERATED but not yet PUBLISHED */}
+        {scheduleStatus === 'GENERATED' && (
+          <button
+            onClick={handlePublish}
+            disabled={isPublishing}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px',
+              background: isPublishing ? '#86EFAC' : '#16A34A', color: '#fff',
+              border: 'none', borderRadius: 8, fontSize: '0.82rem', fontWeight: 600,
+              cursor: isPublishing ? 'not-allowed' : 'pointer',
+              fontFamily: "'IBM Plex Sans', sans-serif", transition: 'background 0.15s',
+              opacity: isPublishing ? 0.7 : 1,
+            }}
+            onMouseEnter={e => { if (!isPublishing) (e.currentTarget as HTMLElement).style.background = '#15803D' }}
+            onMouseLeave={e => { if (!isPublishing) (e.currentTarget as HTMLElement).style.background = '#16A34A' }}
+          >
+            {isPublishing ? (
+              <>
+                <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                A publicar...
+              </>
+            ) : (
+              <>
+                <Send size={14} />
+                Publicar
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Published badge */}
+        {isPublished && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: '#DCFCE7', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, color: '#16A34A' }}>
+            <CheckCircle size={14} />
+            Publicado
+          </div>
         )}
 
         {/* Generate button */}
