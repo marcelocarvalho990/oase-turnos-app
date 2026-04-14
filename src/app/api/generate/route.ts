@@ -3,9 +3,8 @@ import { runScheduler, type SchedulerConstraint } from '@/lib/scheduler'
 import { type NextRequest } from 'next/server'
 import path from 'path'
 import { spawn } from 'child_process'
-import Anthropic from '@anthropic-ai/sdk'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
+const OPENROUTER_BASE = 'https://openrouter.ai/api/v1'
 
 function getDayType(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00')
@@ -137,19 +136,35 @@ Regras de interpretação:
 Responde APENAS com um array JSON válido, sem texto adicional. Se não houver restrições, responde com [].`
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+    const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://turnos-tertianum.vercel.app',
+        'X-Title': 'Turnos Tertianum',
+      },
+      body: JSON.stringify({
+        model: 'anthropic/claude-haiku-4-5',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     })
 
-    const text = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+    if (!res.ok) {
+      console.error('[parseInstructions] OpenRouter error:', res.status, await res.text())
+      return []
+    }
+
+    const json = await res.json() as { choices: Array<{ message: { content: string } }> }
+    const text = json.choices?.[0]?.message?.content?.trim() ?? ''
+
     // Extract JSON array from response (handle possible markdown fences)
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) return []
 
     const parsed = JSON.parse(jsonMatch[0]) as SchedulerConstraint[]
-    // Validate each constraint has required fields
+    // Validate each constraint has required fields and a valid employee id
     return parsed.filter(
       c => c.type && c.employeeId && employees.some(e => e.id === c.employeeId)
     )
