@@ -15,6 +15,7 @@ model Employee {
   role               String
   canCoverOtherTeams Boolean  @default(false)
   isActive           Boolean  @default(true)
+  vacationDays       Int      @default(25)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -169,4 +170,11 @@ model SolverLog {
   objectiveValue Float?
   violations     String?
   createdAt      DateTime @default(now())
+}
+
+model TeamSettings {
+  id               String   @id @default(cuid())
+  team             String   @unique
+  baseMonthlyHours Float    @default(160)
+  updatedAt        DateTime @updatedAt
 }

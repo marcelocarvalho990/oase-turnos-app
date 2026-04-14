@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { runScheduler } from '@/lib/scheduler'
+import { runScheduler, type SchedulerConstraint } from '@/lib/scheduler'
 import { type NextRequest } from 'next/server'
 import path from 'path'
 import { spawn } from 'child_process'
@@ -78,6 +78,57 @@ function runSolver(
 
     proc.on('close', () => clearTimeout(timer))
   })
+}
+
+interface ParsedEmployee {
+  id: string
+  name: string
+  shortName: string
+}
+
+function parseInstructions(
+  instructionsText: string,
+  employees: ParsedEmployee[]
+): SchedulerConstraint[] {
+  const constraints: SchedulerConstraint[] = []
+  if (!instructionsText?.trim()) return constraints
+
+  // Split on · ; or newlines
+  const rules = instructionsText.split(/[·;\n]+/).map(r => r.trim()).filter(Boolean)
+
+  for (const rule of rules) {
+    const lower = rule.toLowerCase()
+
+    // Find employee by partial name (case-insensitive)
+    const matchedEmp = employees.find(e =>
+      lower.includes(e.name.toLowerCase()) ||
+      lower.includes(e.shortName.toLowerCase())
+    )
+    if (!matchedEmp) continue
+
+    // Extract shift code (single uppercase letter or two letters)
+    const shiftMatch = rule.match(/\b(turno\s+)?([A-Z]{1,2})\b/)
+    const shiftCode = shiftMatch ? shiftMatch[2] : undefined
+
+    // Extract number
+    const numMatch = rule.match(/\b(\d+)\b/)
+    const count = numMatch ? parseInt(numMatch[1], 10) : undefined
+
+    // Classify the rule
+    if (/evitar|bloquear|proibir|sem turno/i.test(lower) && shiftCode) {
+      constraints.push({ type: 'BLOCK_SHIFT', employeeId: matchedEmp.id, shiftCode })
+    } else if (/m[áa]ximo|no m[áa]ximo|max/i.test(lower) && shiftCode && count !== undefined) {
+      constraints.push({ type: 'MAX_SHIFT', employeeId: matchedEmp.id, shiftCode, count })
+    } else if (/(m[íi]nimo|pelo menos|no m[íi]nimo|min).*?(fim|fds|fins)/i.test(lower) && count !== undefined) {
+      constraints.push({ type: 'MIN_WEEKENDS', employeeId: matchedEmp.id, count })
+    } else if (/(m[áa]ximo|no m[áa]ximo|max).*?(fim|fds|fins)/i.test(lower) && count !== undefined) {
+      constraints.push({ type: 'MAX_WEEKENDS', employeeId: matchedEmp.id, count })
+    } else if (/m[íi]nimo|pelo menos|no m[íi]nimo|min|deve fazer/i.test(lower) && shiftCode && count !== undefined) {
+      constraints.push({ type: 'MIN_SHIFT', employeeId: matchedEmp.id, shiftCode, count })
+    }
+  }
+
+  return constraints
 }
 
 export async function POST(request: NextRequest) {
@@ -183,6 +234,12 @@ export async function POST(request: NextRequest) {
       dates: dates.map((d) => ({ date: d, dayType: getDayType(d) })),
     }
 
+    // Parse natural language instructions into structured constraints
+    const parsedConstraints = parseInstructions(
+      instructions ?? '',
+      employees.map(e => ({ id: e.id, name: e.name, shortName: e.shortName }))
+    )
+
     const solverPath = path.join(process.cwd(), 'solver', 'solver.py')
 
     let solutionAssignments: Array<{ employeeId: string; date: string; shiftCode: string }>
@@ -212,6 +269,7 @@ export async function POST(request: NextRequest) {
           shiftTypes: problem.shiftTypes,
           coverageRules: problem.coverageRules as import('@/lib/scheduler').SchedulerCoverageRule[],
           dates: problem.dates as import('@/lib/scheduler').SchedulerDate[],
+          constraints: parsedConstraints,
         })
       } else {
         throw solverError

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { CalendarDays, Users, Clock, ShieldCheck, BarChart3, CheckSquare, LogOut, Globe } from 'lucide-react'
+import { CalendarDays, Users, Clock, ShieldCheck, BarChart3, CheckSquare, LogOut, Globe, SlidersHorizontal } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/schedule', labelPt: 'Escala', labelDe: 'Dienstplan', icon: CalendarDays },
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/coverage', labelPt: 'Cobertura', labelDe: 'Abdeckung', icon: ShieldCheck },
   { href: '/fairness', labelPt: 'Equidade', labelDe: 'Gerechtigkeit', icon: BarChart3 },
   { href: '/gerente/pedidos', labelPt: 'Aprovações', labelDe: 'Genehmigungen', icon: CheckSquare },
+  { href: '/definicoes', labelPt: 'Definições', labelDe: 'Einstellungen', icon: SlidersHorizontal },
 ]
 
 export default function ManagerSidebar() {

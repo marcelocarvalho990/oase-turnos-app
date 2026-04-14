@@ -44,6 +44,13 @@ export interface SchedulerDate {
   dayType: 'WEEKDAY' | 'SATURDAY' | 'SUNDAY'
 }
 
+export interface SchedulerConstraint {
+  type: 'MIN_SHIFT' | 'MAX_SHIFT' | 'BLOCK_SHIFT' | 'MIN_WEEKENDS' | 'MAX_WEEKENDS'
+  employeeId: string
+  shiftCode?: string
+  count?: number
+}
+
 export interface SchedulerInput {
   year: number
   month: number
@@ -51,6 +58,7 @@ export interface SchedulerInput {
   shiftTypes: SchedulerShiftType[]
   coverageRules: SchedulerCoverageRule[]
   dates: SchedulerDate[]
+  constraints?: SchedulerConstraint[]
 }
 
 export interface SchedulerAssignment {
@@ -114,7 +122,7 @@ function addDays(dateStr: string, n: number): string {
 }
 
 export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
-  const { employees, shiftTypes, coverageRules, dates } = input
+  const { employees, shiftTypes, coverageRules, dates, constraints = [] } = input
 
   const workShifts = shiftTypes.filter(s => !s.isAbsence)
 
@@ -178,12 +186,48 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     return count
   }
 
-  function canWork(emp: SchedulerEmployee, date: string): boolean {
+  // Build per-employee constraint lookups
+  const blockShifts = new Map<string, Set<string>>() // empId → blocked shiftCodes
+  const maxShiftCounts = new Map<string, Map<string, number>>() // empId → shiftCode → max
+  const maxWeekendsConstraint = new Map<string, number>() // empId → max weekends
+
+  for (const c of constraints) {
+    if (c.type === 'BLOCK_SHIFT' && c.shiftCode) {
+      if (!blockShifts.has(c.employeeId)) blockShifts.set(c.employeeId, new Set())
+      blockShifts.get(c.employeeId)!.add(c.shiftCode)
+    }
+    if (c.type === 'MAX_SHIFT' && c.shiftCode && c.count !== undefined) {
+      if (!maxShiftCounts.has(c.employeeId)) maxShiftCounts.set(c.employeeId, new Map())
+      maxShiftCounts.get(c.employeeId)!.set(c.shiftCode, c.count)
+    }
+    if (c.type === 'MAX_WEEKENDS' && c.count !== undefined) {
+      maxWeekendsConstraint.set(c.employeeId, c.count)
+    }
+  }
+
+  // Per-employee per-shiftCode count tracker (for MAX_SHIFT enforcement)
+  const empShiftCodeCount = new Map<string, Map<string, number>>()
+  for (const emp of employees) empShiftCodeCount.set(emp.id, new Map())
+
+  function canWork(emp: SchedulerEmployee, date: string, shiftCode?: string): boolean {
     if (hardBlockSet.get(emp.id)?.has(date)) return false
     if (alreadyWorking(emp.id, date)) return false
     if (consecutiveDays(emp.id, date) >= 6) return false
     // Weekend fairness hard cap
     if (isWeekend(date) && (empWeekendCount.get(emp.id) ?? 0) >= maxWeekendPerEmp) return false
+    // MAX_WEEKENDS constraint
+    if (isWeekend(date)) {
+      const maxWe = maxWeekendsConstraint.get(emp.id)
+      if (maxWe !== undefined && (empWeekendCount.get(emp.id) ?? 0) >= maxWe) return false
+    }
+    // MAX_SHIFT constraint
+    if (shiftCode) {
+      const maxForShift = maxShiftCounts.get(emp.id)?.get(shiftCode)
+      if (maxForShift !== undefined) {
+        const currentCount = empShiftCodeCount.get(emp.id)?.get(shiftCode) ?? 0
+        if (currentCount >= maxForShift) return false
+      }
+    }
     // Don't overschedule beyond 110% of target
     const target = targetShifts.get(emp.id) ?? 20
     if ((empShiftCount.get(emp.id) ?? 0) >= Math.ceil(target * 1.1)) return false
@@ -191,6 +235,8 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   }
 
   function isEligible(emp: SchedulerEmployee, shift: SchedulerShiftType): boolean {
+    // BLOCK_SHIFT constraint
+    if (blockShifts.get(emp.id)?.has(shift.code)) return false
     if (shift.eligibleRoles.length === 0) return true
     return shift.eligibleRoles.includes(emp.role)
   }
@@ -206,6 +252,11 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     empAssignedDates.get(emp.id)!.add(date)
     empShiftCount.set(emp.id, (empShiftCount.get(emp.id) ?? 0) + 1)
     if (isWeekend(date)) empWeekendCount.set(emp.id, (empWeekendCount.get(emp.id) ?? 0) + 1)
+
+    // Track per-shiftCode count for MAX_SHIFT constraints
+    const codeMap = empShiftCodeCount.get(emp.id)!
+    codeMap.set(shiftCode, (codeMap.get(shiftCode) ?? 0) + 1)
+
     result.push({ employeeId: emp.id, date, shiftCode })
   }
 
@@ -226,7 +277,7 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   function fillSlotWithSpec(date: string, shift: SchedulerShiftType, spec: ShiftSlotSpec) {
     const slot = daySlots.get(date)!.get(shift.code)!
     const sorted = sortedByNeed(date)
-    const eligible = sorted.filter(emp => canWork(emp, date) && isEligible(emp, shift))
+    const eligible = sorted.filter(emp => canWork(emp, date, shift.code) && isEligible(emp, shift))
 
     // Step 1: Fill HF slots
     let hfNeeded = spec.hf - slot.hfCount
@@ -274,7 +325,7 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   function fillSlotGeneric(date: string, shift: SchedulerShiftType, idealCount: number) {
     const slot = daySlots.get(date)!.get(shift.code)!
     const sorted = sortedByNeed(date)
-    const eligible = sorted.filter(emp => canWork(emp, date) && isEligible(emp, shift))
+    const eligible = sorted.filter(emp => canWork(emp, date, shift.code) && isEligible(emp, shift))
     let needed = idealCount - slot.empIds.length
 
     // Pass 1: qualified first
@@ -327,6 +378,64 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
         fillSlotWithSpec(date, shift, spec)
       } else {
         fillSlotGeneric(date, shift, ideal)
+      }
+    }
+  }
+
+  // --- Extra passes for MIN_SHIFT and MIN_WEEKENDS constraints ---
+  for (const c of constraints) {
+    if (c.type === 'MIN_SHIFT' && c.shiftCode && c.count !== undefined) {
+      const emp = employees.find(e => e.id === c.employeeId)
+      if (!emp) continue
+      const currentCount = empShiftCodeCount.get(emp.id)?.get(c.shiftCode) ?? 0
+      const needed = c.count - currentCount
+      if (needed <= 0) continue
+
+      const shift = workShifts.find(s => s.code === c.shiftCode)
+      if (!shift) continue
+
+      let added = 0
+      for (const dayInfo of dates) {
+        if (added >= needed) break
+        const { date } = dayInfo
+        if (!canWork(emp, date, shift.code)) continue
+        if (!isEligible(emp, shift)) continue
+        // Check slot not over max for this shift on this day
+        const slot = daySlots.get(date)?.get(shift.code)
+        if (!slot) continue
+        const spec = SHIFT_SPECS[shift.code] ?? SHIFT_SPECS.DEFAULT
+        if (slot.empIds.length >= spec.maxTotal) continue
+        assign(emp, date, shift.code)
+        added++
+      }
+    }
+
+    if (c.type === 'MIN_WEEKENDS' && c.count !== undefined) {
+      const emp = employees.find(e => e.id === c.employeeId)
+      if (!emp) continue
+      const currentWe = empWeekendCount.get(emp.id) ?? 0
+      const needed = c.count - currentWe
+      if (needed <= 0) continue
+
+      // Try to assign any work shift on weekend days the employee hasn't worked
+      let added = 0
+      for (const dayInfo of dates) {
+        if (added >= needed) break
+        const { date } = dayInfo
+        if (!isWeekend(date)) continue
+        if (!canWork(emp, date)) continue
+        // Find any shift we can place them in
+        for (const shift of workShifts) {
+          if (!isEligible(emp, shift)) continue
+          if (!canWork(emp, date, shift.code)) continue
+          const slot = daySlots.get(date)?.get(shift.code)
+          if (!slot) continue
+          const spec = SHIFT_SPECS[shift.code] ?? SHIFT_SPECS.DEFAULT
+          if (slot.empIds.length >= spec.maxTotal) continue
+          assign(emp, date, shift.code)
+          added++
+          break
+        }
       }
     }
   }

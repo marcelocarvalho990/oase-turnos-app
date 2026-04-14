@@ -274,7 +274,7 @@ export default function FairnessPage() {
               <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
               &lt; 70%
             </span>
-            <span className="ml-2 text-slate-400">FdS = Fins de semana trabalhados · Difíceis = Turnos S e G</span>
+            <span className="ml-2 text-slate-400">FdS = Fins de semana completos (Sáb ou Dom) · Difíceis = Turnos S e G</span>
           </div>
         )}
       </div>

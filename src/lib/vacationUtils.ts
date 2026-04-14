@@ -20,10 +20,10 @@ export function countWorkingDays(startDate: string, endDate: string): number {
 
 /**
  * Annual vacation entitlement in working days based on work percentage.
- * Full-time (100%) = 25 days. Proportional for part-time.
+ * Full-time (100%) = vacationDays (default 25). Proportional for part-time.
  */
-export function annualEntitlement(workPercentage: number): number {
-  return Math.round((workPercentage / 100) * 25)
+export function annualEntitlement(workPercentage: number, vacationDays = 25): number {
+  return Math.round((workPercentage / 100) * vacationDays)
 }
 
 export interface VacationSummary {
@@ -37,8 +37,9 @@ export function computeSummary(
   workPercentage: number,
   requests: { startDate: string; endDate: string; status: string }[],
   year: number,
+  vacationDays = 25,
 ): VacationSummary {
-  const entitled = annualEntitlement(workPercentage)
+  const entitled = annualEntitlement(workPercentage, vacationDays)
 
   let approved = 0
   let pending = 0

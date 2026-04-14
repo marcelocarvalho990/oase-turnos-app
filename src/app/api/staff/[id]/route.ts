@@ -28,7 +28,7 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    const { name, shortName, workPercentage, team, role, canCoverOtherTeams, isActive } = body
+    const { name, shortName, workPercentage, team, role, canCoverOtherTeams, isActive, vacationDays } = body
 
     const employee = await prisma.employee.update({
       where: { id },
@@ -40,6 +40,7 @@ export async function PUT(
         ...(role !== undefined && { role }),
         ...(canCoverOtherTeams !== undefined && { canCoverOtherTeams: Boolean(canCoverOtherTeams) }),
         ...(isActive !== undefined && { isActive: Boolean(isActive) }),
+        ...(vacationDays !== undefined && { vacationDays: Number(vacationDays) }),
       },
     })
 
