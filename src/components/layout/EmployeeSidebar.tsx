@@ -39,20 +39,14 @@ export default function EmployeeSidebar({ employeeName }: Props) {
       }}
     >
       {/* Header */}
-      <div className="px-5 pt-7 pb-6">
-        <div
-          style={{
-            fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: '1.5rem',
-            color: '#1A1816',
-            letterSpacing: '-0.02em',
-            lineHeight: 1,
-          }}
-        >
-          Turnos
-        </div>
-        <div style={{ fontSize: '0.7rem', color: '#9A8F80', marginTop: 4, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Tertianum · Colaborador
+      <div className="px-4 pt-5 pb-5">
+        <img
+          src="/240513_tertianum_branding_marco-simonetti_2@2x.png"
+          alt="Tertianum"
+          style={{ width: '100%', maxWidth: 148, display: 'block', borderRadius: 6 }}
+        />
+        <div style={{ fontSize: '0.62rem', color: '#9A8F80', marginTop: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Dienstplan · Colaborador
         </div>
       </div>
 

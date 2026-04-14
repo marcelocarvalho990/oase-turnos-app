@@ -43,15 +43,6 @@ const t = {
 
 interface Employee { id: string; name: string; shortName: string }
 
-// Tertianum logo as SVG
-function TertianumLogo({ size = 40, color = 'white' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <polygon points="24,4 44,40 4,40" fill="none" stroke={color} strokeWidth="3.5" strokeLinejoin="round"/>
-      <line x1="14" y1="28" x2="34" y2="28" stroke={color} strokeWidth="3.5" strokeLinecap="round"/>
-    </svg>
-  )
-}
 
 export default function LoginClient() {
   const router = useRouter()
@@ -141,18 +132,11 @@ export default function LoginClient() {
 
         {/* Logo */}
         <div style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <TertianumLogo size={44} color="white" />
-            <span style={{
-              fontSize: '1.5rem',
-              fontWeight: 700,
-              color: 'white',
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase',
-            }}>
-              TERTIANUM
-            </span>
-          </div>
+          <img
+            src="/240513_tertianum_branding_marco-simonetti_2@2x.png"
+            alt="Tertianum"
+            style={{ width: 200, display: 'block' }}
+          />
         </div>
 
         {/* Center text */}

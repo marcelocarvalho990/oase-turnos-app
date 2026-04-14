@@ -36,20 +36,14 @@ export default function ManagerSidebar() {
       }}
     >
       {/* Logo */}
-      <div className="px-5 pt-7 pb-6">
-        <div
-          style={{
-            fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: '1.5rem',
-            color: '#FAF8F4',
-            letterSpacing: '-0.02em',
-            lineHeight: 1,
-          }}
-        >
-          Turnos
-        </div>
-        <div style={{ fontSize: '0.7rem', color: '#666', marginTop: 4, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Tertianum · Gestor
+      <div className="px-4 pt-5 pb-5">
+        <img
+          src="/240513_tertianum_branding_marco-simonetti_2@2x.png"
+          alt="Tertianum"
+          style={{ width: '100%', maxWidth: 148, display: 'block' }}
+        />
+        <div style={{ fontSize: '0.62rem', color: '#4A6A9A', marginTop: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Dienstplan · Gestor
         </div>
       </div>
 
