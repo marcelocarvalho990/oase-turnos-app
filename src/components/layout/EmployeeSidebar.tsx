@@ -33,35 +33,35 @@ export default function EmployeeSidebar({ employeeName }: Props) {
     <aside
       className="w-52 shrink-0 flex flex-col h-full"
       style={{
-        background: '#F5F0E8',
-        borderRight: '1px solid #E8E0D0',
+        background: '#003A5D',
+        borderRight: '1px solid #002D47',
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* Header */}
+      {/* Logo */}
       <div className="px-4 pt-5 pb-5">
         <img
           src="/240513_tertianum_branding_marco-simonetti_2@2x.png"
           alt="Tertianum"
-          style={{ width: '100%', maxWidth: 148, display: 'block', borderRadius: 6 }}
+          style={{ width: '100%', maxWidth: 148, display: 'block' }}
         />
-        <div style={{ fontSize: '0.62rem', color: '#9A8F80', marginTop: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: '0.62rem', color: '#6AA3BF', marginTop: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           Dienstplan · Colaborador
         </div>
       </div>
 
       {/* Employee greeting */}
-      <div style={{ margin: '0 12px 12px', padding: '10px 12px', background: '#EDE8DC', borderRadius: 8 }}>
-        <div style={{ fontSize: '0.68rem', color: '#9A8F80', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>
+      <div style={{ margin: '0 12px 12px', padding: '10px 12px', background: 'rgba(255,255,255,0.08)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ fontSize: '0.68rem', color: '#6AA3BF', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>
           {lang === 'pt' ? 'Sessão iniciada como' : 'Angemeldet als'}
         </div>
-        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#1A1816' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#FFFFFF' }}>
           {firstName || employeeName}
         </div>
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: '#E8E0D0', margin: '0 20px 8px' }} />
+      <div style={{ height: 1, background: '#002D47', margin: '0 20px 8px' }} />
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-2" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -80,21 +80,21 @@ export default function EmployeeSidebar({ employeeName }: Props) {
                 borderRadius: 6,
                 fontSize: '0.8rem',
                 fontWeight: active ? 500 : 400,
-                color: active ? '#FAF8F4' : '#6B6056',
-                background: active ? '#003A5D' : 'transparent',
+                color: active ? '#FFFFFF' : '#6AA3BF',
+                background: active ? 'rgba(255,255,255,0.15)' : 'transparent',
                 transition: 'background 0.15s, color 0.15s',
                 textDecoration: 'none',
               }}
               onMouseEnter={e => {
                 if (!active) {
-                  (e.currentTarget as HTMLElement).style.background = '#EDE8DC'
-                  ;(e.currentTarget as HTMLElement).style.color = '#1A1816'
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'
+                  ;(e.currentTarget as HTMLElement).style.color = '#FFFFFF'
                 }
               }}
               onMouseLeave={e => {
                 if (!active) {
                   (e.currentTarget as HTMLElement).style.background = 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.color = '#6B6056'
+                  ;(e.currentTarget as HTMLElement).style.color = '#6AA3BF'
                 }
               }}
             >
@@ -116,7 +116,7 @@ export default function EmployeeSidebar({ employeeName }: Props) {
             padding: '8px 10px',
             borderRadius: 6,
             fontSize: '0.8rem',
-            color: '#9A8F80',
+            color: '#6AA3BF',
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
@@ -124,12 +124,12 @@ export default function EmployeeSidebar({ employeeName }: Props) {
             textAlign: 'left',
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = '#EDE8DC'
-            ;(e.currentTarget as HTMLElement).style.color = '#1A1816'
+            (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'
+            ;(e.currentTarget as HTMLElement).style.color = '#FFFFFF'
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLElement).style.background = 'transparent'
-            ;(e.currentTarget as HTMLElement).style.color = '#9A8F80'
+            ;(e.currentTarget as HTMLElement).style.color = '#6AA3BF'
           }}
         >
           <Globe size={15} strokeWidth={1.8} />
@@ -146,7 +146,7 @@ export default function EmployeeSidebar({ employeeName }: Props) {
             padding: '8px 10px',
             borderRadius: 6,
             fontSize: '0.8rem',
-            color: '#9A8F80',
+            color: '#6AA3BF',
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
@@ -155,12 +155,12 @@ export default function EmployeeSidebar({ employeeName }: Props) {
             opacity: loggingOut ? 0.5 : 1,
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = '#EDE8DC'
-            ;(e.currentTarget as HTMLElement).style.color = '#003A5D'
+            (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'
+            ;(e.currentTarget as HTMLElement).style.color = '#ef4444'
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLElement).style.background = 'transparent'
-            ;(e.currentTarget as HTMLElement).style.color = '#9A8F80'
+            ;(e.currentTarget as HTMLElement).style.color = '#6AA3BF'
           }}
         >
           <LogOut size={15} strokeWidth={1.8} />

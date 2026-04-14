@@ -70,14 +70,14 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
             <div
               key={day.date}
               className={`sticky top-0 z-20 border-b border-slate-200 flex flex-col items-center justify-end pb-1 pt-1 text-center
-                ${isWeekend ? 'bg-blue-50' : 'bg-white'}
-                ${day.isToday ? 'bg-blue-100 border-b-2 border-b-blue-400' : ''}
+                ${isWeekend ? 'bg-[#F0F5F8]' : 'bg-white'}
+                ${day.isToday ? 'bg-[#E6EEF3] border-b-2 border-b-[#003A5D]' : ''}
               `}
             >
-              <span className={`text-[10px] font-medium ${isWeekend ? 'text-blue-600' : 'text-slate-500'}`}>
+              <span className={`text-[10px] font-medium ${isWeekend ? 'text-[#003A5D]' : 'text-slate-500'}`}>
                 {day.weekdayLabel}
               </span>
-              <span className={`text-xs font-bold ${day.isToday ? 'text-blue-700' : isWeekend ? 'text-blue-700' : 'text-slate-800'}`}>
+              <span className={`text-xs font-bold ${day.isToday ? 'text-[#003A5D]' : isWeekend ? 'text-[#003A5D]' : 'text-slate-800'}`}>
                 {day.day}
               </span>
             </div>
@@ -236,8 +236,8 @@ const EmployeeRow = memo(function EmployeeRow({
           <div
             key={day.date}
             className={`border-b border-slate-100 flex items-center justify-center cursor-pointer transition-colors
-              ${isWeekend ? 'bg-blue-50/50' : 'bg-white'}
-              ${isOpen ? 'bg-blue-100 ring-1 ring-inset ring-blue-400' : 'hover:bg-slate-50'}
+              ${isWeekend ? 'bg-[#F0F5F8]/50' : 'bg-white'}
+              ${isOpen ? 'bg-[#E6EEF3] ring-1 ring-inset ring-[#003A5D]' : 'hover:bg-slate-50'}
               ${assignment?.isExternal ? 'ring-1 ring-inset ring-red-400' : ''}
             `}
             style={{ height: 34 }}

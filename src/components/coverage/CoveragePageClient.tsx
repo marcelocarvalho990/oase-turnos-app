@@ -136,7 +136,7 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
         {/* Legend */}
         <div className="flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-blue-100 border border-blue-300 inline-block" />
+            <span className="w-3 h-3 rounded bg-[#E6EEF3] border border-[#99BFCF] inline-block" />
             Min. obrigatório
           </span>
           <span className="flex items-center gap-1.5">
@@ -164,7 +164,7 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
                 <th />
                 {DAY_TYPES.map(({ key }) => (
                   <>
-                    <th key={`${key}-min`} className="px-3 py-2 text-xs text-center font-medium text-blue-600 w-20">Min</th>
+                    <th key={`${key}-min`} className="px-3 py-2 text-xs text-center font-medium text-[#003A5D] w-20">Min</th>
                     <th key={`${key}-ideal`} className="px-3 py-2 text-xs text-center font-medium text-emerald-600 w-20">Ideal</th>
                   </>
                 ))}
@@ -203,15 +203,15 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
                                 max={99}
                                 value={cell.min}
                                 onChange={(e) => handleChange(code, key, 'min', e.target.value)}
-                                className={`w-14 text-center text-sm rounded-lg px-2 py-1.5 border focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors ${
+                                className={`w-14 text-center text-sm rounded-lg px-2 py-1.5 border focus:outline-none focus:ring-2 focus:ring-[#003A5D] transition-colors ${
                                   isActive && cell.min > 0
-                                    ? 'bg-blue-50 border-blue-300 text-blue-800 font-semibold'
+                                    ? 'bg-[#F0F5F8] border-[#99BFCF] text-[#003A5D] font-semibold'
                                     : 'bg-slate-50 border-slate-200 text-slate-400'
                                 }`}
                               />
                               {cell.saving && (
                                 <span className="absolute -bottom-4 left-1/2 -translate-x-1/2">
-                                  <span className="w-2.5 h-2.5 border-2 border-blue-400/40 border-t-blue-500 rounded-full animate-spin inline-block" />
+                                  <span className="w-2.5 h-2.5 border-2 border-[#003A5D]/40 border-t-blue-500 rounded-full animate-spin inline-block" />
                                 </span>
                               )}
                               {cell.saved && (

@@ -173,7 +173,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
             </div>
           </div>
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-2 opacity-50 cursor-not-allowed"
+            className="bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] flex items-center gap-2 opacity-50 cursor-not-allowed"
             title="Em breve"
             disabled
           >
@@ -241,7 +241,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                   required
                   value={form.name}
                   onChange={(e) => setForm((f) => f ? { ...f, name: e.target.value } : f)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                 />
               </div>
               <div>
@@ -250,7 +250,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                   type="text"
                   value={form.description}
                   onChange={(e) => setForm((f) => f ? { ...f, description: e.target.value } : f)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                 />
               </div>
               {editingShift.isWorkTime && (
@@ -263,7 +263,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                         required
                         value={form.startTime1}
                         onChange={(e) => setForm((f) => f ? { ...f, startTime1: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                       />
                     </div>
                     <div>
@@ -273,7 +273,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                         required
                         value={form.endTime1}
                         onChange={(e) => setForm((f) => f ? { ...f, endTime1: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                       />
                     </div>
                     <div>
@@ -282,7 +282,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                         type="time"
                         value={form.startTime2}
                         onChange={(e) => setForm((f) => f ? { ...f, startTime2: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                       />
                     </div>
                     <div>
@@ -291,7 +291,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                         type="time"
                         value={form.endTime2}
                         onChange={(e) => setForm((f) => f ? { ...f, endTime2: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                       />
                     </div>
                   </div>
@@ -304,7 +304,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                       max={1440}
                       value={form.durationMinutes}
                       onChange={(e) => setForm((f) => f ? { ...f, durationMinutes: Number(e.target.value) } : f)}
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                     />
                   </div>
                 </>
@@ -320,7 +320,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center gap-2"
+                  className="bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] disabled:opacity-60 flex items-center gap-2"
                 >
                   {saving ? (
                     <>

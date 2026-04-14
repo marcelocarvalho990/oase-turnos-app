@@ -10,7 +10,7 @@ interface Props {
 }
 
 const ROLE_BADGE: Record<Role, string> = {
-  TEAMLEITUNG: 'bg-blue-100 text-blue-800 border border-blue-200',
+  TEAMLEITUNG: 'bg-[#E6EEF3] text-[#003A5D] border border-[#C5D9E3]',
   FUNKTIONSSTUFE_3: 'bg-purple-100 text-purple-800 border border-purple-200',
   FUNKTIONSSTUFE_2: 'bg-green-100 text-green-800 border border-green-200',
   FUNKTIONSSTUFE_1: 'bg-amber-100 text-amber-800 border border-amber-200',
@@ -156,14 +156,14 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#003A5D] flex items-center justify-center">
               <Users size={18} className="text-white" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900">Colaboradores</h1>
               <p className="text-xs text-slate-500 mt-0.5">{activeCount} ativos · {employees.length} total</p>
             </div>
-            <span className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+            <span className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#E6EEF3] text-[#003A5D] text-xs font-bold">
               {activeCount}
             </span>
           </div>
@@ -176,7 +176,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
             </button>
             <button
               onClick={openCreate}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
+              className="bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] flex items-center gap-2"
             >
               <Plus size={16} />
               Novo Colaborador
@@ -258,7 +258,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                       </button>
                       <button
                         onClick={() => openEdit(emp)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-[#003A5D] hover:bg-[#F0F5F8] transition-colors"
                         title="Editar"
                       >
                         <Pencil size={15} />
@@ -313,7 +313,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                     required
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                     placeholder="Maria Silva"
                   />
                 </div>
@@ -325,7 +325,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                     maxLength={5}
                     value={form.shortName}
                     onChange={(e) => setForm((f) => ({ ...f, shortName: e.target.value }))}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D] font-mono"
                     placeholder="MSil"
                   />
                 </div>
@@ -334,7 +334,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                   <select
                     value={form.workPercentage}
                     onChange={(e) => setForm((f) => ({ ...f, workPercentage: Number(e.target.value) }))}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                   >
                     {PERCENTAGE_OPTIONS.map((p) => (
                       <option key={p} value={p}>{p}%</option>
@@ -348,7 +348,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                     required
                     value={form.team}
                     onChange={(e) => setForm((f) => ({ ...f, team: e.target.value }))}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                     placeholder="2.OG"
                   />
                 </div>
@@ -357,7 +357,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                   <select
                     value={form.role}
                     onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                   >
                     {ROLE_ORDER.map((r) => (
                       <option key={r} value={r}>{ROLE_LABELS[r]}</option>
@@ -372,7 +372,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                     type="checkbox"
                     checked={form.canCoverOtherTeams}
                     onChange={(e) => setForm((f) => ({ ...f, canCoverOtherTeams: e.target.checked }))}
-                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-slate-300 text-[#003A5D] focus:ring-[#003A5D]"
                   />
                   <span className="text-sm text-slate-700">Pode cobrir outras equipas</span>
                 </label>
@@ -381,7 +381,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                     type="checkbox"
                     checked={form.isActive}
                     onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-slate-300 text-[#003A5D] focus:ring-[#003A5D]"
                   />
                   <span className="text-sm text-slate-700">Ativo</span>
                 </label>
@@ -398,7 +398,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center gap-2"
+                  className="bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] disabled:opacity-60 flex items-center gap-2"
                 >
                   {saving ? (
                     <>
