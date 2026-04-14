@@ -125,13 +125,15 @@ Converte as instruções acima numa lista JSON de restrições. Cada restrição
 }
 
 Regras de interpretação:
-- "faz só turno F" ou "apenas turno F" ou "só manhãs" → BLOCK_SHIFT para todos os outros turnos
-- "evitar turno S" ou "sem tardes" → BLOCK_SHIFT para esse turno
+- "não trabalha este mês" / "não trabalha" / "de folga" / "ausente" / "não escalar" → BLOCK_SHIFT para TODOS os turnos disponíveis (${allShiftCodes.join(', ')})
+- "faz só turno F" / "apenas turno F" / "só manhãs" → BLOCK_SHIFT para todos os turnos exceto F
+- "evitar turno S" / "sem tardes" → BLOCK_SHIFT apenas para esse turno
 - "máximo 3 turnos F" → MAX_SHIFT com count:3
 - "mínimo 2 fins de semana" → MIN_WEEKENDS com count:2
 - "máximo 1 fim de semana" → MAX_WEEKENDS com count:1
+- "manhã"/"manhãs" = turno F; "tarde"/"tardes" = turno S
 - Se o nome não corresponder a nenhum colaborador, ignora essa instrução
-- "manhã" ou "manhãs" refere-se ao turno F; "tarde" ou "tardes" refere-se ao turno S
+- Sê liberal no reconhecimento de nomes: "Ricardo", "Ana", "João" bastam para identificar o colaborador
 
 Responde APENAS com um array JSON válido, sem texto adicional. Se não houver restrições, responde com [].`
 

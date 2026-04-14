@@ -142,7 +142,7 @@ ${scheduleContext}
 
 Responde à pergunta do gestor com base nestes dados. Se precisares de dados que não estão disponíveis aqui (como uma escala de outro mês), diz-o.`
 
-    // Call OpenRouter
+    // Call OpenRouter (OpenAI-compatible format: system goes inside messages array)
     const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -154,8 +154,8 @@ Responde à pergunta do gestor com base nestes dados. Se precisares de dados que
       body: JSON.stringify({
         model: 'anthropic/claude-haiku-4-5',
         max_tokens: 2048,
-        system: systemPrompt,
         messages: [
+          { role: 'system', content: systemPrompt },
           ...history.map(m => ({ role: m.role, content: m.content })),
           { role: 'user', content: message },
         ],
