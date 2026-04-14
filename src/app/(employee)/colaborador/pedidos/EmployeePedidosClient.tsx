@@ -194,7 +194,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               { label: tx.entitlement, value: summary.entitlement, color: '#6B6056', bg: '#F5F0E8' },
               { label: tx.approved,    value: summary.approved,    color: '#059669', bg: '#D1FAE5' },
               { label: tx.pending,     value: summary.pending,     color: '#D97706', bg: '#FEF3C7' },
-              { label: tx.remaining,   value: summary.remaining,   color: summary.remaining <= 2 ? '#DC2626' : '#1A5DAD', bg: summary.remaining <= 2 ? '#FEE2E2' : '#FFF0EB' },
+              { label: tx.remaining,   value: summary.remaining,   color: summary.remaining <= 2 ? '#DC2626' : '#003A5D', bg: summary.remaining <= 2 ? '#FEE2E2' : '#FFF0EB' },
             ] as { label: string; value: number; color: string; bg: string }[]).map(item => (
               <div key={item.label} style={{ background: item.bg, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                 <div style={{ fontSize: '1.5rem', fontWeight: 700, color: item.color, lineHeight: 1, fontFamily: "'Instrument Serif', Georgia, serif" }}>
@@ -218,7 +218,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
             onClick={() => setTab(t)}
             style={{
               padding: '10px 20px', background: 'transparent', border: 'none',
-              borderBottom: tab === t ? '2px solid #1A5DAD' : '2px solid transparent',
+              borderBottom: tab === t ? '2px solid #003A5D' : '2px solid transparent',
               color: tab === t ? '#1A1816' : '#9A8F80',
               fontSize: '0.82rem', fontWeight: tab === t ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
@@ -235,7 +235,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
           onClick={() => setForm(tab)}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            padding: '9px 16px', background: '#1A5DAD', border: 'none',
+            padding: '9px 16px', background: '#003A5D', border: 'none',
             borderRadius: 6, color: 'white', fontSize: '0.8rem',
             cursor: 'pointer', marginBottom: 20,
           }}
@@ -269,12 +269,12 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.message}</label>
               <textarea value={vMessage} onChange={e => setVMessage(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
-            {error && <div style={{ color: '#1A5DAD', fontSize: '0.78rem' }}>{error}</div>}
+            {error && <div style={{ color: '#003A5D', fontSize: '0.78rem' }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" onClick={() => { setForm(null); setError('') }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #E8E0D0', borderRadius: 6, color: '#6B6056', fontSize: '0.8rem', cursor: 'pointer' }}>
                 {tx.cancel}
               </button>
-              <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#1A5DAD', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
+              <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#003A5D', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
                 {submitting ? tx.submitting : tx.submit}
               </button>
             </div>
@@ -313,12 +313,12 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.message}</label>
               <textarea value={sMessage} onChange={e => setSMessage(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
-            {error && <div style={{ color: '#1A5DAD', fontSize: '0.78rem' }}>{error}</div>}
+            {error && <div style={{ color: '#003A5D', fontSize: '0.78rem' }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" onClick={() => { setForm(null); setError('') }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #E8E0D0', borderRadius: 6, color: '#6B6056', fontSize: '0.8rem', cursor: 'pointer' }}>
                 {tx.cancel}
               </button>
-              <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#1A5DAD', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
+              <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#003A5D', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
                 {submitting ? tx.submitting : tx.submit}
               </button>
             </div>

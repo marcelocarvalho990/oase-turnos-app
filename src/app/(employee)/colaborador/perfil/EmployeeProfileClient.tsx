@@ -20,7 +20,7 @@ interface Props {
 }
 
 const TIER_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  TEAMLEITUNG:      { label: 'HF', bg: '#EFF6FF', color: '#1D4ED8' },
+  TEAMLEITUNG:      { label: 'HF', bg: '#EFF6FF', color: '#003A5D' },
   FUNKTIONSSTUFE_3: { label: 'FAGE', bg: '#F0FDF4', color: '#15803D' },
   FUNKTIONSSTUFE_2: { label: 'FAGE', bg: '#F0FDF4', color: '#15803D' },
   FUNKTIONSSTUFE_1: { label: 'SRK', bg: '#FFF7ED', color: '#C2410C' },
@@ -120,8 +120,8 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
               padding: '8px 16px',
               background: 'transparent',
               border: 'none',
-              borderBottom: tab === key ? '2px solid #1A5DAD' : '2px solid transparent',
-              color: tab === key ? '#1A5DAD' : '#9A8F80',
+              borderBottom: tab === key ? '2px solid #003A5D' : '2px solid transparent',
+              color: tab === key ? '#003A5D' : '#9A8F80',
               fontFamily: "'DM Sans', sans-serif",
               fontSize: '0.82rem',
               fontWeight: tab === key ? 600 : 400,
@@ -156,7 +156,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 width: 56,
                 height: 56,
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #1A5DAD, #2E6FC4)',
+                background: 'linear-gradient(135deg, #003A5D, #004E7A)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -237,7 +237,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 marginBottom: 14,
               }}
             >
-              <Building2 size={15} color="#1A5DAD" />
+              <Building2 size={15} color="#003A5D" />
               <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1A1816' }}>Andares / Cobertura</span>
             </div>
 
@@ -248,7 +248,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   padding: '5px 12px',
                   borderRadius: 20,
                   background: '#EFF6FF',
-                  color: '#1D4ED8',
+                  color: '#003A5D',
                   fontSize: '0.75rem',
                   fontWeight: 500,
                   border: '1px solid #BFDBFE',
@@ -312,7 +312,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   justifyContent: 'center',
                 }}
               >
-                <Lock size={16} color="#1A5DAD" />
+                <Lock size={16} color="#003A5D" />
               </div>
               <div>
                 <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1A1816' }}>Alterar PIN de acesso</div>
@@ -352,7 +352,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                       fontFamily: 'monospace',
                       boxSizing: 'border-box',
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = '#1A5DAD' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#003A5D' }}
                     onBlur={e => { e.currentTarget.style.borderColor = '#D8D0C4' }}
                   />
                 </div>
@@ -399,7 +399,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 disabled={pinStatus === 'loading'}
                 style={{
                   padding: '11px',
-                  background: pinStatus === 'loading' ? '#93B8E0' : '#1A5DAD',
+                  background: pinStatus === 'loading' ? '#7AA8C0' : '#003A5D',
                   color: 'white',
                   border: 'none',
                   borderRadius: 8,

@@ -6,7 +6,7 @@ export interface ShiftColor {
 
 export const SHIFT_COLORS: Record<string, ShiftColor> = {
   // Work shifts
-  F:    { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD' },
+  F:    { bg: '#DBEAFE', text: '#003A5D', border: '#99BFCF' },
   F9:   { bg: '#E0E7FF', text: '#4338CA', border: '#A5B4FC' },
   G:    { bg: '#EDE9FE', text: '#6D28D9', border: '#C4B5FD' },
   M:    { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },

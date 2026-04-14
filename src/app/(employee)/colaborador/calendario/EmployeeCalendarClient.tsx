@@ -254,7 +254,7 @@ export default function EmployeeCalendarClient({ employeeId, shiftTypes }: Props
                     fontSize: '0.78rem',
                     fontWeight: isToday ? 600 : 400,
                     color: isToday ? 'white' : isWeekend ? '#B0A090' : '#3A3530',
-                    background: isToday ? '#1A5DAD' : 'transparent',
+                    background: isToday ? '#003A5D' : 'transparent',
                     marginBottom: 6,
                   }}
                 >

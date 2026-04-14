@@ -63,9 +63,9 @@ export default function LoginClient() {
   const tx = t[lang]
 
   // Tertianum primary blue
-  const BLUE = '#1C4280'
-  const BLUE_BTN = '#1A5DAD'
-  const BLUE_BTN_HOVER = '#154D94'
+  const BLUE = '#003A5D'
+  const BLUE_BTN = '#003A5D'
+  const BLUE_BTN_HOVER = '#002D47'
 
   function handlePinChange(i: number, val: string) {
     const digit = val.replace(/\D/g, '').slice(-1)
@@ -113,7 +113,7 @@ export default function LoginClient() {
       <div
         style={{
           flex: '1 1 0',
-          background: `linear-gradient(160deg, #1A3D73 0%, ${BLUE} 45%, #122D5A 100%)`,
+          background: `linear-gradient(160deg, #002D47 0%, ${BLUE} 45%, #001E30 100%)`,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -346,7 +346,7 @@ export default function LoginClient() {
               style={{
                 width: '100%',
                 padding: '12px',
-                background: loading ? '#8AABCE' : BLUE_BTN,
+                background: loading ? '#7AA8C0' : BLUE_BTN,
                 border: 'none',
                 borderRadius: 5,
                 color: 'white',

@@ -17,7 +17,7 @@ interface Props {
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT:     'bg-slate-100 text-slate-600',
-  GENERATED: 'bg-blue-100 text-blue-700',
+  GENERATED: 'bg-[#E6EEF3] text-[#003A5D]',
   PUBLISHED: 'bg-green-100 text-green-700',
   LOCKED:    'bg-amber-100 text-amber-700',
 }
@@ -95,7 +95,17 @@ export default function TopBar({ year, month, team, scheduleStatus, onMonthChang
         <button
           onClick={() => setShowInstructions(v => !v)}
           title="Instruções para o gerador"
-          className={`p-2 rounded-lg border text-sm transition-colors ${showInstructions ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+          style={{
+            padding: '7px',
+            borderRadius: 8,
+            border: `1px solid ${showInstructions ? '#99BFCF' : '#E2E8F0'}`,
+            background: showInstructions ? '#E6EEF3' : 'transparent',
+            color: showInstructions ? '#003A5D' : '#64748B',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'all 0.15s',
+          }}
         >
           <SlidersHorizontal size={15} />
         </button>
@@ -104,7 +114,23 @@ export default function TopBar({ year, month, team, scheduleStatus, onMonthChang
         <button
           onClick={handleGenerate}
           disabled={isGenerating}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 16px',
+            background: isGenerating ? '#7AA8C0' : '#003A5D',
+            color: 'white',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            cursor: isGenerating ? 'not-allowed' : 'pointer',
+            transition: 'background 0.15s',
+            opacity: isGenerating ? 0.7 : 1,
+          }}
+          onMouseEnter={e => { if (!isGenerating) (e.currentTarget as HTMLElement).style.background = '#002D47' }}
+          onMouseLeave={e => { if (!isGenerating) (e.currentTarget as HTMLElement).style.background = '#003A5D' }}
         >
           {isGenerating ? (
             <>
@@ -122,18 +148,19 @@ export default function TopBar({ year, month, team, scheduleStatus, onMonthChang
 
       {/* Instructions panel */}
       {showInstructions && (
-        <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-5 py-3">
+        <div className="shrink-0 border-b px-5 py-3" style={{ background: '#E6EEF3', borderColor: '#C5D9E3' }}>
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-xs font-semibold text-blue-800 uppercase tracking-wide">Instruções adicionais para este mês</span>
+                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#003A5D' }}>Instruções adicionais para este mês</span>
               </div>
               <textarea
                 value={instructions}
                 onChange={e => setInstructions(e.target.value)}
                 placeholder='Ex: "Singh K. deve fazer mínimo 5 turnos F" · "Evitar turno S para Zimmermann S." · "Pelo menos 2 fins de semana para Bajric S."'
                 rows={2}
-                className="w-full text-sm text-slate-800 bg-white border border-blue-200 rounded-lg px-3 py-2 resize-none outline-none focus:border-blue-400 placeholder:text-slate-400"
+                className="w-full text-sm text-slate-800 bg-white rounded-lg px-3 py-2 resize-none outline-none placeholder:text-slate-400"
+                style={{ border: '1px solid #99BFCF' }}
               />
             </div>
             <button
@@ -143,7 +170,7 @@ export default function TopBar({ year, month, team, scheduleStatus, onMonthChang
               <X size={14} />
             </button>
           </div>
-          <p className="text-xs text-blue-600 mt-1">
+          <p className="text-xs mt-1" style={{ color: '#003A5D', opacity: 0.7 }}>
             As instruções são guardadas com o registo da geração para rastreabilidade.
           </p>
         </div>
