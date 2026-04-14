@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react'
+import { Send, Bot, User, Sparkles, Loader2, Trash2 } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -71,7 +71,16 @@ function MessageBubble({ msg }: { msg: Message }) {
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([])
+  const STORAGE_KEY = 'manager_chat_history'
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? (JSON.parse(saved) as Message[]) : []
+    } catch {
+      return []
+    }
+  })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -80,6 +89,13 @@ export default function ChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  // Persist chat history to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+    } catch { /* quota exceeded or SSR */ }
+  }, [messages])
 
   async function sendMessage(text: string) {
     const trimmed = text.trim()
@@ -163,7 +179,7 @@ export default function ChatPage() {
         }}
       >
         <Sparkles size={20} color="#7BBFE0" strokeWidth={1.8} />
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{
             fontFamily: "'Poppins', sans-serif",
             fontWeight: 800,
@@ -178,6 +194,30 @@ export default function ChatPage() {
             Pergunta qualquer coisa sobre a equipa, turnos e escalas
           </div>
         </div>
+        {messages.length > 0 && (
+          <button
+            onClick={() => { setMessages([]); localStorage.removeItem(STORAGE_KEY) }}
+            title="Limpar conversa"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
+              borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)',
+              background: 'transparent', color: 'rgba(255,255,255,0.5)',
+              fontSize: '0.75rem', cursor: 'pointer', fontFamily: "'IBM Plex Sans', sans-serif",
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'
+              ;(e.currentTarget as HTMLElement).style.color = '#fff'
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'transparent'
+              ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'
+            }}
+          >
+            <Trash2 size={13} />
+            Limpar
+          </button>
+        )}
       </div>
 
       {/* Messages area */}
