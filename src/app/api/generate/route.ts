@@ -99,43 +99,60 @@ async function parseInstructions(
     .map(e => `- id: "${e.id}", nome: "${e.name}", abreviatura: "${e.shortName}"`)
     .join('\n')
 
-  const prompt = `És um assistente que converte instruções em português de um gestor de turnos em restrições estruturadas JSON.
+  const workShiftList = allShiftCodes.join(', ')
 
-Colaboradores disponíveis:
+  const prompt = `És um assistente que converte instruções de um gestor de turnos em restrições JSON estruturadas.
+
+COLABORADORES (usa o id exato):
 ${employeeList}
 
-Turnos disponíveis: ${allShiftCodes.join(', ')}
+TURNOS DISPONÍVEIS: ${workShiftList}
+Legenda: F = manhã/morning, S = tarde/afternoon/Nachmittag. Outros turnos: ${allShiftCodes.filter(c => c !== 'F' && c !== 'S').join(', ') || 'nenhum'}
 
-Tipos de restrições possíveis:
-- BLOCK_SHIFT: o colaborador não pode fazer este turno
-- MAX_SHIFT: o colaborador pode fazer este turno no máximo N vezes
-- MIN_SHIFT: o colaborador deve fazer este turno pelo menos N vezes
-- MAX_WEEKENDS: o colaborador pode trabalhar no máximo N fins de semana
-- MIN_WEEKENDS: o colaborador deve trabalhar pelo menos N fins de semana
+TIPOS DE RESTRIÇÃO:
+- BLOCK_SHIFT: bloqueia um turno específico para o colaborador
+- MAX_SHIFT: máximo de vezes que pode fazer esse turno
+- MIN_SHIFT: mínimo de vezes que deve fazer esse turno
+- MAX_WEEKENDS: máximo de fins de semana a trabalhar
+- MIN_WEEKENDS: mínimo de fins de semana a trabalhar
 
-Instruções do gestor:
+REGRAS DE CONVERSÃO (aplica a CADA instrução individualmente):
+
+"não trabalha" / "de folga" / "ausente" / "não escalar este mês"
+→ BLOCK_SHIFT para CADA turno de ${workShiftList} (uma entrada por turno)
+
+"só faz turno da manhã" / "só manhãs" / "apenas turno F"
+→ BLOCK_SHIFT para cada turno EXCEPTO F
+
+"só faz turno da tarde" / "só tardes" / "apenas turno S" / "só S"
+→ BLOCK_SHIFT para cada turno EXCEPTO S
+
+"faz turno da manhã" / "turno F" (sem "só")
+→ BLOCK_SHIFT para cada turno EXCEPTO F (interpretado como restrição exclusiva)
+
+"evitar turno X" / "sem turno X"
+→ BLOCK_SHIFT apenas para X
+
+"trabalhar todos os dias" / "máximo de dias" / "escalar sempre"
+→ MIN_SHIFT com shiftCode do turno que lhe foi atribuído, count: 22
+
+"mínimo N fins de semana" → MIN_WEEKENDS count: N
+"máximo N fins de semana" → MAX_WEEKENDS count: N
+"máximo N turnos X" → MAX_SHIFT shiftCode: X, count: N
+"mínimo N turnos X" → MIN_SHIFT shiftCode: X, count: N
+
+PROCESSO:
+1. Identifica TODOS os colaboradores mencionados nas instruções (por nome parcial, apelido ou abreviatura)
+2. Para CADA colaborador, analisa o que é pedido e gera as restrições correspondentes
+3. Processa TODAS as instruções — não ignores nenhuma
+
+INSTRUÇÕES DO GESTOR:
 "${instructionsText}"
 
-Converte as instruções acima numa lista JSON de restrições. Cada restrição tem:
-{
-  "type": "BLOCK_SHIFT" | "MAX_SHIFT" | "MIN_SHIFT" | "MAX_WEEKENDS" | "MIN_WEEKENDS",
-  "employeeId": "<id exato do colaborador da lista acima>",
-  "shiftCode": "<código do turno, se aplicável>",
-  "count": <número, se aplicável>
-}
+Responde APENAS com um array JSON válido. Formato de cada elemento:
+{"type": "BLOCK_SHIFT"|"MAX_SHIFT"|"MIN_SHIFT"|"MAX_WEEKENDS"|"MIN_WEEKENDS", "employeeId": "<id>", "shiftCode": "<código ou omite>", "count": <número ou omite>}
 
-Regras de interpretação:
-- "não trabalha este mês" / "não trabalha" / "de folga" / "ausente" / "não escalar" → BLOCK_SHIFT para TODOS os turnos disponíveis (${allShiftCodes.join(', ')})
-- "faz só turno F" / "apenas turno F" / "só manhãs" → BLOCK_SHIFT para todos os turnos exceto F
-- "evitar turno S" / "sem tardes" → BLOCK_SHIFT apenas para esse turno
-- "máximo 3 turnos F" → MAX_SHIFT com count:3
-- "mínimo 2 fins de semana" → MIN_WEEKENDS com count:2
-- "máximo 1 fim de semana" → MAX_WEEKENDS com count:1
-- "manhã"/"manhãs" = turno F; "tarde"/"tardes" = turno S
-- Se o nome não corresponder a nenhum colaborador, ignora essa instrução
-- Sê liberal no reconhecimento de nomes: "Ricardo", "Ana", "João" bastam para identificar o colaborador
-
-Responde APENAS com um array JSON válido, sem texto adicional. Se não houver restrições, responde com [].`
+Array JSON:`
 
   try {
     const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
@@ -148,7 +165,7 @@ Responde APENAS com um array JSON válido, sem texto adicional. Se não houver r
       },
       body: JSON.stringify({
         model: 'anthropic/claude-haiku-4-5',
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
