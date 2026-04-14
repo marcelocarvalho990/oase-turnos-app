@@ -35,7 +35,7 @@ export default function EmployeeSidebar({ employeeName }: Props) {
       style={{
         background: '#003A5D',
         borderRight: '1px solid #002D47',
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'IBM Plex Sans', sans-serif",
       }}
     >
       {/* Logo */}

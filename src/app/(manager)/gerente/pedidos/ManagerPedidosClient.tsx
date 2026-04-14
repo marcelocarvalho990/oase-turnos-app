@@ -114,36 +114,29 @@ export default function ManagerPedidosClient() {
   const pendingSwapCount = swaps.filter(s => s.status === 'PENDING').length
 
   return (
-    <div style={{ padding: '32px 36px', height: '100%', overflowY: 'auto', background: '#F9F7F3', fontFamily: "'DM Sans', sans-serif" }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      {/* Page header */}
+      <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '1.75rem', color: '#1A1816', letterSpacing: '-0.02em', lineHeight: 1, margin: 0 }}>
+          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {tx.title}
           </h1>
-          <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#9A8F80' }}>{tx.subtitle}</p>
+          <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em' }}>{tx.subtitle}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* Filter */}
-          <select
-            value={filter}
-            onChange={e => setFilter(e.target.value as 'all' | 'pending')}
-            style={{ padding: '6px 10px', background: 'white', border: '1px solid #E0D8CC', borderRadius: 6, color: '#6B6056', fontSize: '0.78rem', cursor: 'pointer' }}
-          >
-            <option value="pending">{tx.filterPending}</option>
-            <option value="all">{tx.filterAll}</option>
+          <select value={filter} onChange={e => setFilter(e.target.value as 'all' | 'pending')} style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'white', fontSize: '0.72rem', cursor: 'pointer' }}>
+            <option value="pending" style={{ background: '#003A5D' }}>{tx.filterPending}</option>
+            <option value="all" style={{ background: '#003A5D' }}>{tx.filterAll}</option>
           </select>
-          <button
-            onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')}
-            style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #D8D0C4', borderRadius: 6, color: '#6B6056', fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}
-          >
+          <button onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
             {tx.lang}
           </button>
         </div>
       </div>
+      <div style={{ padding: '20px 28px' }}>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #E8E0D0', marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #D8E2E8', marginBottom: 24 }}>
         {(['vacation', 'swap', 'saldos'] as TabType[]).map(t => (
           <button
             key={t}
@@ -151,7 +144,7 @@ export default function ManagerPedidosClient() {
             style={{
               padding: '10px 20px', background: 'transparent', border: 'none',
               borderBottom: tab === t ? '2px solid #003A5D' : '2px solid transparent',
-              color: tab === t ? '#1A1816' : '#9A8F80',
+              color: tab === t ? '#001E30' : '#7A9BAD',
               fontSize: '0.82rem', fontWeight: tab === t ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
               display: 'flex', alignItems: 'center', gap: 6,
@@ -172,17 +165,17 @@ export default function ManagerPedidosClient() {
       {tab === 'vacation' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredVacations.length === 0 && (
-            <p style={{ color: '#9A8F80', fontSize: '0.82rem', padding: '20px 0' }}>{filter === 'pending' ? tx.empty : tx.allEmpty}</p>
+            <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{filter === 'pending' ? tx.empty : tx.allEmpty}</p>
           )}
           {filteredVacations.map(v => {
             const s = STATUS_COLORS[v.status]
             const isPending = v.status === 'PENDING'
             return (
-              <div key={v.id} style={{ background: 'white', border: '1px solid #E8E0D0', borderRadius: 10, padding: '16px 18px' }}>
+              <div key={v.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: '16px 18px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1A1816' }}>{v.employee.name}</span>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{v.employee.name}</span>
                       <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
                         {s.label[lang]}
                       </span>
@@ -190,9 +183,9 @@ export default function ManagerPedidosClient() {
                     <div style={{ fontSize: '0.8rem', color: '#3A3530' }}>
                       {v.startDate} → {v.endDate}
                     </div>
-                    {v.notes && <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#6B6056' }}>{v.notes}</p>}
+                    {v.notes && <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#4A6878' }}>{v.notes}</p>}
                     {v.managerNote && !isPending && (
-                      <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: '#9A8F80' }}><em>{tx.managerNote}:</em> {v.managerNote}</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: '#7A9BAD' }}><em>{tx.managerNote}:</em> {v.managerNote}</p>
                     )}
                   </div>
 
@@ -219,7 +212,7 @@ export default function ManagerPedidosClient() {
                         placeholder={tx.noteLabel}
                         value={notes[v.id] ?? ''}
                         onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))}
-                        style={{ padding: '6px 10px', border: '1px solid #E8E0D0', borderRadius: 6, fontSize: '0.75rem', color: '#1A1816', outline: 'none', width: 200, background: 'white' }}
+                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
                       />
                     </div>
                   )}
@@ -234,17 +227,17 @@ export default function ManagerPedidosClient() {
       {tab === 'swap' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredSwaps.length === 0 && (
-            <p style={{ color: '#9A8F80', fontSize: '0.82rem', padding: '20px 0' }}>{filter === 'pending' ? tx.empty : tx.allEmpty}</p>
+            <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{filter === 'pending' ? tx.empty : tx.allEmpty}</p>
           )}
           {filteredSwaps.map(sw => {
             const s = STATUS_COLORS[sw.status]
             const isPending = sw.status === 'PENDING'
             return (
-              <div key={sw.id} style={{ background: 'white', border: '1px solid #E8E0D0', borderRadius: 10, padding: '16px 18px' }}>
+              <div key={sw.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: '16px 18px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1A1816' }}>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>
                         {sw.requester.name} ↔ {sw.targetEmployee.name}
                       </span>
                       <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
@@ -252,13 +245,13 @@ export default function ManagerPedidosClient() {
                       </span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#3A3530' }}>
-                      <span style={{ color: '#6B6056' }}>{sw.requester.shortName}:</span> <strong>{sw.requesterDate}</strong>
+                      <span style={{ color: '#4A6878' }}>{sw.requester.shortName}:</span> <strong>{sw.requesterDate}</strong>
                       {'  ↔  '}
-                      <span style={{ color: '#6B6056' }}>{sw.targetEmployee.shortName}:</span> <strong>{sw.targetDate}</strong>
+                      <span style={{ color: '#4A6878' }}>{sw.targetEmployee.shortName}:</span> <strong>{sw.targetDate}</strong>
                     </div>
-                    {sw.requesterMessage && <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#6B6056' }}>{sw.requesterMessage}</p>}
+                    {sw.requesterMessage && <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#4A6878' }}>{sw.requesterMessage}</p>}
                     {sw.managerNote && !isPending && (
-                      <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: '#9A8F80' }}><em>{tx.managerNote}:</em> {sw.managerNote}</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: '#7A9BAD' }}><em>{tx.managerNote}:</em> {sw.managerNote}</p>
                     )}
                   </div>
 
@@ -285,7 +278,7 @@ export default function ManagerPedidosClient() {
                         placeholder={tx.noteLabel}
                         value={notes[sw.id] ?? ''}
                         onChange={e => setNotes(n => ({ ...n, [sw.id]: e.target.value }))}
-                        style={{ padding: '6px 10px', border: '1px solid #E8E0D0', borderRadius: 6, fontSize: '0.75rem', color: '#1A1816', outline: 'none', width: 200, background: 'white' }}
+                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
                       />
                     </div>
                   )}
@@ -299,14 +292,14 @@ export default function ManagerPedidosClient() {
       {/* Saldos de férias — all employees */}
       {tab === 'saldos' && (
         <div>
-          <div style={{ marginBottom: 12, fontSize: '0.72rem', color: '#9A8F80', letterSpacing: '0.06em' }}>
+          <div style={{ marginBottom: 12, fontSize: '0.72rem', color: '#7A9BAD', letterSpacing: '0.06em' }}>
             {currentYear} · {lang === 'pt' ? 'Dias úteis (seg–sáb). Direito: 25 dias × % contrato.' : 'Werktage (Mo–Sa). Anspruch: 25 Tage × Vertragsprozent.'}
           </div>
 
           {/* Column headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 70px 70px 70px 80px', gap: 0, padding: '6px 14px', borderBottom: '1px solid #E8E0D0', marginBottom: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 70px 70px 70px 80px', gap: 0, padding: '6px 14px', borderBottom: '1px solid #D8E2E8', marginBottom: 4 }}>
             {['Colaborador', tx.entitlement, tx.approved, tx.pending, tx.remaining, '%'].map(h => (
-              <div key={h} style={{ fontSize: '0.65rem', color: '#9A8F80', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: h === 'Colaborador' ? 'left' : 'center' }}>{h}</div>
+              <div key={h} style={{ fontSize: '0.65rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: h === 'Colaborador' ? 'left' : 'center' }}>{h}</div>
             ))}
           </div>
 
@@ -323,16 +316,16 @@ export default function ManagerPedidosClient() {
                     gap: 0,
                     padding: '10px 14px',
                     background: 'white',
-                    border: '1px solid #E8E0D0',
+                    border: '1px solid #D8E2E8',
                     borderRadius: 8,
                     alignItems: 'center',
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#1A1816' }}>{emp.name}</div>
-                    <div style={{ fontSize: '0.68rem', color: '#9A8F80' }}>{emp.workPercentage}%</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#001E30' }}>{emp.name}</div>
+                    <div style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{emp.workPercentage}%</div>
                   </div>
-                  <div style={{ textAlign: 'center', fontSize: '0.82rem', color: '#6B6056' }}>{emp.entitlement}</div>
+                  <div style={{ textAlign: 'center', fontSize: '0.82rem', color: '#4A6878' }}>{emp.entitlement}</div>
                   <div style={{ textAlign: 'center' }}>
                     <span style={{ padding: '2px 8px', borderRadius: 12, background: '#D1FAE5', color: '#059669', fontSize: '0.78rem', fontWeight: 500 }}>{emp.approved}</span>
                   </div>
@@ -343,14 +336,14 @@ export default function ManagerPedidosClient() {
                     }
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <span style={{ padding: '2px 8px', borderRadius: 12, background: low ? '#FEE2E2' : '#F5F0E8', color: low ? '#DC2626' : '#6B6056', fontSize: '0.78rem', fontWeight: 500 }}>{emp.remaining}</span>
+                    <span style={{ padding: '2px 8px', borderRadius: 12, background: low ? '#FEE2E2' : '#F4F6F8', color: low ? '#DC2626' : '#4A6878', fontSize: '0.78rem', fontWeight: 500 }}>{emp.remaining}</span>
                   </div>
                   {/* Progress bar */}
                   <div style={{ paddingLeft: 8 }}>
                     <div style={{ height: 6, background: '#F0EBE3', borderRadius: 4, overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#059669', borderRadius: 4, transition: 'width 0.3s' }} />
                     </div>
-                    <div style={{ fontSize: '0.6rem', color: '#9A8F80', marginTop: 2, textAlign: 'right' }}>{pct}%</div>
+                    <div style={{ fontSize: '0.6rem', color: '#7A9BAD', marginTop: 2, textAlign: 'right' }}>{pct}%</div>
                   </div>
                 </div>
               )
@@ -358,6 +351,7 @@ export default function ManagerPedidosClient() {
           </div>
         </div>
       )}
+      </div>{/* /padding wrapper */}
     </div>
   )
 }

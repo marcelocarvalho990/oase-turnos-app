@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --t-blue:       #003A5D;
+  --t-blue-dark:  #002D47;
+  --t-blue-deep:  #001E30;
+  --t-white:      #FFFFFF;
+  --t-bg:         #F4F6F8;
+  --t-border:     #D8E2E8;
+  --t-muted:      #7A9BAD;
+  --t-text:       #001E30;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-head: 'Syne', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--t-bg);
+  color: var(--t-text);
+  font-family: var(--font-body);
 }
+
+/* Utility classes for consistent branding */
+.t-head { font-family: var(--font-head); font-weight: 700; color: var(--t-blue); }
+.t-mono { font-family: var(--font-mono); }

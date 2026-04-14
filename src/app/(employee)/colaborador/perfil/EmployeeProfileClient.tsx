@@ -76,36 +76,21 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
   }
 
   return (
-    <div
-      style={{
-        padding: '32px 36px',
-        height: '100%',
-        overflowY: 'auto',
-        background: '#FAF8F4',
-        fontFamily: "'DM Sans', sans-serif",
-      }}
-    >
-      {/* Header */}
-      <div style={{ marginBottom: 28 }}>
-        <h1
-          style={{
-            fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: '1.75rem',
-            color: '#1A1816',
-            letterSpacing: '-0.02em',
-            lineHeight: 1,
-            margin: 0,
-          }}
-        >
+    <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      {/* Page header */}
+      <div style={{ background: '#003A5D', padding: '20px 28px' }}>
+        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
           O Meu Perfil
         </h1>
-        <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#9A8F80' }}>
-          {employee.name}
+        <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em', fontFamily: "'IBM Plex Mono', monospace" }}>
+          {employee.name.toUpperCase()}
         </p>
       </div>
 
+      <div style={{ padding: '20px 28px' }}>
+
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid #E8E0D0', paddingBottom: 0 }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #003A5D' }}>
         {([
           { key: 'info', label: 'Informações', icon: User },
           { key: 'pin',  label: 'Alterar PIN', icon: Lock },
@@ -121,8 +106,8 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
               background: 'transparent',
               border: 'none',
               borderBottom: tab === key ? '2px solid #003A5D' : '2px solid transparent',
-              color: tab === key ? '#003A5D' : '#9A8F80',
-              fontFamily: "'DM Sans', sans-serif",
+              color: tab === key ? '#003A5D' : '#7A9BAD',
+              fontFamily: "'IBM Plex Sans', sans-serif",
               fontSize: '0.82rem',
               fontWeight: tab === key ? 600 : 400,
               cursor: 'pointer',
@@ -144,7 +129,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
             style={{
               background: 'white',
               borderRadius: 12,
-              border: '1px solid #E8E0D0',
+              border: '1px solid #D8E2E8',
               padding: '24px',
               display: 'flex',
               alignItems: 'center',
@@ -162,15 +147,15 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 justifyContent: 'center',
                 color: 'white',
                 fontSize: '1.4rem',
-                fontFamily: "'Instrument Serif', Georgia, serif",
+                fontFamily: "'Syne', sans-serif",
                 flexShrink: 0,
               }}
             >
               {employee.name.charAt(0)}
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '1rem', color: '#1A1816' }}>{employee.name}</div>
-              <div style={{ fontSize: '0.78rem', color: '#9A8F80', marginTop: 2 }}>{employee.shortName}</div>
+              <div style={{ fontWeight: 600, fontSize: '1rem', color: '#001E30' }}>{employee.name}</div>
+              <div style={{ fontSize: '0.78rem', color: '#7A9BAD', marginTop: 2 }}>{employee.shortName}</div>
             </div>
             {tier && (
               <div
@@ -195,7 +180,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
             style={{
               background: 'white',
               borderRadius: 12,
-              border: '1px solid #E8E0D0',
+              border: '1px solid #D8E2E8',
               overflow: 'hidden',
             }}
           >
@@ -211,11 +196,11 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '14px 20px',
-                  borderBottom: i < arr.length - 1 ? '1px solid #F5F0E8' : 'none',
+                  borderBottom: i < arr.length - 1 ? '1px solid #F4F6F8' : 'none',
                 }}
               >
-                <span style={{ fontSize: '0.78rem', color: '#9A8F80' }}>{label}</span>
-                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: '#1A1816' }}>{value}</span>
+                <span style={{ fontSize: '0.78rem', color: '#7A9BAD' }}>{label}</span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: '#001E30' }}>{value}</span>
               </div>
             ))}
           </div>
@@ -225,7 +210,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
             style={{
               background: 'white',
               borderRadius: 12,
-              border: '1px solid #E8E0D0',
+              border: '1px solid #D8E2E8',
               padding: '20px',
             }}
           >
@@ -238,7 +223,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
               }}
             >
               <Building2 size={15} color="#003A5D" />
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1A1816' }}>Andares / Cobertura</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#001E30' }}>Andares / Cobertura</span>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -276,13 +261,13 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
               ))}
 
               {!employee.canCoverOtherTeams && (
-                <span style={{ fontSize: '0.75rem', color: '#9A8F80' }}>
+                <span style={{ fontSize: '0.75rem', color: '#7A9BAD' }}>
                   Apenas equipa principal
                 </span>
               )}
             </div>
 
-            <p style={{ margin: '12px 0 0', fontSize: '0.72rem', color: '#B0A090' }}>
+            <p style={{ margin: '12px 0 0', fontSize: '0.72rem', color: '#7A9BAD' }}>
               Para alterar os andares de cobertura, contacte o seu responsável.
             </p>
           </div>
@@ -296,7 +281,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
             style={{
               background: 'white',
               borderRadius: 12,
-              border: '1px solid #E8E0D0',
+              border: '1px solid #D8E2E8',
               padding: '28px',
             }}
           >
@@ -315,8 +300,8 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 <Lock size={16} color="#003A5D" />
               </div>
               <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1A1816' }}>Alterar PIN de acesso</div>
-                <div style={{ fontSize: '0.72rem', color: '#9A8F80' }}>Mínimo 4 dígitos numéricos</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>Alterar PIN de acesso</div>
+                <div style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>Mínimo 4 dígitos numéricos</div>
               </div>
             </div>
 
@@ -329,7 +314,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 <div key={id}>
                   <label
                     htmlFor={id}
-                    style={{ display: 'block', fontSize: '0.75rem', color: '#6B6056', marginBottom: 5, fontWeight: 500 }}
+                    style={{ display: 'block', fontSize: '0.75rem', color: '#4A6878', marginBottom: 5, fontWeight: 500 }}
                   >
                     {label}
                   </label>
@@ -344,7 +329,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      border: '1px solid #D8D0C4',
+                      border: '1px solid #D8E2E8',
                       borderRadius: 8,
                       fontSize: '1rem',
                       letterSpacing: '0.2em',
@@ -353,7 +338,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                       boxSizing: 'border-box',
                     }}
                     onFocus={e => { e.currentTarget.style.borderColor = '#003A5D' }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#D8D0C4' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#D8E2E8' }}
                   />
                 </div>
               ))}
@@ -403,7 +388,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   color: 'white',
                   border: 'none',
                   borderRadius: 8,
-                  fontFamily: "'DM Sans', sans-serif",
+                  fontFamily: "'IBM Plex Sans', sans-serif",
                   fontSize: '0.85rem',
                   fontWeight: 600,
                   letterSpacing: '0.04em',
@@ -418,6 +403,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
           </div>
         </div>
       )}
+      </div>{/* /padding wrapper */}
     </div>
   )
 }

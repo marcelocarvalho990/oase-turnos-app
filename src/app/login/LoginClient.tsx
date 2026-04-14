@@ -108,7 +108,7 @@ export default function LoginClient() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       {/* Left panel — Tertianum brand */}
       <div
         style={{

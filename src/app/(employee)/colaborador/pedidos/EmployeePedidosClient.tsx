@@ -160,50 +160,49 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px 12px', background: 'white',
-    border: '1px solid #E8E0D0', borderRadius: 6,
-    color: '#1A1816', fontSize: '0.85rem', outline: 'none',
+    border: '1px solid #D8E2E8', borderRadius: 6,
+    color: '#001E30', fontSize: '0.85rem', outline: 'none',
     boxSizing: 'border-box',
   }
 
   return (
-    <div style={{ padding: '32px 36px', height: '100%', overflowY: 'auto', background: '#FAF8F4', fontFamily: "'DM Sans', sans-serif" }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      {/* Page header */}
+      <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '1.75rem', color: '#1A1816', letterSpacing: '-0.02em', lineHeight: 1, margin: 0 }}>
+          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {tx.title}
           </h1>
-          <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#9A8F80' }}>{tx.subtitle}</p>
+          <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em' }}>{tx.subtitle}</p>
         </div>
-        <button
-          onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')}
-          style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #D8D0C4', borderRadius: 6, color: '#6B6056', fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}
-        >
+        <button onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
           {tx.lang}
         </button>
       </div>
 
+      <div style={{ padding: '20px 28px' }}>
+
       {/* Vacation balance card */}
       {summary && (
-        <div style={{ background: 'white', border: '1px solid #E8E0D0', borderRadius: 10, padding: '16px 20px', marginBottom: 20 }}>
-          <div style={{ fontSize: '0.68rem', color: '#9A8F80', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
+        <div style={{ background: 'white', border: '1px solid #D8E2E8', padding: '16px 20px', marginBottom: 20 }}>
+          <div style={{ fontSize: '0.68rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
             {tx.vacationBalance} · {currentYear}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {([
-              { label: tx.entitlement, value: summary.entitlement, color: '#6B6056', bg: '#F5F0E8' },
+              { label: tx.entitlement, value: summary.entitlement, color: '#4A6878', bg: '#F4F6F8' },
               { label: tx.approved,    value: summary.approved,    color: '#059669', bg: '#D1FAE5' },
               { label: tx.pending,     value: summary.pending,     color: '#D97706', bg: '#FEF3C7' },
               { label: tx.remaining,   value: summary.remaining,   color: summary.remaining <= 2 ? '#DC2626' : '#003A5D', bg: summary.remaining <= 2 ? '#FEE2E2' : '#FFF0EB' },
             ] as { label: string; value: number; color: string; bg: string }[]).map(item => (
               <div key={item.label} style={{ background: item.bg, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: item.color, lineHeight: 1, fontFamily: "'Instrument Serif', Georgia, serif" }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: item.color, lineHeight: 1, fontFamily: "'Syne', sans-serif" }}>
                   {item.value}
                 </div>
                 <div style={{ fontSize: '0.65rem', color: item.color, marginTop: 3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                   {item.label}
                 </div>
-                <div style={{ fontSize: '0.6rem', color: '#9A8F80', marginTop: 1 }}>{tx.days}</div>
+                <div style={{ fontSize: '0.6rem', color: '#7A9BAD', marginTop: 1 }}>{tx.days}</div>
               </div>
             ))}
           </div>
@@ -211,7 +210,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #E8E0D0', marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #D8E2E8', marginBottom: 24 }}>
         {(['vacation', 'swap'] as ActiveTab[]).map(t => (
           <button
             key={t}
@@ -219,7 +218,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
             style={{
               padding: '10px 20px', background: 'transparent', border: 'none',
               borderBottom: tab === t ? '2px solid #003A5D' : '2px solid transparent',
-              color: tab === t ? '#1A1816' : '#9A8F80',
+              color: tab === t ? '#001E30' : '#7A9BAD',
               fontSize: '0.82rem', fontWeight: tab === t ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
             }}
@@ -247,31 +246,31 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
 
       {/* Vacation Form */}
       {form === 'vacation' && tab === 'vacation' && (
-        <div style={{ background: 'white', border: '1px solid #E8E0D0', borderRadius: 10, padding: 20, marginBottom: 20 }}>
+        <div style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#1A1816' }}>{tx.newVacation}</h3>
-            <button onClick={() => { setForm(null); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9A8F80' }}>
+            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#001E30' }}>{tx.newVacation}</h3>
+            <button onClick={() => { setForm(null); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7A9BAD' }}>
               <X size={16} />
             </button>
           </div>
           <form onSubmit={submitVacation} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.startDate}</label>
+                <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.startDate}</label>
                 <input type="date" value={vStartDate} onChange={e => setVStartDate(e.target.value)} required style={inputStyle} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.endDate}</label>
+                <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.endDate}</label>
                 <input type="date" value={vEndDate} onChange={e => setVEndDate(e.target.value)} required style={inputStyle} />
               </div>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.message}</label>
+              <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.message}</label>
               <textarea value={vMessage} onChange={e => setVMessage(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
             {error && <div style={{ color: '#003A5D', fontSize: '0.78rem' }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => { setForm(null); setError('') }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #E8E0D0', borderRadius: 6, color: '#6B6056', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <button type="button" onClick={() => { setForm(null); setError('') }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #D8E2E8', borderRadius: 6, color: '#4A6878', fontSize: '0.8rem', cursor: 'pointer' }}>
                 {tx.cancel}
               </button>
               <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#003A5D', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
@@ -284,16 +283,16 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
 
       {/* Swap Form */}
       {form === 'swap' && tab === 'swap' && (
-        <div style={{ background: 'white', border: '1px solid #E8E0D0', borderRadius: 10, padding: 20, marginBottom: 20 }}>
+        <div style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#1A1816' }}>{tx.newSwap}</h3>
-            <button onClick={() => { setForm(null); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9A8F80' }}>
+            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#001E30' }}>{tx.newSwap}</h3>
+            <button onClick={() => { setForm(null); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7A9BAD' }}>
               <X size={16} />
             </button>
           </div>
           <form onSubmit={submitSwap} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.targetEmployee}</label>
+              <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.targetEmployee}</label>
               <select value={sTarget} onChange={e => setSTarget(e.target.value)} required style={{ ...inputStyle, cursor: 'pointer' }}>
                 <option value="">—</option>
                 {colleagues.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -301,21 +300,21 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.myDate}</label>
+                <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.myDate}</label>
                 <input type="date" value={sMyDate} onChange={e => setSMyDate(e.target.value)} required style={inputStyle} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.theirDate}</label>
+                <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.theirDate}</label>
                 <input type="date" value={sTheirDate} onChange={e => setSTheirDate(e.target.value)} required style={inputStyle} />
               </div>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.68rem', color: '#9A8F80', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.message}</label>
+              <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.message}</label>
               <textarea value={sMessage} onChange={e => setSMessage(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
             {error && <div style={{ color: '#003A5D', fontSize: '0.78rem' }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => { setForm(null); setError('') }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #E8E0D0', borderRadius: 6, color: '#6B6056', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <button type="button" onClick={() => { setForm(null); setError('') }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #D8E2E8', borderRadius: 6, color: '#4A6878', fontSize: '0.8rem', cursor: 'pointer' }}>
                 {tx.cancel}
               </button>
               <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#003A5D', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
@@ -330,28 +329,28 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
       {tab === 'vacation' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {vacations.length === 0 && (
-            <p style={{ color: '#9A8F80', fontSize: '0.82rem', padding: '20px 0' }}>{tx.empty}</p>
+            <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{tx.empty}</p>
           )}
           {vacations.map(v => {
             const s = STATUS_COLORS[v.status]
             return (
-              <div key={v.id} style={{ background: 'white', border: '1px solid #E8E0D0', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div key={v.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#1A1816' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#001E30' }}>
                       {v.startDate} {tx.to} {v.endDate}
                     </span>
                     <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
                       {s.label[lang]}
                     </span>
                   </div>
-                  {v.notes && <p style={{ margin: 0, fontSize: '0.75rem', color: '#6B6056' }}>{v.notes}</p>}
-                  {v.managerNote && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#9A8F80' }}><em>{tx.managerNote}:</em> {v.managerNote}</p>}
+                  {v.notes && <p style={{ margin: 0, fontSize: '0.75rem', color: '#4A6878' }}>{v.notes}</p>}
+                  {v.managerNote && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#7A9BAD' }}><em>{tx.managerNote}:</em> {v.managerNote}</p>}
                 </div>
                 {v.status === 'PENDING' && (
                   <button
                     onClick={() => cancelVacation(v.id)}
-                    style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #E8E0D0', borderRadius: 6, color: '#9A8F80', fontSize: '0.72rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #D8E2E8', borderRadius: 6, color: '#7A9BAD', fontSize: '0.72rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     {tx.cancelRequest}
                   </button>
@@ -366,21 +365,21 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
       {tab === 'swap' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {swaps.length === 0 && (
-            <p style={{ color: '#9A8F80', fontSize: '0.82rem', padding: '20px 0' }}>{tx.empty}</p>
+            <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{tx.empty}</p>
           )}
           {swaps.map(sw => {
             const s = STATUS_COLORS[sw.status]
             const iAmRequester = sw.requesterId === employeeId
             return (
-              <div key={sw.id} style={{ background: 'white', border: '1px solid #E8E0D0', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div key={sw.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
                       {s.label[lang]}
                     </span>
                     {iAmRequester
-                      ? <span style={{ fontSize: '0.72rem', color: '#9A8F80' }}>{lang === 'pt' ? 'Pediste a' : 'Angefragt bei'} {sw.targetEmployee.name}</span>
-                      : <span style={{ fontSize: '0.72rem', color: '#9A8F80' }}>{lang === 'pt' ? 'Pedido de' : 'Anfrage von'} {sw.requester.name}</span>
+                      ? <span style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>{lang === 'pt' ? 'Pediste a' : 'Angefragt bei'} {sw.targetEmployee.name}</span>
+                      : <span style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>{lang === 'pt' ? 'Pedido de' : 'Anfrage von'} {sw.requester.name}</span>
                     }
                   </div>
                   <div style={{ fontSize: '0.78rem', color: '#3A3530' }}>
@@ -389,13 +388,13 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
                       : <>{lang === 'pt' ? 'Turno deles' : 'Ihre Schicht'}: <strong>{sw.requesterDate}</strong> ↔ {lang === 'pt' ? 'O teu turno' : 'Deine Schicht'}: <strong>{sw.targetDate}</strong></>
                     }
                   </div>
-                  {sw.requesterMessage && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#6B6056' }}>{sw.requesterMessage}</p>}
-                  {sw.managerNote && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#9A8F80' }}><em>{tx.managerNote}:</em> {sw.managerNote}</p>}
+                  {sw.requesterMessage && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#4A6878' }}>{sw.requesterMessage}</p>}
+                  {sw.managerNote && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#7A9BAD' }}><em>{tx.managerNote}:</em> {sw.managerNote}</p>}
                 </div>
                 {sw.status === 'PENDING' && iAmRequester && (
                   <button
                     onClick={() => cancelSwap(sw.id)}
-                    style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #E8E0D0', borderRadius: 6, color: '#9A8F80', fontSize: '0.72rem', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                    style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #D8E2E8', borderRadius: 6, color: '#7A9BAD', fontSize: '0.72rem', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                   >
                     {tx.cancelRequest}
                   </button>
@@ -405,6 +404,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
           })}
         </div>
       )}
+      </div>{/* /padding wrapper */}
     </div>
   )
 }
