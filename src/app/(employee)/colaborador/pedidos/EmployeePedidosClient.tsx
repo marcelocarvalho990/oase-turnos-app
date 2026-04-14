@@ -170,7 +170,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
       {/* Page header */}
       <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
+          <h1 style={{ fontFamily: "'Jost', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {tx.title}
           </h1>
           <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em' }}>{tx.subtitle}</p>
@@ -196,7 +196,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               { label: tx.remaining,   value: summary.remaining,   color: summary.remaining <= 2 ? '#DC2626' : '#003A5D', bg: summary.remaining <= 2 ? '#FEE2E2' : '#FFF0EB' },
             ] as { label: string; value: number; color: string; bg: string }[]).map(item => (
               <div key={item.label} style={{ background: item.bg, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: item.color, lineHeight: 1, fontFamily: "'Syne', sans-serif" }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: item.color, lineHeight: 1, fontFamily: "'Jost', sans-serif" }}>
                   {item.value}
                 </div>
                 <div style={{ fontSize: '0.65rem', color: item.color, marginTop: 3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
