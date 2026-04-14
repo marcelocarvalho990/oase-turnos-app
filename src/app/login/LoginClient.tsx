@@ -113,7 +113,7 @@ export default function LoginClient() {
       <div
         style={{
           flex: '1 1 0',
-          background: `linear-gradient(160deg, #002D47 0%, ${BLUE} 45%, #001E30 100%)`,
+          background: '#003A5D',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -122,14 +122,6 @@ export default function LoginClient() {
           overflow: 'hidden',
         }}
       >
-        {/* Subtle texture overlay */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'4\' height=\'4\'%3E%3Crect width=\'4\' height=\'4\' fill=\'%231C4280\'/%3E%3Crect width=\'1\' height=\'1\' x=\'0\' y=\'0\' fill=\'%231A3D73\' opacity=\'0.6\'/%3E%3Crect width=\'1\' height=\'1\' x=\'2\' y=\'2\' fill=\'%231E4890\' opacity=\'0.4\'/%3E%3C/svg%3E")',
-          opacity: 0.5,
-          pointerEvents: 'none',
-        }} />
-
         {/* Logo */}
         <div style={{ position: 'relative' }}>
           <img
