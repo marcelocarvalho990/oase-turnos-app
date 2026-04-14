@@ -150,7 +150,7 @@ export default function ManagerPedidosClient() {
             onClick={() => setTab(t)}
             style={{
               padding: '10px 20px', background: 'transparent', border: 'none',
-              borderBottom: tab === t ? '2px solid #C1440E' : '2px solid transparent',
+              borderBottom: tab === t ? '2px solid #1A5DAD' : '2px solid transparent',
               color: tab === t ? '#1A1816' : '#9A8F80',
               fontSize: '0.82rem', fontWeight: tab === t ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
@@ -159,10 +159,10 @@ export default function ManagerPedidosClient() {
           >
             {t === 'vacation' ? tx.vacation : t === 'swap' ? tx.swap : tx.saldos}
             {t === 'vacation' && pendingVacCount > 0 && (
-              <span style={{ padding: '1px 7px', background: '#C1440E', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingVacCount}</span>
+              <span style={{ padding: '1px 7px', background: '#1A5DAD', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingVacCount}</span>
             )}
             {t === 'swap' && pendingSwapCount > 0 && (
-              <span style={{ padding: '1px 7px', background: '#C1440E', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingSwapCount}</span>
+              <span style={{ padding: '1px 7px', background: '#1A5DAD', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingSwapCount}</span>
             )}
           </button>
         ))}

@@ -1,6 +1,15 @@
 /**
- * Pure TypeScript shift scheduler — greedy + balancing.
- * Replaces the Python OR-Tools solver for environments without Python.
+ * Role-aware TypeScript shift scheduler.
+ * Implements qualification rules from the Tertianum operational spec:
+ *   - HF (TEAMLEITUNG) = head nurse
+ *   - FAGE (FUNKTIONSSTUFE_2/3) = qualified care worker
+ *   - SRK (FUNKTIONSSTUFE_1/LERNENDE) = basic care worker
+ *
+ * Rules:
+ *   - SRK must always be accompanied by at least 1 FAGE or HF
+ *   - Work target = totalWorkShifts * (workPercentage / 100)
+ *   - Max 6 consecutive days
+ *   - Weekends balanced across employees
  */
 
 export interface SchedulerEmployee {
@@ -8,7 +17,7 @@ export interface SchedulerEmployee {
   name: string
   role: string
   workPercentage: number
-  hardBlocks: string[] // dates to skip
+  hardBlocks: string[]
 }
 
 export interface SchedulerShiftType {
@@ -46,6 +55,15 @@ export interface SchedulerAssignment {
   shiftCode: string
 }
 
+// Role classification
+const HF_ROLES = ['TEAMLEITUNG']
+const FAGE_ROLES = ['FUNKTIONSSTUFE_3', 'FUNKTIONSSTUFE_2']
+const SRK_ROLES = ['FUNKTIONSSTUFE_1', 'LERNENDE']
+
+function isQualified(role: string): boolean {
+  return HF_ROLES.includes(role) || FAGE_ROLES.includes(role)
+}
+
 function getDayType(dateStr: string): 'WEEKDAY' | 'SATURDAY' | 'SUNDAY' {
   const d = new Date(dateStr + 'T00:00:00')
   const dow = d.getDay()
@@ -54,64 +72,91 @@ function getDayType(dateStr: string): 'WEEKDAY' | 'SATURDAY' | 'SUNDAY' {
   return 'WEEKDAY'
 }
 
+function isWeekend(dateStr: string): boolean {
+  const dow = new Date(dateStr + 'T00:00:00').getDay()
+  return dow === 0 || dow === 6
+}
+
+function addDays(dateStr: string, n: number): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setDate(d.getDate() + n)
+  return d.toISOString().split('T')[0]
+}
+
 export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   const { employees, shiftTypes, coverageRules, dates } = input
 
-  // Work shifts only (no absence types)
   const workShifts = shiftTypes.filter(s => !s.isAbsence)
 
-  // Build sets for fast lookup
-  const hardBlockSet = new Map<string, Set<string>>() // employeeId -> Set<date>
-  for (const emp of employees) {
-    hardBlockSet.set(emp.id, new Set(emp.hardBlocks))
-  }
+  // Pre-build sets
+  const hardBlockSet = new Map<string, Set<string>>()
+  for (const emp of employees) hardBlockSet.set(emp.id, new Set(emp.hardBlocks))
 
-  // Track assignments: { date -> { shiftCode -> employeeId[] } }
-  const dayAssignments = new Map<string, Map<string, string[]>>()
-  for (const d of dates) {
-    const m = new Map<string, string[]>()
-    for (const s of workShifts) m.set(s.code, [])
-    dayAssignments.set(d.date, m)
-  }
-
-  // Track hours assigned per employee (in minutes)
-  const empMinutes = new Map<string, number>()
-  for (const emp of employees) empMinutes.set(emp.id, 0)
-
-  // Track last assigned date per employee for rest-day enforcement
-  const lastWorked = new Map<string, string | null>()
-  for (const emp of employees) lastWorked.set(emp.id, null)
-
-  // Track consecutive work days per employee
-  const consecutiveDays = new Map<string, number>()
-  for (const emp of employees) consecutiveDays.set(emp.id, 0)
-
-  // Track assigned dates per employee (to check prev day)
+  // Track assignments per employee
   const empAssignedDates = new Map<string, Set<string>>()
   for (const emp of employees) empAssignedDates.set(emp.id, new Set())
 
-  const result: SchedulerAssignment[] = []
+  // Track shift count per employee
+  const empShiftCount = new Map<string, number>()
+  for (const emp of employees) empShiftCount.set(emp.id, 0)
 
-  // Target minutes per employee for the month
-  // Standard full-time = 168h/month (21 working days × 8h), scaled by workPercentage
-  const daysInMonth = dates.length
-  const fullTimeMinutes = daysInMonth * 8 * 60 * (5 / 7) // approx working days
-  const targetMinutes = new Map<string, number>()
+  // Track weekend shifts per employee (for fairness)
+  const empWeekendCount = new Map<string, number>()
+  for (const emp of employees) empWeekendCount.set(emp.id, 0)
+
+  // Total working days in month (for target calculation)
+  const totalDays = dates.length
+  const totalShiftsInMonth = totalDays // 1 shift slot per day per person max
+
+  // Target shifts per employee based on work percentage
+  // 100% ≈ 20 shifts/month (5 days/week × ~4 weeks, adjusted)
+  const workingDayCount = dates.filter(d => d.dayType === 'WEEKDAY').length
+  const targetShifts = new Map<string, number>()
   for (const emp of employees) {
-    targetMinutes.set(emp.id, fullTimeMinutes * (emp.workPercentage / 100))
+    // Scale: full-time = workingDayCount + (weekends * 0.3 probability)
+    const weekendDays = dates.filter(d => d.dayType !== 'WEEKDAY').length
+    const baseTarget = Math.round((workingDayCount * 0.85 + weekendDays * 0.4) * (emp.workPercentage / 100))
+    targetShifts.set(emp.id, Math.max(1, baseTarget))
   }
 
-  // Group coverage rules by date type and shift
-  const coverageMap = new Map<string, Map<string, SchedulerCoverageRule>>()
+  // Coverage rules indexed by dayType → shiftCode
+  const coverageIdx = new Map<string, Map<string, SchedulerCoverageRule>>()
   for (const rule of coverageRules) {
-    if (!coverageMap.has(rule.dayType)) coverageMap.set(rule.dayType, new Map())
-    coverageMap.get(rule.dayType)!.set(rule.shiftCode, rule)
+    if (!coverageIdx.has(rule.dayType)) coverageIdx.set(rule.dayType, new Map())
+    coverageIdx.get(rule.dayType)!.set(rule.shiftCode, rule)
+  }
+
+  const result: SchedulerAssignment[] = []
+
+  // Per-day assignment tracking: date → shiftCode → [employeeIds]
+  const daySlots = new Map<string, Map<string, string[]>>()
+  for (const d of dates) {
+    const m = new Map<string, string[]>()
+    for (const s of workShifts) m.set(s.code, [])
+    daySlots.set(d.date, m)
+  }
+
+  function alreadyWorking(empId: string, date: string): boolean {
+    return empAssignedDates.get(empId)?.has(date) ?? false
+  }
+
+  function consecutiveDays(empId: string, date: string): number {
+    let count = 0
+    let cur = date
+    while (empAssignedDates.get(empId)?.has(addDays(cur, -1))) {
+      count++
+      cur = addDays(cur, -1)
+    }
+    return count
   }
 
   function canWork(emp: SchedulerEmployee, date: string): boolean {
     if (hardBlockSet.get(emp.id)?.has(date)) return false
-    // No more than 6 consecutive days
-    if ((consecutiveDays.get(emp.id) ?? 0) >= 6) return false
+    if (alreadyWorking(emp.id, date)) return false
+    if (consecutiveDays(emp.id, date) >= 6) return false
+    // Don't overschedule beyond target
+    const target = targetShifts.get(emp.id) ?? 20
+    if ((empShiftCount.get(emp.id) ?? 0) >= Math.ceil(target * 1.1)) return false
     return true
   }
 
@@ -120,81 +165,88 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     return shift.eligibleRoles.includes(emp.role)
   }
 
-  function getAssignedThisDay(date: string, shiftCode: string): string[] {
-    return dayAssignments.get(date)?.get(shiftCode) ?? []
+  function assign(emp: SchedulerEmployee, date: string, shiftCode: string) {
+    daySlots.get(date)!.get(shiftCode)!.push(emp.id)
+    empAssignedDates.get(emp.id)!.add(date)
+    empShiftCount.set(emp.id, (empShiftCount.get(emp.id) ?? 0) + 1)
+    if (isWeekend(date)) empWeekendCount.set(emp.id, (empWeekendCount.get(emp.id) ?? 0) + 1)
+    result.push({ employeeId: emp.id, date, shiftCode })
   }
 
-  function alreadyAssignedToday(empId: string, date: string): boolean {
-    for (const [code] of dayAssignments.get(date) ?? []) {
-      if (dayAssignments.get(date)?.get(code)?.includes(empId)) return true
-    }
-    return false
+  // Sort employees for filling: prioritize by least assigned / target ratio
+  function sortedByNeed(date: string, preferQualified = false): SchedulerEmployee[] {
+    return [...employees].sort((a, b) => {
+      // Prefer employees who need more shifts (below target)
+      const aRatio = (empShiftCount.get(a.id) ?? 0) / (targetShifts.get(a.id) ?? 1)
+      const bRatio = (empShiftCount.get(b.id) ?? 0) / (targetShifts.get(b.id) ?? 1)
+      // On weekends, also balance weekend count
+      const aWe = isWeekend(date) ? (empWeekendCount.get(a.id) ?? 0) : 0
+      const bWe = isWeekend(date) ? (empWeekendCount.get(b.id) ?? 0) : 0
+      if (preferQualified) {
+        const aQ = isQualified(a.role) ? 0 : 1
+        const bQ = isQualified(b.role) ? 0 : 1
+        if (aQ !== bQ) return aQ - bQ
+      }
+      if (aWe !== bWe) return aWe - bWe
+      return aRatio - bRatio
+    })
   }
 
-  // Process each date in order
+  // Main loop: process each day
   for (const dayInfo of dates) {
     const { date } = dayInfo
     const dayType = getDayType(date)
+    const rulesForDay = coverageIdx.get(dayType) ?? new Map()
 
-    // Get required shifts for this day type
-    const rulesForDay = coverageMap.get(dayType) ?? new Map()
-
-    // Determine shift demand: use coverageRules if available, otherwise use common work shifts
-    const shiftsNeeded: Array<{ shift: SchedulerShiftType; ideal: number; min: number }> = []
+    // Determine what shifts need coverage today
+    const shiftsToFill: Array<{ shift: SchedulerShiftType; ideal: number; min: number }> = []
 
     for (const shift of workShifts) {
       const rule = rulesForDay.get(shift.code)
-      if (rule) {
-        if (rule.idealStaff > 0) {
-          shiftsNeeded.push({ shift, ideal: rule.idealStaff, min: rule.minStaff })
-        }
+      if (rule && rule.idealStaff > 0) {
+        shiftsToFill.push({ shift, ideal: rule.idealStaff, min: rule.minStaff })
       }
     }
 
-    // If no coverage rules defined, use all work shifts with 1 person each
-    if (shiftsNeeded.length === 0) {
-      for (const shift of workShifts) {
-        shiftsNeeded.push({ shift, ideal: 1, min: 1 })
-      }
+    // Fallback: if no rules, use F and S with 1 person each
+    if (shiftsToFill.length === 0) {
+      const fShift = workShifts.find(s => s.code === 'F')
+      const sShift = workShifts.find(s => s.code === 'S')
+      if (fShift) shiftsToFill.push({ shift: fShift, ideal: 3, min: 2 })
+      if (sShift) shiftsToFill.push({ shift: sShift, ideal: 2, min: 1 })
     }
 
-    // Sort employees by: least hours assigned first (balancing)
-    const sortedEmployees = [...employees].sort((a, b) => {
-      const aMin = empMinutes.get(a.id) ?? 0
-      const bMin = empMinutes.get(b.id) ?? 0
-      const aTarget = targetMinutes.get(a.id) ?? 1
-      const bTarget = targetMinutes.get(b.id) ?? 1
-      // Sort by ratio of assigned/target (ascending = needs more hours first)
-      return (aMin / aTarget) - (bMin / bTarget)
-    })
+    // Fill each shift — qualified-first to ensure supervision rules
+    for (const { shift, ideal } of shiftsToFill) {
+      const slot = daySlots.get(date)!.get(shift.code)!
+      let needed = ideal - slot.length
+      if (needed <= 0) continue
 
-    // Fill each shift
-    for (const { shift, ideal } of shiftsNeeded) {
-      let assigned = getAssignedThisDay(date, shift.code).length
+      // Pass 1: fill with qualified staff first (HF and FAGE)
+      const qualifiedCandidates = sortedByNeed(date, true).filter(emp =>
+        canWork(emp, date) && isEligible(emp, shift) && isQualified(emp.role)
+      )
+      for (const emp of qualifiedCandidates) {
+        if (needed <= 0) break
+        assign(emp, date, shift.code)
+        needed--
+      }
 
-      for (const emp of sortedEmployees) {
-        if (assigned >= ideal) break
-        if (!canWork(emp, date)) continue
-        if (!isEligible(emp, shift)) continue
-        if (alreadyAssignedToday(emp.id, date)) continue
+      // Pass 2: fill remaining slots with SRK (only if at least 1 qualified was assigned)
+      const qualifiedAssigned = daySlots.get(date)!.get(shift.code)!.filter(id => {
+        const emp = employees.find(e => e.id === id)
+        return emp ? isQualified(emp.role) : false
+      }).length
 
-        // Assign
-        dayAssignments.get(date)!.get(shift.code)!.push(emp.id)
-        empMinutes.set(emp.id, (empMinutes.get(emp.id) ?? 0) + shift.durationMinutes)
-        empAssignedDates.get(emp.id)!.add(date)
-
-        // Update consecutive days counter
-        const prev = new Date(date + 'T00:00:00')
-        prev.setDate(prev.getDate() - 1)
-        const prevStr = prev.toISOString().split('T')[0]
-        if (empAssignedDates.get(emp.id)?.has(prevStr)) {
-          consecutiveDays.set(emp.id, (consecutiveDays.get(emp.id) ?? 0) + 1)
-        } else {
-          consecutiveDays.set(emp.id, 1)
+      if (qualifiedAssigned > 0) {
+        const srkCandidates = sortedByNeed(date, false).filter(emp =>
+          canWork(emp, date) && isEligible(emp, shift) && SRK_ROLES.includes(emp.role)
+        )
+        for (const emp of srkCandidates) {
+          if (needed <= 0) break
+          assign(emp, date, shift.code)
+          needed--
         }
-
-        result.push({ employeeId: emp.id, date, shiftCode: shift.code })
-        assigned++
       }
     }
   }

@@ -30,8 +30,8 @@ export default function ManagerSidebar() {
     <aside
       className="w-52 shrink-0 flex flex-col h-full border-r"
       style={{
-        background: '#111110',
-        borderColor: '#222220',
+        background: '#1C3F72',
+        borderColor: '#163460',
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
@@ -54,7 +54,7 @@ export default function ManagerSidebar() {
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: '#222220', margin: '0 20px' }} />
+      <div style={{ height: 1, background: '#163460', margin: '0 20px' }} />
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -74,13 +74,13 @@ export default function ManagerSidebar() {
                 fontSize: '0.8rem',
                 fontWeight: active ? 500 : 400,
                 color: active ? '#FAF8F4' : '#888',
-                background: active ? '#C1440E' : 'transparent',
+                background: active ? '#1A5DAD' : 'transparent',
                 transition: 'background 0.15s, color 0.15s',
                 textDecoration: 'none',
               }}
               onMouseEnter={e => {
                 if (!active) {
-                  (e.currentTarget as HTMLElement).style.background = '#1A1A18'
+                  (e.currentTarget as HTMLElement).style.background = '#163460'
                   ;(e.currentTarget as HTMLElement).style.color = '#FAF8F4'
                 }
               }}
@@ -118,7 +118,7 @@ export default function ManagerSidebar() {
             textAlign: 'left',
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = '#1A1A18'
+            (e.currentTarget as HTMLElement).style.background = '#163460'
             ;(e.currentTarget as HTMLElement).style.color = '#FAF8F4'
           }}
           onMouseLeave={e => {
@@ -150,7 +150,7 @@ export default function ManagerSidebar() {
             opacity: loggingOut ? 0.5 : 1,
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = '#1A1A18'
+            (e.currentTarget as HTMLElement).style.background = '#163460'
             ;(e.currentTarget as HTMLElement).style.color = '#ef4444'
           }}
           onMouseLeave={e => {

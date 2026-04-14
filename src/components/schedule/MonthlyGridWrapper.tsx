@@ -76,14 +76,14 @@ export default function MonthlyGridWrapper({
     }
   }, [schedule.id, initialMap])
 
-  const handleGenerate = useCallback(async () => {
+  const handleGenerate = useCallback(async (instructions?: string) => {
     setIsGenerating(true)
     setGenerateResult(null)
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduleId: schedule.id, year, month, team }),
+        body: JSON.stringify({ scheduleId: schedule.id, year, month, team, instructions }),
       })
       const data = await res.json()
       setGenerateResult({ status: data.status, count: data.count })

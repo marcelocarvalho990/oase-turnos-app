@@ -8,42 +8,54 @@ type Lang = 'pt' | 'de'
 
 const t = {
   pt: {
-    tagline: 'Sistema de Turnos',
-    org: 'Tertianum · 2.OG',
-    tabManager: 'Gestor',
-    tabEmployee: 'Colaborador',
+    system: 'Dienstplan-System',
+    subtitle: 'Gestão eficiente de horários e turnos',
+    tabManager: 'Leitung',
+    tabEmployee: 'Mitarbeiter',
     password: 'Palavra-passe',
+    passwordPlaceholder: 'Introduzir palavra-passe...',
     pin: 'PIN de 4 dígitos',
     selectEmployee: 'Selecionar colaborador...',
-    enter: 'Entrar',
+    enter: 'ANMELDEN',
     entering: 'A entrar...',
     error: 'Credenciais inválidas',
+    forgot: 'Esqueceu a palavra-passe?',
+    footer: '© 2026 Tertianum AG',
     lang: 'DE',
   },
   de: {
-    tagline: 'Dienstplan-System',
-    org: 'Tertianum · 2.OG',
-    tabManager: 'Manager',
+    system: 'Dienstplan-System',
+    subtitle: 'Effiziente Verwaltung von Arbeitszeiten und Schichten',
+    tabManager: 'Leitung',
     tabEmployee: 'Mitarbeiter',
     password: 'Passwort',
+    passwordPlaceholder: 'Passwort eingeben...',
     pin: '4-stellige PIN',
     selectEmployee: 'Mitarbeiter auswählen...',
-    enter: 'Anmelden',
+    enter: 'ANMELDEN',
     entering: 'Wird angemeldet...',
     error: 'Ungültige Anmeldedaten',
+    forgot: 'Passwort vergessen?',
+    footer: '© 2026 Tertianum AG',
     lang: 'PT',
   },
 }
 
-interface Employee {
-  id: string
-  name: string
-  shortName: string
+interface Employee { id: string; name: string; shortName: string }
+
+// Tertianum logo as SVG
+function TertianumLogo({ size = 40, color = 'white' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <polygon points="24,4 44,40 4,40" fill="none" stroke={color} strokeWidth="3.5" strokeLinejoin="round"/>
+      <line x1="14" y1="28" x2="34" y2="28" stroke={color} strokeWidth="3.5" strokeLinecap="round"/>
+    </svg>
+  )
 }
 
 export default function LoginClient() {
   const router = useRouter()
-  const [lang, setLang] = useState<Lang>('pt')
+  const [lang, setLang] = useState<Lang>('de')
   const [tab, setTab] = useState<Tab>('manager')
   const [password, setPassword] = useState('')
   const [pin, setPin] = useState(['', '', '', ''])
@@ -59,17 +71,24 @@ export default function LoginClient() {
 
   const tx = t[lang]
 
+  // Tertianum primary blue
+  const BLUE = '#1C4280'
+  const BLUE_BTN = '#1A5DAD'
+  const BLUE_BTN_HOVER = '#154D94'
+
   function handlePinChange(i: number, val: string) {
     const digit = val.replace(/\D/g, '').slice(-1)
     const next = [...pin]
     next[i] = digit
     setPin(next)
     if (digit && i < 3) pinRefs[i + 1].current?.focus()
-    if (!digit && i > 0 && val === '') pinRefs[i - 1].current?.focus()
   }
 
   function handlePinKeyDown(i: number, e: React.KeyboardEvent) {
     if (e.key === 'Backspace' && !pin[i] && i > 0) {
+      const next = [...pin]
+      next[i - 1] = ''
+      setPin(next)
       pinRefs[i - 1].current?.focus()
     }
   }
@@ -78,25 +97,16 @@ export default function LoginClient() {
     e.preventDefault()
     setError('')
     setLoading(true)
-
     const body = tab === 'manager'
       ? { role: 'MANAGER', password }
       : { role: 'EMPLOYEE', employeeId: selectedEmployee, pin: pin.join('') }
-
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || tx.error)
-        setLoading(false)
-        return
-      }
-
+      if (!res.ok) { setError((await res.json()).error || tx.error); setLoading(false); return }
       const data = await res.json()
       if (data.role === 'MANAGER') router.push('/schedule')
       else router.push('/colaborador/calendario')
@@ -107,297 +117,282 @@ export default function LoginClient() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: '#0E0D0C',
-        display: 'flex',
-        fontFamily: "'DM Sans', system-ui, sans-serif",
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Subtle background texture */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `radial-gradient(ellipse at 20% 50%, rgba(193,68,14,0.07) 0%, transparent 60%),
-            radial-gradient(ellipse at 80% 20%, rgba(193,68,14,0.04) 0%, transparent 50%)`,
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Left panel — large typographic statement */}
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      {/* Left panel — Tertianum brand */}
       <div
         style={{
           flex: '1 1 0',
+          background: `linear-gradient(160deg, #1A3D73 0%, ${BLUE} 45%, #122D5A 100%)`,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'flex-end',
-          padding: '48px 52px',
+          justifyContent: 'space-between',
+          padding: '48px 56px',
           position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        {/* Top-left org label */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 40,
-            left: 52,
-            fontSize: '0.68rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: '#555',
-          }}
-        >
-          {tx.org}
-        </div>
+        {/* Subtle texture overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'4\' height=\'4\'%3E%3Crect width=\'4\' height=\'4\' fill=\'%231C4280\'/%3E%3Crect width=\'1\' height=\'1\' x=\'0\' y=\'0\' fill=\'%231A3D73\' opacity=\'0.6\'/%3E%3Crect width=\'1\' height=\'1\' x=\'2\' y=\'2\' fill=\'%231E4890\' opacity=\'0.4\'/%3E%3C/svg%3E")',
+          opacity: 0.5,
+          pointerEvents: 'none',
+        }} />
 
-        {/* Lang toggle */}
-        <button
-          onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')}
-          style={{
-            position: 'absolute',
-            top: 36,
-            right: 40,
-            padding: '6px 14px',
-            borderRadius: 4,
-            border: '1px solid #333',
-            background: 'transparent',
-            color: '#666',
-            fontSize: '0.72rem',
-            letterSpacing: '0.1em',
-            cursor: 'pointer',
-            textTransform: 'uppercase',
-          }}
-        >
-          {tx.lang}
-        </button>
-
-        {/* Hero text */}
-        <div>
-          <div
-            style={{
-              fontFamily: "'Instrument Serif', Georgia, serif",
-              fontSize: 'clamp(5rem, 12vw, 9rem)',
-              color: '#FAF8F4',
-              lineHeight: 0.9,
-              letterSpacing: '-0.03em',
-              marginBottom: 24,
-            }}
-          >
-            Turnos
-          </div>
-          <div
-            style={{
-              fontSize: '0.78rem',
-              color: '#444',
-              letterSpacing: '0.06em',
+        {/* Logo */}
+        <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <TertianumLogo size={44} color="white" />
+            <span style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: 'white',
+              letterSpacing: '0.15em',
               textTransform: 'uppercase',
-              paddingLeft: 4,
-            }}
-          >
-            {tx.tagline}
+            }}>
+              TERTIANUM
+            </span>
           </div>
         </div>
 
-        {/* Decorative accent line */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 52,
-            width: 1,
-            height: '35%',
-            background: 'linear-gradient(to bottom, #C1440E, transparent)',
-          }}
-        />
+        {/* Center text */}
+        <div style={{ position: 'relative' }}>
+          <h1 style={{
+            fontSize: 'clamp(2rem, 4vw, 2.8rem)',
+            fontWeight: 700,
+            color: 'white',
+            margin: '0 0 12px',
+            letterSpacing: '-0.01em',
+            lineHeight: 1.15,
+          }}>
+            {tx.system}
+          </h1>
+          <p style={{
+            fontSize: '0.95rem',
+            color: 'rgba(255,255,255,0.65)',
+            margin: 0,
+            lineHeight: 1.5,
+            maxWidth: 280,
+          }}>
+            {tx.subtitle}
+          </p>
+        </div>
+
+        {/* Footer / lang toggle */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{tx.footer}</span>
+          <button
+            onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')}
+            style={{
+              padding: '5px 12px',
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 4,
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: '0.72rem',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          >
+            {tx.lang}
+          </button>
+        </div>
       </div>
 
       {/* Right panel — login form */}
-      <div
-        style={{
-          width: 380,
-          flexShrink: 0,
-          background: '#141312',
-          borderLeft: '1px solid #1E1D1B',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          padding: '48px 40px',
-        }}
-      >
-        {/* Tabs */}
-        <div
-          style={{
+      <div style={{
+        width: 400,
+        flexShrink: 0,
+        background: '#F4F6F9',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '48px 40px',
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: 10,
+          boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
+          padding: '32px 32px 28px',
+          width: '100%',
+        }}>
+          {/* Tabs */}
+          <div style={{
             display: 'flex',
-            gap: 0,
-            marginBottom: 32,
-            borderBottom: '1px solid #222',
-          }}
-        >
-          {(['manager', 'employee'] as Tab[]).map(t => (
-            <button
-              key={t}
-              onClick={() => { setTab(t); setError('') }}
-              style={{
-                flex: 1,
-                padding: '10px 0',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: tab === t ? '2px solid #C1440E' : '2px solid transparent',
-                color: tab === t ? '#FAF8F4' : '#555',
-                fontSize: '0.78rem',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                transition: 'color 0.15s',
-                marginBottom: -1,
-              }}
-            >
-              {t === 'manager' ? tx.tabManager : tx.tabEmployee}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {tab === 'manager' ? (
-            <div>
-              <label style={{ display: 'block', fontSize: '0.7rem', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                {tx.password}
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoFocus
-                required
+            borderRadius: 6,
+            overflow: 'hidden',
+            border: '1px solid #D8E0EA',
+            marginBottom: 28,
+          }}>
+            {(['manager', 'employee'] as Tab[]).map(t => (
+              <button
+                key={t}
+                onClick={() => { setTab(t); setError('') }}
                 style={{
-                  width: '100%',
-                  padding: '11px 14px',
-                  background: '#1A1917',
-                  border: '1px solid #2A2826',
-                  borderRadius: 6,
-                  color: '#FAF8F4',
-                  fontSize: '0.9rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
+                  flex: 1,
+                  padding: '10px 0',
+                  background: tab === t ? BLUE : 'transparent',
+                  border: 'none',
+                  color: tab === t ? 'white' : '#5A7089',
+                  fontSize: '0.82rem',
+                  fontWeight: tab === t ? 600 : 400,
+                  letterSpacing: '0.03em',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s, color 0.15s',
                 }}
-                onFocus={e => { e.currentTarget.style.borderColor = '#C1440E' }}
-                onBlur={e => { e.currentTarget.style.borderColor = '#2A2826' }}
-              />
-            </div>
-          ) : (
-            <>
+              >
+                {t === 'manager' ? tx.tabManager : tx.tabEmployee}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {tab === 'manager' ? (
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  {tx.tabEmployee}
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#1C3050', marginBottom: 6 }}>
+                  {tx.password}
                 </label>
-                <select
-                  value={selectedEmployee}
-                  onChange={e => setSelectedEmployee(e.target.value)}
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder={tx.passwordPlaceholder}
+                  autoFocus
                   required
                   style={{
                     width: '100%',
-                    padding: '11px 14px',
-                    background: '#1A1917',
-                    border: '1px solid #2A2826',
-                    borderRadius: 6,
-                    color: selectedEmployee ? '#FAF8F4' : '#555',
-                    fontSize: '0.85rem',
+                    padding: '10px 12px',
+                    border: '1px solid #C8D6E5',
+                    borderRadius: 5,
+                    fontSize: '0.9rem',
+                    color: '#1C3050',
                     outline: 'none',
-                    cursor: 'pointer',
                     boxSizing: 'border-box',
+                    background: 'white',
                   }}
-                  onFocus={e => { e.currentTarget.style.borderColor = '#C1440E' }}
-                  onBlur={e => { e.currentTarget.style.borderColor = '#2A2826' }}
-                >
-                  <option value="">{tx.selectEmployee}</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name}</option>
-                  ))}
-                </select>
+                  onFocus={e => { e.currentTarget.style.borderColor = BLUE_BTN }}
+                  onBlur={e => { e.currentTarget.style.borderColor = '#C8D6E5' }}
+                />
               </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  {tx.pin}
-                </label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {pin.map((digit, i) => (
-                    <input
-                      key={i}
-                      ref={pinRefs[i]}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={e => handlePinChange(i, e.target.value)}
-                      onKeyDown={e => handlePinKeyDown(i, e)}
-                      style={{
-                        width: 52,
-                        height: 52,
-                        textAlign: 'center',
-                        background: '#1A1917',
-                        border: '1px solid #2A2826',
-                        borderRadius: 6,
-                        color: '#FAF8F4',
-                        fontSize: '1.2rem',
-                        fontWeight: 500,
-                        outline: 'none',
-                      }}
-                      onFocus={e => { e.currentTarget.style.borderColor = '#C1440E' }}
-                      onBlur={e => { e.currentTarget.style.borderColor = '#2A2826' }}
-                    />
-                  ))}
+            ) : (
+              <>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#1C3050', marginBottom: 6 }}>
+                    {tx.tabEmployee}
+                  </label>
+                  <select
+                    value={selectedEmployee}
+                    onChange={e => setSelectedEmployee(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #C8D6E5',
+                      borderRadius: 5,
+                      fontSize: '0.85rem',
+                      color: selectedEmployee ? '#1C3050' : '#8A9BB0',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      boxSizing: 'border-box',
+                      background: 'white',
+                    }}
+                    onFocus={e => { e.currentTarget.style.borderColor = BLUE_BTN }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#C8D6E5' }}
+                  >
+                    <option value="">{tx.selectEmployee}</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name}</option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-            </>
-          )}
 
-          {error && (
-            <div
-              style={{
-                padding: '10px 14px',
-                background: 'rgba(193,68,14,0.1)',
-                border: '1px solid rgba(193,68,14,0.3)',
-                borderRadius: 6,
-                color: '#E06040',
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#1C3050', marginBottom: 6 }}>
+                    {tx.pin}
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {pin.map((digit, i) => (
+                      <input
+                        key={i}
+                        ref={pinRefs[i]}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={e => handlePinChange(i, e.target.value)}
+                        onKeyDown={e => handlePinKeyDown(i, e)}
+                        style={{
+                          width: 52,
+                          height: 52,
+                          textAlign: 'center',
+                          border: '1px solid #C8D6E5',
+                          borderRadius: 5,
+                          fontSize: '1.3rem',
+                          fontWeight: 600,
+                          color: '#1C3050',
+                          outline: 'none',
+                          background: 'white',
+                        }}
+                        onFocus={e => { e.currentTarget.style.borderColor = BLUE_BTN }}
+                        onBlur={e => { e.currentTarget.style.borderColor = '#C8D6E5' }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {error && (
+              <div style={{
+                padding: '8px 12px',
+                background: '#FEE2E2',
+                borderRadius: 5,
+                color: '#B91C1C',
                 fontSize: '0.78rem',
+              }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: loading ? '#8AABCE' : BLUE_BTN,
+                border: 'none',
+                borderRadius: 5,
+                color: 'white',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                marginTop: 4,
+                transition: 'background 0.15s',
               }}
+              onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.background = BLUE_BTN_HOVER }}
+              onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLElement).style.background = BLUE_BTN }}
             >
-              {error}
-            </div>
-          )}
+              {loading ? tx.entering : tx.enter}
+            </button>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: '12px',
-              background: loading ? '#333' : '#C1440E',
-              border: 'none',
-              borderRadius: 6,
-              color: '#FAF8F4',
-              fontSize: '0.82rem',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: 4,
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.background = '#A83A0C' }}
-            onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLElement).style.background = '#C1440E' }}
-          >
-            {loading ? tx.entering : tx.enter}
-          </button>
-        </form>
-
-        {/* Bottom version */}
-        <div style={{ marginTop: 'auto', paddingTop: 40, fontSize: '0.65rem', color: '#333', letterSpacing: '0.06em' }}>
-          v1.0 · 2026
+            {tab === 'manager' && (
+              <div style={{ textAlign: 'center' }}>
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', color: '#5A7089', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  {tx.forgot}
+                </button>
+              </div>
+            )}
+          </form>
         </div>
+
+        <div style={{ marginTop: 20, fontSize: '0.7rem', color: '#9AAABB' }}>{tx.footer}</div>
       </div>
     </div>
   )

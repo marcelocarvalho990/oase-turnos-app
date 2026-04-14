@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { scheduleId, year, month, team } = body
+    const { scheduleId, year, month, team, instructions } = body
 
     if (!scheduleId || !year || !month || !team) {
       return Response.json(
@@ -259,6 +259,7 @@ export async function POST(request: NextRequest) {
         scheduleId,
         status: 'FEASIBLE',
         durationMs,
+        ...(instructions ? { violations: `[instructions] ${instructions}` } : {}),
       },
     })
 

@@ -86,7 +86,7 @@ export default function EmployeeSidebar({ employeeName }: Props) {
                 fontSize: '0.8rem',
                 fontWeight: active ? 500 : 400,
                 color: active ? '#FAF8F4' : '#6B6056',
-                background: active ? '#C1440E' : 'transparent',
+                background: active ? '#1A5DAD' : 'transparent',
                 transition: 'background 0.15s, color 0.15s',
                 textDecoration: 'none',
               }}
@@ -161,7 +161,7 @@ export default function EmployeeSidebar({ employeeName }: Props) {
           }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLElement).style.background = '#EDE8DC'
-            ;(e.currentTarget as HTMLElement).style.color = '#C1440E'
+            ;(e.currentTarget as HTMLElement).style.color = '#1A5DAD'
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLElement).style.background = 'transparent'
