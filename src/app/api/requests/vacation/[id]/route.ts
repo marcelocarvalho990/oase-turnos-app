@@ -37,3 +37,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   return Response.json({ error: 'Sem permissão' }, { status: 403 })
 }
+
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAuth()
+  if (session.role !== 'MANAGER') {
+    return Response.json({ error: 'Sem permissão' }, { status: 403 })
+  }
+  const { id } = await params
+  const existing = await prisma.absenceRequest.findUnique({ where: { id } })
+  if (!existing) return Response.json({ error: 'Pedido não encontrado' }, { status: 404 })
+  await prisma.absenceRequest.delete({ where: { id } })
+  return Response.json({ ok: true })
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Check, X, ChevronDown } from 'lucide-react'
+import { Check, X, ChevronDown, Trash2 } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
 
 type Lang = 'pt' | 'de'
@@ -66,6 +66,7 @@ export default function ManagerPedidosClient() {
   const [empSummaries, setEmpSummaries] = useState<EmployeeVacSummary[]>([])
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
   const currentYear = new Date().getFullYear()
 
   const tx = t[lang]
@@ -106,6 +107,15 @@ export default function ManagerPedidosClient() {
     })
     setActionLoading(null)
     await load()
+  }
+
+
+  async function deleteVacation(id: string) {
+    if (!confirm(lang === 'pt' ? 'Apagar este pedido de férias?' : 'Diesen Urlaubsantrag löschen?')) return
+    setDeleteLoading(id)
+    await fetch(`/api/requests/vacation/${id}`, { method: 'DELETE' })
+    setDeleteLoading(null)
+    await Promise.all([load(), loadSummaries()])
   }
 
   const filteredVacations = filter === 'pending' ? vacations.filter(v => v.status === 'PENDING') : vacations
@@ -197,33 +207,43 @@ export default function ManagerPedidosClient() {
                     )}
                   </div>
 
-                  {isPending && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          onClick={() => actVacation(v.id, 'APPROVED')}
-                          disabled={actionLoading === v.id}
-                          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: '#059669', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.75rem', cursor: 'pointer', opacity: actionLoading === v.id ? 0.5 : 1 }}
-                        >
-                          <Check size={13} /> {tx.approve}
-                        </button>
-                        <button
-                          onClick={() => actVacation(v.id, 'REJECTED')}
-                          disabled={actionLoading === v.id}
-                          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: '#DC2626', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.75rem', cursor: 'pointer', opacity: actionLoading === v.id ? 0.5 : 1 }}
-                        >
-                          <X size={13} /> {tx.reject}
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder={tx.noteLabel}
-                        value={notes[v.id] ?? ''}
-                        onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))}
-                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
-                      />
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>
+                    {isPending && (
+                      <>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => actVacation(v.id, 'APPROVED')}
+                            disabled={actionLoading === v.id}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: '#059669', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.75rem', cursor: 'pointer', opacity: actionLoading === v.id ? 0.5 : 1 }}
+                          >
+                            <Check size={13} /> {tx.approve}
+                          </button>
+                          <button
+                            onClick={() => actVacation(v.id, 'REJECTED')}
+                            disabled={actionLoading === v.id}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: '#DC2626', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.75rem', cursor: 'pointer', opacity: actionLoading === v.id ? 0.5 : 1 }}
+                          >
+                            <X size={13} /> {tx.reject}
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder={tx.noteLabel}
+                          value={notes[v.id] ?? ''}
+                          onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))}
+                          style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
+                        />
+                      </>
+                    )}
+                    <button
+                      onClick={() => deleteVacation(v.id)}
+                      disabled={deleteLoading === v.id}
+                      title={lang === 'pt' ? 'Apagar pedido' : 'Antrag löschen'}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'transparent', border: '1px solid #F87171', borderRadius: 6, color: '#DC2626', fontSize: '0.72rem', cursor: 'pointer', opacity: deleteLoading === v.id ? 0.5 : 1 }}
+                    >
+                      <Trash2 size={12} /> {lang === 'pt' ? 'Apagar' : 'Löschen'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )
