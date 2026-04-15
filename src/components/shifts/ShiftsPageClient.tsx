@@ -11,7 +11,7 @@ const TX = {
     newShift: 'Novo Turno', workShifts: 'Turnos de Trabalho', absShifts: 'Ausências / Eventos',
     absLabel: 'Ausência / Evento', editShift: 'Editar Turno',
     name: 'Nome', desc: 'Descrição (opcional)', start1: 'Início 1', end1: 'Fim 1',
-    start2: 'Início 2 (opcional)', end2: 'Fim 2 (opcional)', duration: 'Duração (minutos)',
+    duration: 'Duração (minutos)',
     cancel: 'Cancelar', saving: 'A guardar…', save: 'Guardar',
   },
   de: {
@@ -19,7 +19,7 @@ const TX = {
     newShift: 'Neue Schicht', workShifts: 'Arbeitsschichten', absShifts: 'Abwesenheiten / Ereignisse',
     absLabel: 'Abwesenheit / Ereignis', editShift: 'Schicht bearbeiten',
     name: 'Name', desc: 'Beschreibung (optional)', start1: 'Beginn 1', end1: 'Ende 1',
-    start2: 'Beginn 2 (optional)', end2: 'Ende 2 (optional)', duration: 'Dauer (Minuten)',
+    duration: 'Dauer (Minuten)',
     cancel: 'Abbrechen', saving: 'Wird gespeichert…', save: 'Speichern',
   },
 }
@@ -32,8 +32,6 @@ interface EditForm {
   name: string
   startTime1: string
   endTime1: string
-  startTime2: string
-  endTime2: string
   durationMinutes: number
   description: string
 }
@@ -146,8 +144,6 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
       name: shift.name,
       startTime1: shift.startTime1,
       endTime1: shift.endTime1,
-      startTime2: shift.startTime2 ?? '',
-      endTime2: shift.endTime2 ?? '',
       durationMinutes: shift.durationMinutes,
       description: shift.description ?? '',
     })
@@ -170,12 +166,9 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...editingShift,
           name: form.name,
           startTime1: form.startTime1,
           endTime1: form.endTime1,
-          startTime2: form.startTime2 || null,
-          endTime2: form.endTime2 || null,
           durationMinutes: Number(form.durationMinutes),
           description: form.description || null,
         }),
@@ -310,24 +303,6 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                         required
                         value={form.endTime1}
                         onChange={(e) => setForm((f) => f ? { ...f, endTime1: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">{t.start2}</label>
-                      <input
-                        type="time"
-                        value={form.startTime2}
-                        onChange={(e) => setForm((f) => f ? { ...f, startTime2: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">{t.end2}</label>
-                      <input
-                        type="time"
-                        value={form.endTime2}
-                        onChange={(e) => setForm((f) => f ? { ...f, endTime2: e.target.value } : f)}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                       />
                     </div>
