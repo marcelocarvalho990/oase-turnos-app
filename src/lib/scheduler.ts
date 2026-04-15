@@ -467,15 +467,20 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const sorted = sortedByNeed(date)
     const fSlotIds = daySlots.get(date)!.get('F')?.empIds ?? []
 
-    // First pass: SRK — prefer employees below their hour target
-    const srkCandidates = sorted.filter(
-      e =>
-        getTier(e.role) === 'SRK' &&
-        canWork(e, date, 'F9') &&
-        isEligible(e, f9Shift) &&
-        !fSlotIds.includes(e.id)
-    )
-    const srkPick = srkCandidates.find(e => !atTarget(e.id))
+    const isAvailableForF9 = (e: SchedulerEmployee) =>
+      getTier(e.role) === 'SRK' &&
+      canWork(e, date, 'F9') &&
+      isEligible(e, f9Shift) &&
+      !fSlotIds.includes(e.id) &&
+      !atTarget(e.id)
+
+    // Priority 1: LERNENDE — they cannot work S shifts, so F9 is their only way
+    // to accumulate hours beyond what the F slot provides. Give them first pick.
+    const lernendeCandidate = sorted.find(e => e.role === 'LERNENDE' && isAvailableForF9(e))
+    if (lernendeCandidate) { assign(lernendeCandidate, date, 'F9'); return }
+
+    // Priority 2: other SRK (FUNKTIONSSTUFE_1) below target
+    const srkPick = sorted.find(e => e.role !== 'LERNENDE' && isAvailableForF9(e))
     if (srkPick) { assign(srkPick, date, 'F9'); return }
 
     // Fallback: FAGE if no SRK available — only below-target, skip eligibleRoles check (emergency)
