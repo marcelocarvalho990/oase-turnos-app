@@ -46,6 +46,7 @@ export interface ShiftType {
   startTime2?: string | null
   endTime2?: string | null
   durationMinutes: number
+  breakTime?: string | null
   color: string
   bgColor: string
   textColor: string

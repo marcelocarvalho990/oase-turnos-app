@@ -143,12 +143,18 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   const f9Shift = workShifts.find(s => s.code === 'F9') // mandatory when F is scheduled
 
   // ── Workload targets ──────────────────────────────────────────────────────
-  // 100% employee → 21 shifts in a 31-day month (scales with month and %)
-  const BASE_SHIFTS_31 = 21
-  const targetShifts = new Map<string, number>()
+  // 100% = 164.8h/month (Swiss standard), scaled by month length and contract %
+  const TARGET_HOURS_100PCT = 164.8
+  const targetMinutes = new Map<string, number>()
   for (const emp of employees) {
-    const target = Math.round(BASE_SHIFTS_31 * (daysInMonth / 31) * (emp.workPercentage / 100))
-    targetShifts.set(emp.id, Math.max(1, target))
+    const raw = TARGET_HOURS_100PCT * 60 * (daysInMonth / 31) * (emp.workPercentage / 100)
+    targetMinutes.set(emp.id, Math.round(raw))
+  }
+
+  // Pre-compute effective worked minutes per shift code
+  const shiftEffectiveMin = new Map<string, number>()
+  for (const s of workShifts) {
+    shiftEffectiveMin.set(s.code, s.durationMinutes)
   }
 
   // ── Coverage rules index ──────────────────────────────────────────────────
@@ -193,6 +199,11 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     empWeekendCount.set(emp.id, 0)
     empShiftCodeCount.set(emp.id, new Map())
     empLastShift.set(emp.id, null)
+  }
+
+  const empAssignedMinutes = new Map<string, number>()
+  for (const emp of employees) {
+    empAssignedMinutes.set(emp.id, 0)
   }
 
   // Day-slot state: date → shiftCode → SlotState
@@ -267,7 +278,7 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   }
 
   function atTarget(empId: string): boolean {
-    return (empShiftCount.get(empId) ?? 0) >= (targetShifts.get(empId) ?? 99)
+    return (empAssignedMinutes.get(empId) ?? 0) >= (targetMinutes.get(empId) ?? 99999)
   }
 
   function assign(emp: SchedulerEmployee, date: string, shiftCode: string) {
@@ -284,6 +295,8 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const codeMap = empShiftCodeCount.get(emp.id)!
     codeMap.set(shiftCode, (codeMap.get(shiftCode) ?? 0) + 1)
     result.push({ employeeId: emp.id, date, shiftCode })
+    const shiftMins = shiftEffectiveMin.get(shiftCode) ?? 0
+    empAssignedMinutes.set(emp.id, (empAssignedMinutes.get(emp.id) ?? 0) + shiftMins)
   }
 
   /** Sort employees by how far they are from target (most under-assigned first).
@@ -298,8 +311,8 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
         const bExt = b.isExternal ? 1 : 0
         if (aExt !== bExt) return aExt - bExt
 
-        const aRatio = (empShiftCount.get(a.id) ?? 0) / (targetShifts.get(a.id) ?? 1)
-        const bRatio = (empShiftCount.get(b.id) ?? 0) / (targetShifts.get(b.id) ?? 1)
+        const aRatio = (empAssignedMinutes.get(a.id) ?? 0) / (targetMinutes.get(a.id) ?? 1)
+        const bRatio = (empAssignedMinutes.get(b.id) ?? 0) / (targetMinutes.get(b.id) ?? 1)
         if (isWeekend(date)) {
           const aWe = empWeekendCount.get(a.id) ?? 0
           const bWe = empWeekendCount.get(b.id) ?? 0
@@ -591,67 +604,50 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   // Tries F first, then S, then F9 — M is the absolute last resort.
   // Respects all existing slot caps and composition rules.
 
-  // Sort employees: internal first, then external; most-under-assigned first
   const topUpOrder = [...employees].sort((a, b) => {
     const aExt = a.isExternal ? 1 : 0
     const bExt = b.isExternal ? 1 : 0
     if (aExt !== bExt) return aExt - bExt
-    const aRatio = (empShiftCount.get(a.id) ?? 0) / (targetShifts.get(a.id) ?? 1)
-    const bRatio = (empShiftCount.get(b.id) ?? 0) / (targetShifts.get(b.id) ?? 1)
+    const aRatio = (empAssignedMinutes.get(a.id) ?? 0) / (targetMinutes.get(a.id) ?? 1)
+    const bRatio = (empAssignedMinutes.get(b.id) ?? 0) / (targetMinutes.get(b.id) ?? 1)
     return aRatio - bRatio
   })
 
   for (const emp of topUpOrder) {
-    const target = targetShifts.get(emp.id) ?? 0
-    const current = empShiftCount.get(emp.id) ?? 0
-    if (current >= target) continue
+    const targetMin = targetMinutes.get(emp.id) ?? 0
+    if ((empAssignedMinutes.get(emp.id) ?? 0) >= targetMin) continue
 
-    const needed = target - current
-
-    // Priority order: F → S → F9 (M excluded — only F, F9, S are generated)
     const candidateShifts = workShifts.filter(s => ['F', 'S', 'F9'].includes(s.code))
 
-    let added = 0
     for (const dayInfo of dates) {
-      if (added >= needed) break
+      if ((empAssignedMinutes.get(emp.id) ?? 0) >= targetMin) break
       const { date } = dayInfo
       if (!canWork(emp, date)) continue
 
       for (const shift of candidateShifts) {
-        if (added >= needed) break
+        if ((empAssignedMinutes.get(emp.id) ?? 0) >= targetMin) break
         if (!isEligible(emp, shift)) continue
         if (!canWork(emp, date, shift.code)) continue
 
-        // F slot: respect cap and composition rules
         if (shift.code === 'F') {
           const slot = daySlots.get(date)!.get('F')!
           if (getTier(emp.role) === 'SRK' && slot.hfCount + slot.fageCount === 0) continue
           if (slot.empIds.length >= F_MAX) continue
         }
-        // S slot: respect exact 2-person cap
         if (shift.code === 'S') {
           const slot = daySlots.get(date)!.get('S')!
           if (slot.empIds.length >= 2) continue
           if (getTier(emp.role) === 'FAGE' && slot.fageCount >= 1) continue
           if (getTier(emp.role) === 'SRK' && slot.srkCount >= 1) continue
         }
-        // F9: only if not already in F that day, and slot is empty
         if (shift.code === 'F9') {
           const fSlot = daySlots.get(date)!.get('F')
           if (fSlot?.empIds.includes(emp.id)) continue
           const f9Slot = daySlots.get(date)!.get('F9')!
           if (f9Slot.empIds.length >= 1) continue
         }
-        // M: hard cap 1 per day, only if F is truly full (S absence on weekends doesn't block M)
-        if (shift.code === 'M') {
-          const mSlot = daySlots.get(date)!.get('M')!
-          if (mSlot.empIds.length >= 1) continue
-          const fSlot = daySlots.get(date)!.get('F')!
-          if (fSlot.empIds.length < F_MAX) continue // still room in F — skip M
-        }
 
         assign(emp, date, shift.code)
-        added++
         break
       }
     }

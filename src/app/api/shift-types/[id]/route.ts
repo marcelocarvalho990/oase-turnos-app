@@ -11,6 +11,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       startTime1,
       endTime1,
       durationMinutes,
+      breakTime,
     } = body
 
     if (!name || !startTime1 || !endTime1) {
@@ -30,6 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         startTime2: null,
         endTime2: null,
         durationMinutes: Number(durationMinutes),
+        breakTime: breakTime ?? null,
       },
     })
 
@@ -37,5 +39,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error) {
     console.error('[PUT /api/shift-types/[id]]', error)
     return Response.json({ error: 'Failed to update shift type' }, { status: 500 })
+  }
+}
+
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    await prisma.shiftType.delete({ where: { id } })
+    return new Response(null, { status: 204 })
+  } catch (error) {
+    console.error('[DELETE /api/shift-types/[id]]', error)
+    return Response.json({ error: 'Failed to delete shift type' }, { status: 500 })
   }
 }

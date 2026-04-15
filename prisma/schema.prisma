@@ -41,6 +41,7 @@ model ShiftType {
   startTime2      String?
   endTime2        String?
   durationMinutes Int
+  breakTime       String?
   color           String
   bgColor         String
   textColor       String
