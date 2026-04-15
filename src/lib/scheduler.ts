@@ -332,7 +332,12 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
           const bWe = empWeekendCount.get(b.id) ?? 0
           if (aWe !== bWe) return aWe - bWe
         }
-        return aRatio - bRatio
+        const ratioDiff = aRatio - bRatio
+        // Tiebreaker: when ratios are within 2%, prefer employee with fewer total shifts
+        if (Math.abs(ratioDiff) < 0.02) {
+          return (empShiftCount.get(a.id) ?? 0) - (empShiftCount.get(b.id) ?? 0)
+        }
+        return ratioDiff
       })
   }
 
@@ -344,14 +349,20 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const slot = daySlots.get(date)!.get('S')!
     const sorted = sortedByNeed(date)
 
-    // 1. Assign 1 FAGE — prefer employees who haven't reached their hour target
+    // 1. Assign 1 FAGE — distribute S shifts evenly; prefer employees below their hour target
     if (slot.fageCount === 0) {
-      const candidates = sorted.filter(
-        e => getTier(e.role) === 'FAGE' && canWork(e, date, 'S') && isEligible(e, sShift)
-      )
-      // Non-at-target first; fall back to at-target to preserve coverage
-      const pick = candidates.find(e => !atTarget(e.id))
-      if (pick) assign(pick, date, 'S')
+      const candidates = sorted
+        .filter(e => getTier(e.role) === 'FAGE' && canWork(e, date, 'S') && isEligible(e, sShift) && !atTarget(e.id))
+        .sort((a, b) => {
+          // Primary: fewest S shifts so far (balance S load among FAGE)
+          const aSS = empShiftCodeCount.get(a.id)?.get('S') ?? 0
+          const bSS = empShiftCodeCount.get(b.id)?.get('S') ?? 0
+          if (aSS !== bSS) return aSS - bSS
+          // Secondary: overall need ratio
+          return ((empAssignedMinutes.get(a.id) ?? 0) / (targetMinutes.get(a.id) ?? 1)) -
+                 ((empAssignedMinutes.get(b.id) ?? 0) / (targetMinutes.get(b.id) ?? 1))
+        })
+      if (candidates[0]) assign(candidates[0], date, 'S')
     }
     if (slot.fageCount === 0) return // can't staff S without FAGE
 
