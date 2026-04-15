@@ -3,17 +3,20 @@
 import { useState, useCallback, useRef } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { CoverageRule, ShiftType, DayType } from '@/types'
+import { useLang } from '@/hooks/useLang'
 
 interface Props {
   rules: CoverageRule[]
   workShifts: ShiftType[]
 }
 
-const DAY_TYPES: { key: DayType; label: string }[] = [
-  { key: 'WEEKDAY', label: 'Dia de Semana' },
-  { key: 'SATURDAY', label: 'Sábado' },
-  { key: 'SUNDAY', label: 'Domingo' },
-]
+const DAY_LABELS: Record<DayType, { pt: string; de: string }> = {
+  WEEKDAY:  { pt: 'Dia de Semana', de: 'Werktag'  },
+  SATURDAY: { pt: 'Sábado',        de: 'Samstag'  },
+  SUNDAY:   { pt: 'Domingo',       de: 'Sonntag'  },
+  HOLIDAY:  { pt: 'Feriado',       de: 'Feiertag' },
+}
+const DAY_TYPE_KEYS: DayType[] = ['WEEKDAY', 'SATURDAY', 'SUNDAY']
 
 type RuleMap = Record<string, Record<DayType, { min: number; ideal: number; id?: string }>>
 
@@ -55,6 +58,8 @@ interface CellState {
 }
 
 export default function CoveragePageClient({ rules, workShifts }: Props) {
+  const [lang] = useLang()
+  const DAY_TYPES = DAY_TYPE_KEYS.map(k => ({ key: k, label: DAY_LABELS[k][lang] }))
   const shiftCodes = workShifts.map((s) => s.code)
   const shiftMap = Object.fromEntries(workShifts.map((s) => [s.code, s]))
 
@@ -128,8 +133,8 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
             <ShieldCheck size={18} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Regras de Cobertura</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Min. e ideal por turno · Equipa 2.OG</p>
+            <h1 className="text-xl font-bold text-slate-900">{lang === 'de' ? 'Abdeckungsregeln' : 'Regras de Cobertura'}</h1>
+            <p className="text-xs text-slate-500 mt-0.5">{lang === 'de' ? 'Min. und Ideal pro Schicht · Team 2.OG' : 'Min. e ideal por turno · Equipa 2.OG'}</p>
           </div>
         </div>
 
@@ -137,13 +142,13 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
         <div className="flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-[#E6EEF3] border border-[#99BFCF] inline-block" />
-            Min. obrigatório
+            {lang === 'de' ? 'Min. obligatorisch' : 'Min. obrigatório'}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300 inline-block" />
             Ideal
           </span>
-          <span className="text-slate-400">As alterações são guardadas automaticamente.</span>
+          <span className="text-slate-400">{lang === 'de' ? 'Änderungen werden automatisch gespeichert.' : 'As alterações são guardadas automaticamente.'}</span>
         </div>
 
         {/* Grid card */}
@@ -152,7 +157,7 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500 w-36">
-                  Turno
+                  {lang === 'de' ? 'Schicht' : 'Turno'}
                 </th>
                 {DAY_TYPES.map(({ key, label }) => (
                   <th key={key} className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500" colSpan={2}>

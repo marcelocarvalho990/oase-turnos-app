@@ -220,6 +220,7 @@ export async function POST(request: NextRequest) {
         prisma.absenceRequest.findMany({
           where: {
             employee: { team },
+            status: 'APPROVED',
           },
           include: { employee: true },
         }),
@@ -238,15 +239,18 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
+    if (schedule.status === 'PUBLISHED') {
+      return Response.json({ error: 'Cannot regenerate a published schedule. Clear it first.' }, { status: 409 })
+    }
+
     const yr = Number(year)
     const mo = Number(month)
     const dates = buildDatesForMonth(yr, mo)
     const workingDays = getWorkingDays(yr, mo)
 
-    // Build hard blocks per employee from absence requests
+    // Build hard blocks per employee from absence requests (already filtered: APPROVED + isHardBlock)
     const hardBlocksMap: Record<string, string[]> = {}
     for (const abs of absences) {
-      if (!abs.isHardBlock) continue
       const empId = abs.employeeId
       if (!hardBlocksMap[empId]) hardBlocksMap[empId] = []
       // Expand date range
@@ -368,6 +372,42 @@ export async function POST(request: NextRequest) {
     }
     solutionAssignments = filteredAssignments
 
+    // Insert absence assignments for approved vacation days within this month
+    // Build a set of all already-assigned employee+date pairs
+    const assignedKeys = new Set([
+      ...filteredAssignments.map(a => `${a.employeeId}::${a.date}`),
+      ...existingAssignments.map(a => `${a.employeeId}::${a.date}`),
+    ])
+
+    const absenceAssignments: Array<{ employeeId: string; date: string; shiftCode: string }> = []
+    const monthPrefix = `${String(yr)}-${String(mo).padStart(2, '0')}-`
+
+    for (const abs of absences) {
+      const shiftCode = abs.type  // 'Ferien', 'Krank30', etc. — matches ShiftType.code
+      const start = new Date(abs.startDate + 'T00:00:00')
+      const end = new Date(abs.endDate + 'T00:00:00')
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0]
+        if (!dateStr.startsWith(monthPrefix)) continue
+        const key = `${abs.employeeId}::${dateStr}`
+        if (assignedKeys.has(key)) continue
+        assignedKeys.add(key)
+        absenceAssignments.push({ employeeId: abs.employeeId, date: dateStr, shiftCode })
+      }
+    }
+
+    if (absenceAssignments.length > 0) {
+      await prisma.assignment.createMany({
+        data: absenceAssignments.map(a => ({
+          scheduleId,
+          employeeId: a.employeeId,
+          date: a.date,
+          shiftCode: a.shiftCode,
+          origin: 'AUTO',
+        })),
+      })
+    }
+
     // Update schedule status
     await prisma.schedule.update({
       where: { id: scheduleId },
@@ -393,6 +433,7 @@ export async function POST(request: NextRequest) {
       status: 'FEASIBLE',
       count: solutionAssignments.length,
       durationMs,
+      parsedConstraints: parsedConstraints.length,
     })
   } catch (error) {
     const durationMs = Date.now() - startTime

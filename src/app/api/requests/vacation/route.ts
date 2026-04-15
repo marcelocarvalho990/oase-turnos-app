@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       startDate,
       endDate,
       type: 'Ferien',
-      isHardBlock: false,
+      isHardBlock: true,
       status: 'PENDING',
       notes: notes ?? null,
     },

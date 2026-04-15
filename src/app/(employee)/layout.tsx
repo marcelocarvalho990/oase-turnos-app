@@ -5,7 +5,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
   const session = await requireAuth('EMPLOYEE')
 
   return (
-    <div className="flex h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="flex h-full" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <EmployeeSidebar employeeName={session.employeeName ?? ''} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{ background: '#F4F6F8' }}>
         {children}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { useLang } from '@/hooks/useLang'
 
 type Lang = 'pt' | 'de'
 type ReqStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
@@ -71,7 +72,7 @@ type FormMode = null | 'vacation' | 'swap'
 interface Props { employeeId: string; colleagues: Colleague[] }
 
 export default function EmployeePedidosClient({ employeeId, colleagues }: Props) {
-  const [lang, setLang] = useState<Lang>('pt')
+  const [lang, toggleLang] = useLang()
   const [tab, setTab] = useState<ActiveTab>('vacation')
   const [form, setForm] = useState<FormMode>(null)
   const [vacations, setVacations] = useState<VacationRequest[]>([])
@@ -175,7 +176,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
           </h1>
           <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em' }}>{tx.subtitle}</p>
         </div>
-        <button onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={toggleLang} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
           {tx.lang}
         </button>
       </div>
@@ -327,7 +328,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
 
       {/* Vacation list */}
       {tab === 'vacation' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div key="vacation" className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {vacations.length === 0 && (
             <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{tx.empty}</p>
           )}
@@ -363,7 +364,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
 
       {/* Swap list */}
       {tab === 'swap' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div key="swap" className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {swaps.length === 0 && (
             <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{tx.empty}</p>
           )}

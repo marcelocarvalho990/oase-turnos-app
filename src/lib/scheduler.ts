@@ -1,19 +1,33 @@
 /**
- * Role-aware TypeScript shift scheduler.
- * Implements qualification rules from the Tertianum operational spec:
- *   - HF (TEAMLEITUNG) = head nurse
- *   - FAGE (FUNKTIONSSTUFE_2/3) = qualified care worker
- *   - SRK (FUNKTIONSSTUFE_1/LERNENDE) = basic care worker
+ * Tertianum 2.OG — Shift Scheduler (TypeScript fallback)
  *
- * Per-shift structure (correcoes_sistema_turnos.docx):
- *   Morning F: 1 HF + 1-2 FAGE + 2-4 SRK  → max 5 total
- *   Afternoon S: 1 FAGE + 1 SRK            → max 2 total
+ * ROLE TIERS
+ *   HF   = TEAMLEITUNG
+ *   FAGE = FUNKTIONSSTUFE_3, FUNKTIONSSTUFE_2
+ *   SRK  = FUNKTIONSSTUFE_1, LERNENDE
  *
- * Rules:
- *   - SRK must always be accompanied by at least 1 FAGE or HF
- *   - Work target = totalWorkShifts * (workPercentage / 100)
- *   - Max 6 consecutive days
- *   - Weekends balanced across employees (diff ≤ 1)
+ * HARD SHIFT COMPOSITION RULES
+ *   Morning F — exactly 4 people:
+ *     Option A:  1 HF   + 3 SRK
+ *     Option B:  1 FAGE + 3 SRK
+ *     Option C:  1 HF   + 1 FAGE + 2 SRK
+ *     Rule: at least 1 qualified (HF or FAGE); never SRK-only
+ *     F9:  one SRK slot per day is the designated food/logistics person
+ *          (if a shift type "F9" exists it is filled separately alongside F)
+ *
+ *   Afternoon S — exactly 2 people:
+ *     1 FAGE + 1 SRK  (LERNENDE may NOT work S)
+ *
+ *   Middle M — optional:
+ *     Only scheduled when F/S are understaffed OR an employee is below target
+ *     Follows coverage rules set by the manager
+ *
+ * LERNENDE rule:  only eligible for F shift (school days → hardBlocks)
+ * No S→F rule:    employee who works S on day D may not work F on day D+1
+ *
+ * WORKLOAD TARGETS
+ *   100% → 21 shifts / 31-day month (scales with month length and %)
+ *   formula: round(21 × daysInMonth/31 × workPercentage/100)
  */
 
 export interface SchedulerEmployee {
@@ -67,52 +81,26 @@ export interface SchedulerAssignment {
   shiftCode: string
 }
 
-// Role classification
-const HF_ROLES = ['TEAMLEITUNG']
-const FAGE_ROLES = ['FUNKTIONSSTUFE_3', 'FUNKTIONSSTUFE_2']
-const SRK_ROLES = ['FUNKTIONSSTUFE_1', 'LERNENDE']
+// ── Role classification ───────────────────────────────────────────────────────
 
 type RoleTier = 'HF' | 'FAGE' | 'SRK' | 'UNKNOWN'
 
 function getTier(role: string): RoleTier {
-  if (HF_ROLES.includes(role)) return 'HF'
-  if (FAGE_ROLES.includes(role)) return 'FAGE'
-  if (SRK_ROLES.includes(role)) return 'SRK'
+  if (role === 'TEAMLEITUNG') return 'HF'
+  if (role === 'FUNKTIONSSTUFE_3' || role === 'FUNKTIONSSTUFE_2') return 'FAGE'
+  if (role === 'FUNKTIONSSTUFE_1' || role === 'LERNENDE') return 'SRK'
   return 'UNKNOWN'
 }
 
-function isQualified(role: string): boolean {
-  return HF_ROLES.includes(role) || FAGE_ROLES.includes(role)
-}
+// ── Date helpers ──────────────────────────────────────────────────────────────
 
-// Per-shift slot targets: how many of each tier to fill
-interface ShiftSlotSpec {
-  hf: number      // exactly this many HF
-  fageMin: number // minimum FAGE
-  fageMax: number // maximum FAGE
-  srkMin: number  // minimum SRK
-  srkMax: number  // maximum SRK
-  maxTotal: number
-}
-
-const SHIFT_SPECS: Record<string, ShiftSlotSpec> = {
-  F:   { hf: 1, fageMin: 1, fageMax: 2, srkMin: 2, srkMax: 4, maxTotal: 5 },
-  S:   { hf: 0, fageMin: 1, fageMax: 1, srkMin: 1, srkMax: 1, maxTotal: 2 },
-  // Other shifts: generic qualified-first, no SRK alone
-  DEFAULT: { hf: 0, fageMin: 1, fageMax: 99, srkMin: 0, srkMax: 99, maxTotal: 99 },
-}
-
-function getDayType(dateStr: string): 'WEEKDAY' | 'SATURDAY' | 'SUNDAY' {
-  const d = new Date(dateStr + 'T00:00:00')
-  const dow = d.getDay()
-  if (dow === 6) return 'SATURDAY'
-  if (dow === 0) return 'SUNDAY'
-  return 'WEEKDAY'
+function getDayOfWeek(dateStr: string): number {
+  return new Date(dateStr + 'T00:00:00').getDay() // 0=Sun … 6=Sat
 }
 
 function isWeekend(dateStr: string): boolean {
-  const dow = new Date(dateStr + 'T00:00:00').getDay()
-  return dow === 0 || dow === 6
+  const d = getDayOfWeek(dateStr)
+  return d === 0 || d === 6
 }
 
 function addDays(dateStr: string, n: number): string {
@@ -121,75 +109,53 @@ function addDays(dateStr: string, n: number): string {
   return d.toISOString().split('T')[0]
 }
 
+// ── Slot state ────────────────────────────────────────────────────────────────
+
+interface SlotState {
+  empIds: string[]
+  hfCount: number
+  fageCount: number
+  srkCount: number
+}
+
+function emptySlot(): SlotState {
+  return { empIds: [], hfCount: 0, fageCount: 0, srkCount: 0 }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   const { employees, shiftTypes, coverageRules, dates, constraints = [] } = input
 
   const workShifts = shiftTypes.filter(s => !s.isAbsence)
+  const daysInMonth = dates.length
 
-  // Pre-build sets
-  const hardBlockSet = new Map<string, Set<string>>()
-  for (const emp of employees) hardBlockSet.set(emp.id, new Set(emp.hardBlocks))
+  // ── Shift type lookups ────────────────────────────────────────────────────
+  const fShift = workShifts.find(s => s.code === 'F')
+  const sShift = workShifts.find(s => s.code === 'S')
+  const mShift = workShifts.find(s => s.code === 'M')
+  const f9Shift = workShifts.find(s => s.code === 'F9') // optional
 
-  const empAssignedDates = new Map<string, Set<string>>()
-  for (const emp of employees) empAssignedDates.set(emp.id, new Set())
-
-  const empShiftCount = new Map<string, number>()
-  for (const emp of employees) empShiftCount.set(emp.id, 0)
-
-  const empWeekendCount = new Map<string, number>()
-  for (const emp of employees) empWeekendCount.set(emp.id, 0)
-
-  // Target shifts per employee based on work percentage
-  const workingDayCount = dates.filter(d => d.dayType === 'WEEKDAY').length
-  const weekendDays = dates.filter(d => d.dayType !== 'WEEKDAY').length
+  // ── Workload targets ──────────────────────────────────────────────────────
+  // 100% employee → 21 shifts in a 31-day month (scales with month and %)
+  const BASE_SHIFTS_31 = 21
   const targetShifts = new Map<string, number>()
   for (const emp of employees) {
-    const base = Math.round((workingDayCount * 0.85 + weekendDays * 0.4) * (emp.workPercentage / 100))
-    targetShifts.set(emp.id, Math.max(1, base))
+    const target = Math.round(BASE_SHIFTS_31 * (daysInMonth / 31) * (emp.workPercentage / 100))
+    targetShifts.set(emp.id, Math.max(1, target))
   }
 
-  // Max weekend shifts — aim for equal distribution ±1
-  const totalWeekendDays = weekendDays
-  const avgWeekendPerEmp = employees.length > 0 ? (totalWeekendDays * 2) / employees.length : 2
-  // Allow at most ceil(avg) + 1 weekend shifts per employee
-  const maxWeekendPerEmp = Math.ceil(avgWeekendPerEmp) + 1
-
-  // Coverage rules indexed by dayType → shiftCode
+  // ── Coverage rules index ──────────────────────────────────────────────────
   const coverageIdx = new Map<string, Map<string, SchedulerCoverageRule>>()
   for (const rule of coverageRules) {
     if (!coverageIdx.has(rule.dayType)) coverageIdx.set(rule.dayType, new Map())
     coverageIdx.get(rule.dayType)!.set(rule.shiftCode, rule)
   }
 
-  const result: SchedulerAssignment[] = []
-
-  // Per-day slot tracking: date → shiftCode → { empIds, hfCount, fageCount, srkCount }
-  interface SlotState { empIds: string[]; hfCount: number; fageCount: number; srkCount: number }
-  const daySlots = new Map<string, Map<string, SlotState>>()
-  for (const d of dates) {
-    const m = new Map<string, SlotState>()
-    for (const s of workShifts) m.set(s.code, { empIds: [], hfCount: 0, fageCount: 0, srkCount: 0 })
-    daySlots.set(d.date, m)
-  }
-
-  function alreadyWorking(empId: string, date: string): boolean {
-    return empAssignedDates.get(empId)?.has(date) ?? false
-  }
-
-  function consecutiveDays(empId: string, date: string): number {
-    let count = 0
-    let cur = date
-    while (empAssignedDates.get(empId)?.has(addDays(cur, -1))) {
-      count++
-      cur = addDays(cur, -1)
-    }
-    return count
-  }
-
-  // Build per-employee constraint lookups
-  const blockShifts = new Map<string, Set<string>>() // empId → blocked shiftCodes
-  const maxShiftCounts = new Map<string, Map<string, number>>() // empId → shiftCode → max
-  const maxWeekendsConstraint = new Map<string, number>() // empId → max weekends
+  // ── Constraint lookups ────────────────────────────────────────────────────
+  const blockShifts = new Map<string, Set<string>>()
+  const maxShiftCounts = new Map<string, Map<string, number>>()
+  const maxWeekendsConstraint = new Map<string, number>()
 
   for (const c of constraints) {
     if (c.type === 'BLOCK_SHIFT' && c.shiftCode) {
@@ -205,40 +171,97 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     }
   }
 
-  // Per-employee per-shiftCode count tracker (for MAX_SHIFT enforcement)
+  // ── Tracking state ────────────────────────────────────────────────────────
+  const hardBlockSet = new Map<string, Set<string>>()
+  for (const emp of employees) hardBlockSet.set(emp.id, new Set(emp.hardBlocks))
+
+  const empAssignedDates = new Map<string, Set<string>>()
+  const empShiftCount = new Map<string, number>()
+  const empWeekendCount = new Map<string, number>()
   const empShiftCodeCount = new Map<string, Map<string, number>>()
-  for (const emp of employees) empShiftCodeCount.set(emp.id, new Map())
+  const empLastShift = new Map<string, string | null>() // date → shift code for S→F constraint
+
+  for (const emp of employees) {
+    empAssignedDates.set(emp.id, new Set())
+    empShiftCount.set(emp.id, 0)
+    empWeekendCount.set(emp.id, 0)
+    empShiftCodeCount.set(emp.id, new Map())
+    empLastShift.set(emp.id, null)
+  }
+
+  // Day-slot state: date → shiftCode → SlotState
+  const daySlots = new Map<string, Map<string, SlotState>>()
+  for (const d of dates) {
+    const m = new Map<string, SlotState>()
+    for (const s of workShifts) m.set(s.code, emptySlot())
+    daySlots.set(d.date, m)
+  }
+
+  // Weekend cap: roughly (weekendDays * 2) / employees, ±1 buffer
+  const weekendDays = dates.filter(d => isWeekend(d.date)).length
+  const maxWeekendPerEmp = Math.ceil((weekendDays * 2) / Math.max(employees.length, 1)) + 1
+
+  const result: SchedulerAssignment[] = []
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function consecutiveDays(empId: string, date: string): number {
+    let count = 0
+    let cur = date
+    while (empAssignedDates.get(empId)?.has(addDays(cur, -1))) {
+      count++
+      cur = addDays(cur, -1)
+    }
+    return count
+  }
 
   function canWork(emp: SchedulerEmployee, date: string, shiftCode?: string): boolean {
+    // Hard block (vacation, absence, or already-fixed assignment)
     if (hardBlockSet.get(emp.id)?.has(date)) return false
-    if (alreadyWorking(emp.id, date)) return false
+    // Only one shift per day
+    if (empAssignedDates.get(emp.id)?.has(date)) return false
+    // Max 6 consecutive days
     if (consecutiveDays(emp.id, date) >= 6) return false
-    // Weekend fairness hard cap
+    // No S shift followed by F shift next day
+    if (shiftCode === 'F') {
+      const prevDate = addDays(date, -1)
+      const prevDateAssignments = [...(empAssignedDates.get(emp.id) ?? [])]
+      if (prevDateAssignments.includes(prevDate)) {
+        // Check if they worked S the previous day
+        const prevSlots = daySlots.get(prevDate)
+        if (prevSlots?.get('S')?.empIds.includes(emp.id)) return false
+      }
+    }
+    // Weekend fairness cap
     if (isWeekend(date) && (empWeekendCount.get(emp.id) ?? 0) >= maxWeekendPerEmp) return false
-    // MAX_WEEKENDS constraint
+    // Manager MAX_WEEKENDS constraint
     if (isWeekend(date)) {
       const maxWe = maxWeekendsConstraint.get(emp.id)
       if (maxWe !== undefined && (empWeekendCount.get(emp.id) ?? 0) >= maxWe) return false
     }
-    // MAX_SHIFT constraint
+    // Manager MAX_SHIFT constraint
     if (shiftCode) {
       const maxForShift = maxShiftCounts.get(emp.id)?.get(shiftCode)
       if (maxForShift !== undefined) {
-        const currentCount = empShiftCodeCount.get(emp.id)?.get(shiftCode) ?? 0
-        if (currentCount >= maxForShift) return false
+        const cur = empShiftCodeCount.get(emp.id)?.get(shiftCode) ?? 0
+        if (cur >= maxForShift) return false
       }
     }
-    // Don't overschedule beyond 110% of target
-    const target = targetShifts.get(emp.id) ?? 20
-    if ((empShiftCount.get(emp.id) ?? 0) >= Math.ceil(target * 1.1)) return false
     return true
   }
 
   function isEligible(emp: SchedulerEmployee, shift: SchedulerShiftType): boolean {
-    // BLOCK_SHIFT constraint
+    // Manager BLOCK_SHIFT constraint
     if (blockShifts.get(emp.id)?.has(shift.code)) return false
-    if (shift.eligibleRoles.length === 0) return true
-    return shift.eligibleRoles.includes(emp.role)
+    // LERNENDE can only work F (and F9 if applicable)
+    if (emp.role === 'LERNENDE' && shift.code !== 'F' && shift.code !== 'F9') return false
+    // Role eligibility from DB
+    if (shift.eligibleRoles.length > 0 && !shift.eligibleRoles.includes(emp.role)) return false
+    return true
+  }
+
+  function atTarget(empId: string): boolean {
+    return (empShiftCount.get(empId) ?? 0) >= (targetShifts.get(empId) ?? 99)
   }
 
   function assign(emp: SchedulerEmployee, date: string, shiftCode: string) {
@@ -247,101 +270,209 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const tier = getTier(emp.role)
     if (tier === 'HF') slot.hfCount++
     else if (tier === 'FAGE') slot.fageCount++
-    else if (tier === 'SRK') slot.srkCount++
+    else slot.srkCount++
 
     empAssignedDates.get(emp.id)!.add(date)
     empShiftCount.set(emp.id, (empShiftCount.get(emp.id) ?? 0) + 1)
     if (isWeekend(date)) empWeekendCount.set(emp.id, (empWeekendCount.get(emp.id) ?? 0) + 1)
-
-    // Track per-shiftCode count for MAX_SHIFT constraints
     const codeMap = empShiftCodeCount.get(emp.id)!
     codeMap.set(shiftCode, (codeMap.get(shiftCode) ?? 0) + 1)
-
     result.push({ employeeId: emp.id, date, shiftCode })
   }
 
-  // Sort employees by need (fewest shifts relative to target), with weekend balance
-  function sortedByNeed(date: string): SchedulerEmployee[] {
-    return [...employees].sort((a, b) => {
-      const aRatio = (empShiftCount.get(a.id) ?? 0) / (targetShifts.get(a.id) ?? 1)
-      const bRatio = (empShiftCount.get(b.id) ?? 0) / (targetShifts.get(b.id) ?? 1)
-      if (isWeekend(date)) {
-        const aWe = empWeekendCount.get(a.id) ?? 0
-        const bWe = empWeekendCount.get(b.id) ?? 0
-        if (aWe !== bWe) return aWe - bWe
-      }
-      return aRatio - bRatio
-    })
+  /** Sort employees by how far they are from target (most under-assigned first).
+   *  On weekends also factor in weekend count for fairness. */
+  function sortedByNeed(date: string, excludeAtTarget = false): SchedulerEmployee[] {
+    return [...employees]
+      .filter(emp => !excludeAtTarget || !atTarget(emp.id))
+      .sort((a, b) => {
+        const aRatio = (empShiftCount.get(a.id) ?? 0) / (targetShifts.get(a.id) ?? 1)
+        const bRatio = (empShiftCount.get(b.id) ?? 0) / (targetShifts.get(b.id) ?? 1)
+        if (isWeekend(date)) {
+          const aWe = empWeekendCount.get(a.id) ?? 0
+          const bWe = empWeekendCount.get(b.id) ?? 0
+          if (aWe !== bWe) return aWe - bWe
+        }
+        return aRatio - bRatio
+      })
   }
 
-  function fillSlotWithSpec(date: string, shift: SchedulerShiftType, spec: ShiftSlotSpec) {
-    const slot = daySlots.get(date)!.get(shift.code)!
+  // ── S shift fill ──────────────────────────────────────────────────────────
+  // Exactly 1 FAGE + 1 SRK (never LERNENDE). Fill S before F on each day.
+
+  function fillSShift(date: string) {
+    if (!sShift) return
+    const slot = daySlots.get(date)!.get('S')!
     const sorted = sortedByNeed(date)
-    const eligible = sorted.filter(emp => canWork(emp, date, shift.code) && isEligible(emp, shift))
 
-    // Step 1: Fill HF slots
-    let hfNeeded = spec.hf - slot.hfCount
-    for (const emp of eligible) {
-      if (hfNeeded <= 0) break
-      if (slot.empIds.length >= spec.maxTotal) break
-      if (getTier(emp.role) === 'HF') {
-        assign(emp, date, shift.code)
-        hfNeeded--
-      }
-    }
-
-    // Step 2: Fill FAGE slots
-    let fageNeeded = spec.fageMin - slot.fageCount
-    const fageMax = spec.fageMax - slot.fageCount
-    let fageAssigned = 0
-    for (const emp of eligible) {
-      if (fageAssigned >= fageMax) break
-      if (slot.empIds.length >= spec.maxTotal) break
-      if (getTier(emp.role) === 'FAGE' && !slot.empIds.includes(emp.id)) {
-        assign(emp, date, shift.code)
-        fageAssigned++
-        fageNeeded = Math.max(0, fageNeeded - 1)
-      }
-    }
-
-    // Step 3: Fill SRK slots (only if at least 1 qualified already assigned)
-    const qualifiedCount = slot.hfCount + slot.fageCount
-    if (qualifiedCount > 0) {
-      let srkNeeded = spec.srkMin - slot.srkCount
-      const srkMax = spec.srkMax - slot.srkCount
-      let srkAssigned = 0
-      for (const emp of eligible) {
-        if (srkAssigned >= srkMax) break
-        if (slot.empIds.length >= spec.maxTotal) break
-        if (getTier(emp.role) === 'SRK' && !slot.empIds.includes(emp.id)) {
-          assign(emp, date, shift.code)
-          srkAssigned++
-          srkNeeded = Math.max(0, srkNeeded - 1)
+    // 1. Assign 1 FAGE
+    if (slot.fageCount === 0) {
+      for (const emp of sorted) {
+        if (getTier(emp.role) === 'FAGE' && canWork(emp, date, 'S') && isEligible(emp, sShift)) {
+          assign(emp, date, 'S')
+          break
         }
       }
     }
+    if (slot.fageCount === 0) return // can't staff S without FAGE
+
+    // 2. Assign 1 SRK (not LERNENDE)
+    for (const emp of sorted) {
+      if (slot.empIds.length >= 2) break
+      if (
+        getTier(emp.role) === 'SRK' &&
+        emp.role !== 'LERNENDE' &&
+        canWork(emp, date, 'S') &&
+        isEligible(emp, sShift) &&
+        !slot.empIds.includes(emp.id)
+      ) {
+        assign(emp, date, 'S')
+        break
+      }
+    }
   }
 
-  function fillSlotGeneric(date: string, shift: SchedulerShiftType, idealCount: number) {
+  // ── F shift fill ──────────────────────────────────────────────────────────
+  // Exactly 4 people:
+  //   Option A: 1 HF + 3 SRK
+  //   Option B: 1 FAGE + 3 SRK
+  //   Option C: 1 HF + 1 FAGE + 2 SRK
+  // At least 1 qualified required; SRK-only is forbidden.
+
+  function fillFShift(date: string) {
+    if (!fShift) return
+    const slot = daySlots.get(date)!.get('F')!
+    const sorted = sortedByNeed(date)
+
+    const eligible = (tier: RoleTier, allowLernende = true) =>
+      sorted.filter(
+        e =>
+          getTier(e.role) === tier &&
+          (allowLernende || e.role !== 'LERNENDE') &&
+          canWork(e, date, 'F') &&
+          isEligible(e, fShift) &&
+          !slot.empIds.includes(e.id)
+      )
+
+    // Step 1: try 1 HF (preferred — preserves FAGE for S shift)
+    if (slot.hfCount === 0) {
+      const hf = eligible('HF')[0]
+      if (hf) assign(hf, date, 'F')
+    }
+
+    // Step 2: if no HF → FAGE is required (Option B); if HF → FAGE optional (Option C)
+    const needFage = slot.hfCount === 0
+    if (needFage && slot.fageCount === 0) {
+      const fage = eligible('FAGE')[0]
+      if (fage) assign(fage, date, 'F')
+    }
+
+    // Step 3: abort if still no qualified staff
+    if (slot.hfCount + slot.fageCount === 0) return
+
+    // Step 4: fill SRK up to 4 (LERNENDE allowed on F)
+    for (const emp of eligible('SRK')) {
+      if (slot.empIds.length >= 4) break
+      assign(emp, date, 'F')
+    }
+
+    // Step 5: if still < 4 with HF but no FAGE yet → try Option C (add FAGE)
+    if (slot.empIds.length < 4 && slot.hfCount > 0 && slot.fageCount === 0) {
+      const fage = eligible('FAGE')[0]
+      if (fage) assign(fage, date, 'F')
+      // Fill remaining with SRK
+      for (const emp of eligible('SRK')) {
+        if (slot.empIds.length >= 4) break
+        assign(emp, date, 'F')
+      }
+    }
+
+    // Step 6: if still < 4 (staff shortage) — fill with any eligible person to avoid empty shift
+    if (slot.hfCount + slot.fageCount > 0 && slot.empIds.length < 4) {
+      const extra = sorted.filter(
+        e => canWork(e, date, 'F') && isEligible(e, fShift) && !slot.empIds.includes(e.id)
+      )
+      for (const emp of extra) {
+        if (slot.empIds.length >= 4) break
+        assign(emp, date, 'F')
+      }
+    }
+  }
+
+  // ── F9 fill (optional — only if shift type "F9" exists) ─────────────────
+  // Assigns 1 SRK-tier employee to the F9 slot (food/logistics responsibility).
+  // F9 is complementary to F on the same day (counts as part of morning team).
+
+  function fillF9Shift(date: string) {
+    if (!f9Shift) return
+    const slot = daySlots.get(date)!.get('F9')!
+    if (slot.empIds.length > 0) return // already filled
+    const sorted = sortedByNeed(date)
+    for (const emp of sorted) {
+      if (
+        getTier(emp.role) === 'SRK' &&
+        canWork(emp, date, 'F9') &&
+        isEligible(emp, f9Shift) &&
+        !daySlots.get(date)!.get('F')!.empIds.includes(emp.id)
+      ) {
+        assign(emp, date, 'F9')
+        break
+      }
+    }
+  }
+
+  // ── M shift fill (optional supplement) ───────────────────────────────────
+  // Fills M after F and S are done. Uses coverage rules to determine need.
+  // Only assigns employees who are below their shift target.
+
+  function fillMShift(date: string, idealCount: number) {
+    if (!mShift || idealCount <= 0) return
+    const slot = daySlots.get(date)!.get('M')!
+    const sorted = sortedByNeed(date, /*excludeAtTarget=*/false)
+
+    for (const emp of sorted) {
+      if (slot.empIds.length >= idealCount) break
+      if (
+        !atTarget(emp.id) &&
+        canWork(emp, date, 'M') &&
+        isEligible(emp, mShift) &&
+        !slot.empIds.includes(emp.id)
+      ) {
+        assign(emp, date, 'M')
+      }
+    }
+  }
+
+  // ── Generic fill for other shifts ────────────────────────────────────────
+
+  function fillGenericShift(date: string, shift: SchedulerShiftType, idealCount: number) {
     const slot = daySlots.get(date)!.get(shift.code)!
     const sorted = sortedByNeed(date)
-    const eligible = sorted.filter(emp => canWork(emp, date, shift.code) && isEligible(emp, shift))
     let needed = idealCount - slot.empIds.length
 
-    // Pass 1: qualified first
-    for (const emp of eligible) {
+    // Qualified first
+    for (const emp of sorted) {
       if (needed <= 0) break
-      if (isQualified(emp.role) && !slot.empIds.includes(emp.id)) {
+      if (
+        getTier(emp.role) !== 'SRK' &&
+        canWork(emp, date, shift.code) &&
+        isEligible(emp, shift) &&
+        !slot.empIds.includes(emp.id)
+      ) {
         assign(emp, date, shift.code)
         needed--
       }
     }
-    // Pass 2: SRK only if at least 1 qualified present
-    const qualifiedCount = slot.hfCount + slot.fageCount
-    if (qualifiedCount > 0) {
-      for (const emp of eligible) {
+    // SRK only if qualified present
+    if (slot.hfCount + slot.fageCount > 0) {
+      for (const emp of sorted) {
         if (needed <= 0) break
-        if (getTier(emp.role) === 'SRK' && !slot.empIds.includes(emp.id)) {
+        if (
+          getTier(emp.role) === 'SRK' &&
+          canWork(emp, date, shift.code) &&
+          isEligible(emp, shift) &&
+          !slot.empIds.includes(emp.id)
+        ) {
           assign(emp, date, shift.code)
           needed--
         }
@@ -349,40 +480,41 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     }
   }
 
-  // Main loop
+  // ── Main scheduling loop ──────────────────────────────────────────────────
+  // For each day: fill S first (preserves FAGE), then F, then F9, then M.
+
   for (const dayInfo of dates) {
     const { date } = dayInfo
-    const dayType = getDayType(date)
-    const rulesForDay = coverageIdx.get(dayType) ?? new Map()
+    const dayType = dayInfo.dayType
+    const rules = coverageIdx.get(dayType) ?? new Map()
 
-    const shiftsToFill: Array<{ shift: SchedulerShiftType; ideal: number }> = []
+    const sRule = rules.get('S')
+    const fRule = rules.get('F')
+    const mRule = rules.get('M')
 
+    // S first — needs FAGE reserved
+    if (sRule && sRule.idealStaff > 0) fillSShift(date)
+
+    // F next — uses whatever qualified staff remains
+    if (fRule && fRule.idealStaff > 0) fillFShift(date)
+    else if (!fRule) fillFShift(date) // always schedule F if no rule defined (default on)
+
+    // F9 if shift type exists
+    if (f9Shift) fillF9Shift(date)
+
+    // M only as supplement (not required)
+    if (mRule && mRule.idealStaff > 0) fillMShift(date, mRule.idealStaff)
+
+    // Other shifts (not F, S, M, F9)
     for (const shift of workShifts) {
-      const rule = rulesForDay.get(shift.code)
-      if (rule && rule.idealStaff > 0) {
-        shiftsToFill.push({ shift, ideal: rule.idealStaff })
-      }
-    }
-
-    // Fallback defaults
-    if (shiftsToFill.length === 0) {
-      const fShift = workShifts.find(s => s.code === 'F')
-      const sShift = workShifts.find(s => s.code === 'S')
-      if (fShift) shiftsToFill.push({ shift: fShift, ideal: 5 })
-      if (sShift) shiftsToFill.push({ shift: sShift, ideal: 2 })
-    }
-
-    for (const { shift, ideal } of shiftsToFill) {
-      const spec = SHIFT_SPECS[shift.code] ?? SHIFT_SPECS.DEFAULT
-      if (spec !== SHIFT_SPECS.DEFAULT) {
-        fillSlotWithSpec(date, shift, spec)
-      } else {
-        fillSlotGeneric(date, shift, ideal)
-      }
+      if (['F', 'S', 'M', 'F9'].includes(shift.code)) continue
+      const rule = rules.get(shift.code)
+      if (rule && rule.idealStaff > 0) fillGenericShift(date, shift, rule.idealStaff)
     }
   }
 
-  // --- Extra passes for MIN_SHIFT and MIN_WEEKENDS constraints ---
+  // ── Second pass: MIN_SHIFT and MIN_WEEKENDS constraints ───────────────────
+
   for (const c of constraints) {
     if (c.type === 'MIN_SHIFT' && c.shiftCode && c.count !== undefined) {
       const emp = employees.find(e => e.id === c.employeeId)
@@ -390,21 +522,15 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
       const currentCount = empShiftCodeCount.get(emp.id)?.get(c.shiftCode) ?? 0
       const needed = c.count - currentCount
       if (needed <= 0) continue
-
       const shift = workShifts.find(s => s.code === c.shiftCode)
       if (!shift) continue
-
       let added = 0
       for (const dayInfo of dates) {
         if (added >= needed) break
         const { date } = dayInfo
-        if (!canWork(emp, date, shift.code)) continue
-        if (!isEligible(emp, shift)) continue
-        // Check slot not over max for this shift on this day
+        if (!canWork(emp, date, shift.code) || !isEligible(emp, shift)) continue
         const slot = daySlots.get(date)?.get(shift.code)
         if (!slot) continue
-        const spec = SHIFT_SPECS[shift.code] ?? SHIFT_SPECS.DEFAULT
-        if (slot.empIds.length >= spec.maxTotal) continue
         assign(emp, date, shift.code)
         added++
       }
@@ -416,26 +542,67 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
       const currentWe = empWeekendCount.get(emp.id) ?? 0
       const needed = c.count - currentWe
       if (needed <= 0) continue
-
-      // Try to assign any work shift on weekend days the employee hasn't worked
       let added = 0
       for (const dayInfo of dates) {
         if (added >= needed) break
         const { date } = dayInfo
-        if (!isWeekend(date)) continue
-        if (!canWork(emp, date)) continue
-        // Find any shift we can place them in
+        if (!isWeekend(date) || !canWork(emp, date)) continue
         for (const shift of workShifts) {
-          if (!isEligible(emp, shift)) continue
-          if (!canWork(emp, date, shift.code)) continue
+          if (!isEligible(emp, shift) || !canWork(emp, date, shift.code)) continue
           const slot = daySlots.get(date)?.get(shift.code)
           if (!slot) continue
-          const spec = SHIFT_SPECS[shift.code] ?? SHIFT_SPECS.DEFAULT
-          if (slot.empIds.length >= spec.maxTotal) continue
           assign(emp, date, shift.code)
           added++
           break
         }
+      }
+    }
+  }
+
+  // ── Third pass: top-up employees below target using M or any available shift
+  // This ensures workload percentages are respected even if primary shifts are full.
+
+  for (const emp of employees) {
+    const target = targetShifts.get(emp.id) ?? 0
+    const current = empShiftCount.get(emp.id) ?? 0
+    if (current >= target) continue
+
+    const needed = target - current
+
+    // Try M first (supplement shift), then any other available shift
+    const candidateShifts = mShift
+      ? [mShift, ...workShifts.filter(s => s.code !== 'M')]
+      : workShifts
+
+    let added = 0
+    for (const dayInfo of dates) {
+      if (added >= needed) break
+      const { date } = dayInfo
+      if (!canWork(emp, date)) continue
+
+      for (const shift of candidateShifts) {
+        if (added >= needed) break
+        if (!isEligible(emp, shift)) continue
+        if (!canWork(emp, date, shift.code)) continue
+
+        // For F and S: only add if slot composition can accommodate this role
+        if (shift.code === 'F') {
+          const slot = daySlots.get(date)!.get('F')!
+          // Don't add SRK if no qualified present
+          if (getTier(emp.role) === 'SRK' && slot.hfCount + slot.fageCount === 0) continue
+          // Don't add if slot is full
+          if (slot.empIds.length >= 4) continue
+        }
+        if (shift.code === 'S') {
+          const slot = daySlots.get(date)!.get('S')!
+          if (slot.empIds.length >= 2) continue
+          if (getTier(emp.role) === 'FAGE' && slot.fageCount >= 1) continue
+          if (getTier(emp.role) === 'SRK' && slot.srkCount >= 1) continue
+        }
+
+        assign(emp, date, shift.code)
+        added++
+        break
       }
     }
   }

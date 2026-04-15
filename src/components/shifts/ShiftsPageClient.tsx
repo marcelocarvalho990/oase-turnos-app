@@ -3,6 +3,26 @@
 import { useState } from 'react'
 import { Clock, Plus, Pencil, X, Timer } from 'lucide-react'
 import { ShiftType } from '@/types'
+import { useLang } from '@/hooks/useLang'
+
+const TX = {
+  pt: {
+    title: 'Tipos de Turno', subtitle: (w: number, a: number) => `${w} turnos · ${a} ausências`,
+    newShift: 'Novo Turno', workShifts: 'Turnos de Trabalho', absShifts: 'Ausências / Eventos',
+    absLabel: 'Ausência / Evento', editShift: 'Editar Turno',
+    name: 'Nome', desc: 'Descrição (opcional)', start1: 'Início 1', end1: 'Fim 1',
+    start2: 'Início 2 (opcional)', end2: 'Fim 2 (opcional)', duration: 'Duração (minutos)',
+    cancel: 'Cancelar', saving: 'A guardar…', save: 'Guardar',
+  },
+  de: {
+    title: 'Schichttypen', subtitle: (w: number, a: number) => `${w} Schichten · ${a} Abwesenheiten`,
+    newShift: 'Neue Schicht', workShifts: 'Arbeitsschichten', absShifts: 'Abwesenheiten / Ereignisse',
+    absLabel: 'Abwesenheit / Ereignis', editShift: 'Schicht bearbeiten',
+    name: 'Name', desc: 'Beschreibung (optional)', start1: 'Beginn 1', end1: 'Ende 1',
+    start2: 'Beginn 2 (optional)', end2: 'Ende 2 (optional)', duration: 'Dauer (Minuten)',
+    cancel: 'Abbrechen', saving: 'Wird gespeichert…', save: 'Speichern',
+  },
+}
 
 interface Props {
   shiftTypes: ShiftType[]
@@ -31,7 +51,7 @@ function formatDuration(minutes: number) {
   return `${h}h ${m}m`
 }
 
-function ShiftCard({ shift, onEdit }: { shift: ShiftType; onEdit: (s: ShiftType) => void }) {
+function ShiftCard({ shift, onEdit, absLabel }: { shift: ShiftType; onEdit: (s: ShiftType) => void; absLabel: string }) {
   const t1Start = formatTime(shift.startTime1)
   const t1End = formatTime(shift.endTime1)
   const t2Start = formatTime(shift.startTime2)
@@ -85,7 +105,7 @@ function ShiftCard({ shift, onEdit }: { shift: ShiftType; onEdit: (s: ShiftType)
           </div>
         ) : (
           <div className="mt-auto pt-2 flex items-center gap-1.5">
-            <span className="text-xs text-slate-400 italic">Ausência / Evento</span>
+            <span className="text-xs text-slate-400 italic">{absLabel}</span>
           </div>
         )}
       </div>
@@ -94,6 +114,8 @@ function ShiftCard({ shift, onEdit }: { shift: ShiftType; onEdit: (s: ShiftType)
 }
 
 export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
+  const [lang] = useLang()
+  const t = TX[lang]
   const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(initial)
   const [editingShift, setEditingShift] = useState<ShiftType | null>(null)
   const [form, setForm] = useState<EditForm | null>(null)
@@ -168,8 +190,8 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
               <Clock size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Tipos de Turno</h1>
-              <p className="text-xs text-slate-500 mt-0.5">{workShifts.length} turnos · {absenceShifts.length} ausências</p>
+              <h1 className="text-xl font-bold text-slate-900">{t.title}</h1>
+              <p className="text-xs text-slate-500 mt-0.5">{t.subtitle(workShifts.length, absenceShifts.length)}</p>
             </div>
           </div>
           <button
@@ -178,19 +200,19 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
             disabled
           >
             <Plus size={16} />
-            Novo Turno
+            {t.newShift}
           </button>
         </div>
 
         {/* Work shifts */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Turnos de Trabalho</h2>
+            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{t.workShifts}</h2>
             <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-xs font-bold flex items-center justify-center">{workShifts.length}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {workShifts.map((shift) => (
-              <ShiftCard key={shift.id} shift={shift} onEdit={openEdit} />
+              <ShiftCard key={shift.id} shift={shift} onEdit={openEdit} absLabel={t.absLabel} />
             ))}
           </div>
         </section>
@@ -198,12 +220,12 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
         {/* Absence shifts */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Ausências / Eventos</h2>
+            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{t.absShifts}</h2>
             <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-xs font-bold flex items-center justify-center">{absenceShifts.length}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {absenceShifts.map((shift) => (
-              <ShiftCard key={shift.id} shift={shift} onEdit={openEdit} />
+              <ShiftCard key={shift.id} shift={shift} onEdit={openEdit} absLabel={t.absLabel} />
             ))}
           </div>
         </section>
@@ -221,7 +243,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                 >
                   {editingShift.code}
                 </span>
-                <h2 className="text-base font-semibold text-slate-900">Editar Turno</h2>
+                <h2 className="text-base font-semibold text-slate-900">{t.editShift}</h2>
               </div>
               <button
                 onClick={closeEdit}
@@ -235,7 +257,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-lg">{error}</div>
               )}
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Nome</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">{t.name}</label>
                 <input
                   type="text"
                   required
@@ -245,7 +267,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Descrição (opcional)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">{t.desc}</label>
                 <input
                   type="text"
                   value={form.description}
@@ -257,7 +279,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Início 1</label>
+                      <label className="block text-xs font-medium text-slate-700 mb-1">{t.start1}</label>
                       <input
                         type="time"
                         required
@@ -267,7 +289,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Fim 1</label>
+                      <label className="block text-xs font-medium text-slate-700 mb-1">{t.end1}</label>
                       <input
                         type="time"
                         required
@@ -277,7 +299,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Início 2 (opcional)</label>
+                      <label className="block text-xs font-medium text-slate-700 mb-1">{t.start2}</label>
                       <input
                         type="time"
                         value={form.startTime2}
@@ -286,7 +308,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Fim 2 (opcional)</label>
+                      <label className="block text-xs font-medium text-slate-700 mb-1">{t.end2}</label>
                       <input
                         type="time"
                         value={form.endTime2}
@@ -296,7 +318,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Duração (minutos)</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">{t.duration}</label>
                     <input
                       type="number"
                       required
@@ -315,7 +337,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                   onClick={closeEdit}
                   className="bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 hover:bg-slate-50"
                 >
-                  Cancelar
+                  {t.cancel}
                 </button>
                 <button
                   type="submit"
@@ -325,9 +347,9 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                   {saving ? (
                     <>
                       <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      A guardar…
+                      {t.saving}
                     </>
-                  ) : 'Guardar'}
+                  ) : t.save}
                 </button>
               </div>
             </form>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { BarChart3, TrendingDown, TrendingUp, Users, Calendar } from 'lucide-react'
 import { FairnessMetric } from '@/types'
+import { useLang } from '@/hooks/useLang'
 
 const TEAM = '2.OG'
 
@@ -22,24 +23,49 @@ function getHealthBg(worked: number, target: number): string {
   return 'bg-red-50 border-l-4 border-red-400'
 }
 
-function getHealthLabel(worked: number, target: number): { label: string; cls: string } {
+function getHealthLabel(worked: number, target: number, lang: 'pt' | 'de'): { label: string; cls: string } {
   if (target === 0) return { label: '—', cls: 'text-slate-400' }
   const pct = worked / target
   if (pct >= 0.9) return { label: 'OK', cls: 'text-emerald-700 bg-emerald-50 border border-emerald-200' }
-  if (pct >= 0.7) return { label: 'Atenção', cls: 'text-amber-700 bg-amber-50 border border-amber-200' }
-  return { label: 'Baixo', cls: 'text-red-700 bg-red-50 border border-red-200' }
+  if (pct >= 0.7) return { label: lang === 'de' ? 'Achtung' : 'Atenção', cls: 'text-amber-700 bg-amber-50 border border-amber-200' }
+  return { label: lang === 'de' ? 'Niedrig' : 'Baixo', cls: 'text-red-700 bg-red-50 border border-red-200' }
 }
 
-function Spinner() {
+const FX = {
+  pt: {
+    title: 'Equidade e Fairness', team: 'Equipa', loading: 'A carregar dados de equidade…',
+    totalShifts: 'Atribuições totais', belowTarget: 'Abaixo do objetivo', avgWeekends: 'Fins de semana (média)',
+    noSchedule: 'Ainda não existe uma escala gerada para este mês.',
+    noData: 'Nenhum dado disponível para este mês.',
+    colEmployee: 'Colaborador', colHours: 'Horas trabalhadas vs. objetivo',
+    colWeekends: 'FdS', colHard: 'Turnos difíceis', colStatus: 'Estado',
+    legend90: '≥ 90% objetivo',
+    legendNote: 'FdS = Fins de semana completos (Sáb ou Dom) · Difíceis = Turnos S e G',
+  },
+  de: {
+    title: 'Gerechtigkeit und Fairness', team: 'Team', loading: 'Gerechtigkeitsdaten werden geladen…',
+    totalShifts: 'Gesamtzuweisungen', belowTarget: 'Unter dem Ziel', avgWeekends: 'Wochenenden (Durchschn.)',
+    noSchedule: 'Es gibt noch keinen generierten Dienstplan für diesen Monat.',
+    noData: 'Keine Daten für diesen Monat verfügbar.',
+    colEmployee: 'Mitarbeiter', colHours: 'Geleistete Std. vs. Ziel',
+    colWeekends: 'WE', colHard: 'Schwere Schichten', colStatus: 'Status',
+    legend90: '≥ 90% Ziel',
+    legendNote: 'WE = vollständige Wochenenden (Sa oder So) · Schwer = Schichten S und G',
+  },
+}
+
+function Spinner({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-32 gap-3">
       <span className="w-8 h-8 border-4 border-[#C5D9E3] border-t-[#003A5D] rounded-full animate-spin" />
-      <span className="text-sm text-slate-500">A carregar dados de equidade…</span>
+      <span className="text-sm text-slate-500">{label}</span>
     </div>
   )
 }
 
 export default function FairnessPage() {
+  const [lang] = useLang()
+  const fx = FX[lang]
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
@@ -47,7 +73,7 @@ export default function FairnessPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const monthLabel = new Date(year, month - 1, 1).toLocaleString('pt-PT', { month: 'long', year: 'numeric' })
+  const monthLabel = new Date(year, month - 1, 1).toLocaleString(lang === 'de' ? 'de-DE' : 'pt-PT', { month: 'long', year: 'numeric' })
 
   useEffect(() => {
     setLoading(true)
@@ -101,8 +127,8 @@ export default function FairnessPage() {
               <BarChart3 size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Equidade e Fairness</h1>
-              <p className="text-xs text-slate-500 mt-0.5">Equipa {TEAM}</p>
+              <h1 className="text-xl font-bold text-slate-900">{fx.title}</h1>
+              <p className="text-xs text-slate-500 mt-0.5">{fx.team} {TEAM}</p>
             </div>
           </div>
           {/* Month picker */}
@@ -133,7 +159,7 @@ export default function FairnessPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-900">{totalShifts}</p>
-              <p className="text-xs text-slate-500">Atribuições totais</p>
+              <p className="text-xs text-slate-500">{fx.totalShifts}</p>
             </div>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-4 flex items-center gap-3">
@@ -142,7 +168,7 @@ export default function FairnessPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-900">{belowTarget}</p>
-              <p className="text-xs text-slate-500">Abaixo do objetivo</p>
+              <p className="text-xs text-slate-500">{fx.belowTarget}</p>
             </div>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-4 flex items-center gap-3">
@@ -151,25 +177,25 @@ export default function FairnessPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-900">{avgWeekends}</p>
-              <p className="text-xs text-slate-500">Fins de semana (média)</p>
+              <p className="text-xs text-slate-500">{fx.avgWeekends}</p>
             </div>
           </div>
         </div>
 
         {/* Chart / list */}
-        {loading && <Spinner />}
+        {loading && <Spinner label={fx.loading} />}
 
         {error && !loading && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
             {error === 'Schedule not found'
-              ? 'Ainda não existe uma escala gerada para este mês.'
+              ? fx.noSchedule
               : error}
           </div>
         )}
 
         {metrics && metrics.length === 0 && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-12 text-center text-slate-400 text-sm">
-            Nenhum dado disponível para este mês.
+            {fx.noData}
           </div>
         )}
 
@@ -177,11 +203,11 @@ export default function FairnessPage() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             {/* Column headers */}
             <div className="grid grid-cols-[200px_1fr_80px_80px_70px] gap-3 px-5 py-3 bg-slate-50/70 border-b border-slate-100">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Colaborador</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Horas trabalhadas vs. objetivo</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">FdS</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Turnos difíceis</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Estado</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{fx.colEmployee}</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{fx.colHours}</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">{fx.colWeekends}</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">{fx.colHard}</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">{fx.colStatus}</span>
             </div>
 
             <div className="divide-y divide-slate-50">
@@ -190,7 +216,7 @@ export default function FairnessPage() {
                 const deviation = m.workedHours - m.targetHours
                 const healthColor = getHealthColor(m.workedHours, m.targetHours)
                 const rowBg = getHealthBg(m.workedHours, m.targetHours)
-                const { label: healthLabel, cls: healthCls } = getHealthLabel(m.workedHours, m.targetHours)
+                const { label: healthLabel, cls: healthCls } = getHealthLabel(m.workedHours, m.targetHours, lang)
 
                 return (
                   <div
@@ -264,7 +290,7 @@ export default function FairnessPage() {
           <div className="flex items-center gap-5 text-xs text-slate-500 pb-2">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
-              ≥ 90% objetivo
+              {fx.legend90}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
@@ -274,7 +300,7 @@ export default function FairnessPage() {
               <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
               &lt; 70%
             </span>
-            <span className="ml-2 text-slate-400">FdS = Fins de semana completos (Sáb ou Dom) · Difíceis = Turnos S e G</span>
+            <span className="ml-2 text-slate-400">{fx.legendNote}</span>
           </div>
         )}
       </div>

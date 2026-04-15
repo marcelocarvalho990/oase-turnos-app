@@ -4,6 +4,44 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Users, Plus, Pencil, Trash2, X, Check, KeyRound } from 'lucide-react'
 import { Employee, Role, ROLE_LABELS, ROLE_ORDER } from '@/types'
+import { useLang } from '@/hooks/useLang'
+
+const TX = {
+  pt: {
+    title: 'Colaboradores', activeOf: (a: number, t: number) => `${a} ativos · ${t} total`,
+    showActive: 'Mostrar apenas ativos', showAll: 'Mostrar todos', newEmp: 'Novo Colaborador',
+    colName: 'Nome', colShort: 'Abrev.', colPct: '%', colTeam: 'Equipa', colRole: 'Função',
+    colMulti: 'Multi-Equipa', colStatus: 'Estado', colActions: 'Ações',
+    empty: 'Nenhum colaborador encontrado.',
+    active: 'Ativo', inactive: 'Inativo',
+    editTitle: 'Editar Colaborador', newTitle: 'Novo Colaborador',
+    fullName: 'Nome completo', shortName: 'Abreviatura', pct: 'Percentagem',
+    team: 'Equipa', role: 'Função',
+    multiTeam: 'Pode cobrir outras equipas', activeLabel: 'Ativo',
+    cancel: 'Cancelar', saving: 'A guardar…', save: 'Guardar alterações', create: 'Criar colaborador',
+    pinGenerated: 'PIN gerado',
+    pinShare: (name: string) => `Partilha este PIN com ${name}. Só é mostrado uma vez.`,
+    close: 'Fechar',
+    tooltipPin: 'Gerar PIN', tooltipEdit: 'Editar', tooltipDel: 'Eliminar',
+  },
+  de: {
+    title: 'Mitarbeiter', activeOf: (a: number, t: number) => `${a} aktiv · ${t} gesamt`,
+    showActive: 'Nur aktive anzeigen', showAll: 'Alle anzeigen', newEmp: 'Neuer Mitarbeiter',
+    colName: 'Name', colShort: 'Abkürz.', colPct: '%', colTeam: 'Team', colRole: 'Funktion',
+    colMulti: 'Multi-Team', colStatus: 'Status', colActions: 'Aktionen',
+    empty: 'Keine Mitarbeiter gefunden.',
+    active: 'Aktiv', inactive: 'Inaktiv',
+    editTitle: 'Mitarbeiter bearbeiten', newTitle: 'Neuer Mitarbeiter',
+    fullName: 'Vollständiger Name', shortName: 'Abkürzung', pct: 'Prozentsatz',
+    team: 'Team', role: 'Funktion',
+    multiTeam: 'Kann andere Teams abdecken', activeLabel: 'Aktiv',
+    cancel: 'Abbrechen', saving: 'Wird gespeichert…', save: 'Änderungen speichern', create: 'Mitarbeiter erstellen',
+    pinGenerated: 'PIN generiert',
+    pinShare: (name: string) => `Teile diesen PIN mit ${name}. Wird nur einmal angezeigt.`,
+    close: 'Schließen',
+    tooltipPin: 'PIN generieren', tooltipEdit: 'Bearbeiten', tooltipDel: 'Löschen',
+  },
+}
 
 interface Props {
   employees: Employee[]
@@ -41,6 +79,8 @@ const EMPTY_FORM: FormState = {
 
 export default function StaffPageClient({ employees: initialEmployees }: Props) {
   const router = useRouter()
+  const [lang] = useLang()
+  const t = TX[lang]
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
   const [showAll, setShowAll] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -160,8 +200,8 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
               <Users size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Colaboradores</h1>
-              <p className="text-xs text-slate-500 mt-0.5">{activeCount} ativos · {employees.length} total</p>
+              <h1 className="text-xl font-bold text-slate-900">{t.title}</h1>
+              <p className="text-xs text-slate-500 mt-0.5">{t.activeOf(activeCount, employees.length)}</p>
             </div>
             <span className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#E6EEF3] text-[#003A5D] text-xs font-bold">
               {activeCount}
@@ -172,14 +212,14 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
               onClick={() => setShowAll((v) => !v)}
               className="bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 hover:bg-slate-50"
             >
-              {showAll ? 'Mostrar apenas ativos' : 'Mostrar todos'}
+              {showAll ? t.showActive : t.showAll}
             </button>
             <button
               onClick={openCreate}
               className="bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] flex items-center gap-2"
             >
               <Plus size={16} />
-              Novo Colaborador
+              {t.newEmp}
             </button>
           </div>
         </div>
@@ -189,21 +229,21 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
-                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Nome</th>
-                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Abrev.</th>
-                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">%</th>
-                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Equipa</th>
-                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Função</th>
-                <th className="text-center px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Multi-Equipa</th>
-                <th className="text-center px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Estado</th>
-                <th className="text-right px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Ações</th>
+                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t.colName}</th>
+                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t.colShort}</th>
+                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t.colPct}</th>
+                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t.colTeam}</th>
+                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t.colRole}</th>
+                <th className="text-center px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t.colMulti}</th>
+                <th className="text-center px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t.colStatus}</th>
+                <th className="text-right px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t.colActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {displayed.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-400">
-                    Nenhum colaborador encontrado.
+                    {t.empty}
                   </td>
                 </tr>
               )}
@@ -243,7 +283,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                         ? 'bg-green-50 text-green-700 border border-green-200'
                         : 'bg-slate-100 text-slate-500 border border-slate-200'
                     }`}>
-                      {emp.isActive ? 'Ativo' : 'Inativo'}
+                      {emp.isActive ? t.active : t.inactive}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -252,14 +292,14 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                         onClick={() => handleGeneratePin(emp)}
                         disabled={generatingPinFor === emp.id}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-40"
-                        title="Gerar PIN"
+                        title={t.tooltipPin}
                       >
                         <KeyRound size={15} />
                       </button>
                       <button
                         onClick={() => openEdit(emp)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-[#003A5D] hover:bg-[#F0F5F8] transition-colors"
-                        title="Editar"
+                        title={t.tooltipEdit}
                       >
                         <Pencil size={15} />
                       </button>
@@ -267,7 +307,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                         onClick={() => handleDelete(emp)}
                         disabled={deletingId === emp.id}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
-                        title="Eliminar"
+                        title={t.tooltipDel}
                       >
                         <Trash2 size={15} />
                       </button>
@@ -287,7 +327,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-base font-semibold text-slate-900">
-                {editingId ? 'Editar Colaborador' : 'Novo Colaborador'}
+                {editingId ? t.editTitle : t.newTitle}
               </h2>
               <button
                 onClick={closeModal}
@@ -307,7 +347,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Nome completo</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">{t.fullName}</label>
                   <input
                     type="text"
                     required
@@ -318,7 +358,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Abreviatura</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">{t.shortName}</label>
                   <input
                     type="text"
                     required
@@ -330,7 +370,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Percentagem</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">{t.pct}</label>
                   <select
                     value={form.workPercentage}
                     onChange={(e) => setForm((f) => ({ ...f, workPercentage: Number(e.target.value) }))}
@@ -342,7 +382,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Equipa</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">{t.team}</label>
                   <input
                     type="text"
                     required
@@ -353,7 +393,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Função</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">{t.role}</label>
                   <select
                     value={form.role}
                     onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}
@@ -374,7 +414,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                     onChange={(e) => setForm((f) => ({ ...f, canCoverOtherTeams: e.target.checked }))}
                     className="w-4 h-4 rounded border-slate-300 text-[#003A5D] focus:ring-[#003A5D]"
                   />
-                  <span className="text-sm text-slate-700">Pode cobrir outras equipas</span>
+                  <span className="text-sm text-slate-700">{t.multiTeam}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
@@ -383,7 +423,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                     onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
                     className="w-4 h-4 rounded border-slate-300 text-[#003A5D] focus:ring-[#003A5D]"
                   />
-                  <span className="text-sm text-slate-700">Ativo</span>
+                  <span className="text-sm text-slate-700">{t.activeLabel}</span>
                 </label>
               </div>
 
@@ -393,7 +433,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                   onClick={closeModal}
                   className="bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 hover:bg-slate-50"
                 >
-                  Cancelar
+                  {t.cancel}
                 </button>
                 <button
                   type="submit"
@@ -403,9 +443,9 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
                   {saving ? (
                     <>
                       <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      A guardar…
+                      {t.saving}
                     </>
-                  ) : editingId ? 'Guardar alterações' : 'Criar colaborador'}
+                  ) : editingId ? t.save : t.create}
                 </button>
               </div>
             </form>
@@ -420,9 +460,9 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
             <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
               <KeyRound size={20} className="text-amber-600" />
             </div>
-            <h3 className="text-base font-semibold text-slate-900 mb-1">PIN gerado</h3>
+            <h3 className="text-base font-semibold text-slate-900 mb-1">{t.pinGenerated}</h3>
             <p className="text-sm text-slate-500 mb-4">
-              Partilha este PIN com <strong>{pinResult.empName}</strong>. Só é mostrado uma vez.
+              {t.pinShare(pinResult.empName)}
             </p>
             <div className="bg-slate-900 text-white rounded-xl px-6 py-4 text-3xl font-mono font-bold tracking-widest mb-4">
               {pinResult.pin}
@@ -431,7 +471,7 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
               onClick={() => setPinResult(null)}
               className="bg-slate-900 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors"
             >
-              Fechar
+              {t.close}
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import type { ShiftType } from '@/types'
 import ShiftBadge from './ShiftBadge'
 import { X } from 'lucide-react'
@@ -16,15 +16,20 @@ interface Props {
 
 export default function CellEditor({ date, currentCode, shiftTypes, onSelect, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+  const [closing, setClosing] = useState(false)
+
+  const handleClose = useCallback(() => {
+    if (closing) return
+    setClosing(true)
+    setTimeout(onClose, 130)
+  }, [closing, onClose])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClose()
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) handleClose()
     }
     const keyHandler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') handleClose()
     }
     document.addEventListener('mousedown', handler)
     document.addEventListener('keydown', keyHandler)
@@ -32,7 +37,7 @@ export default function CellEditor({ date, currentCode, shiftTypes, onSelect, on
       document.removeEventListener('mousedown', handler)
       document.removeEventListener('keydown', keyHandler)
     }
-  }, [onClose])
+  }, [handleClose])
 
   const workShifts = shiftTypes.filter(s => !s.isAbsence)
   const absenceShifts = shiftTypes.filter(s => s.isAbsence)
@@ -42,10 +47,13 @@ export default function CellEditor({ date, currentCode, shiftTypes, onSelect, on
   })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20" onClick={onClose}>
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/20 ${closing ? 'modal-backdrop-out' : 'modal-backdrop'}`}
+      onClick={handleClose}
+    >
       <div
         ref={ref}
-        className="bg-white rounded-xl shadow-2xl border border-slate-200 p-4 w-80"
+        className={`bg-white rounded-xl shadow-2xl border border-slate-200 p-4 w-80 ${closing ? 'anim-scaleOut' : 'anim-scaleIn'}`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -59,7 +67,7 @@ export default function CellEditor({ date, currentCode, shiftTypes, onSelect, on
               </div>
             )}
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -72,7 +80,7 @@ export default function CellEditor({ date, currentCode, shiftTypes, onSelect, on
               <button
                 key={st.code}
                 onClick={() => onSelect(st.code)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all hover:scale-105
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 hover:scale-105 active:scale-95
                   ${currentCode === st.code ? 'ring-2 ring-offset-1' : 'hover:shadow-sm'}
                 `}
                 style={{
@@ -97,7 +105,7 @@ export default function CellEditor({ date, currentCode, shiftTypes, onSelect, on
               <button
                 key={st.code}
                 onClick={() => onSelect(st.code)}
-                className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all hover:scale-105
+                className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 hover:scale-105 active:scale-95
                   ${currentCode === st.code ? 'ring-2 ring-offset-1' : 'hover:shadow-sm'}
                 `}
                 style={{

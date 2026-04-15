@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Check, X, ChevronDown } from 'lucide-react'
+import { useLang } from '@/hooks/useLang'
 
 type Lang = 'pt' | 'de'
 type ReqStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
@@ -57,7 +58,7 @@ const t = {
 }
 
 export default function ManagerPedidosClient() {
-  const [lang, setLang] = useState<Lang>('pt')
+  const [lang, toggleLang] = useLang()
   const [tab, setTab] = useState<TabType>('vacation')
   const [filter, setFilter] = useState<'all' | 'pending'>('pending')
   const [vacations, setVacations] = useState<VacationRequest[]>([])
@@ -128,7 +129,7 @@ export default function ManagerPedidosClient() {
             <option value="pending" style={{ background: '#003A5D' }}>{tx.filterPending}</option>
             <option value="all" style={{ background: '#003A5D' }}>{tx.filterAll}</option>
           </select>
-          <button onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={toggleLang} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
             {tx.lang}
           </button>
         </div>
@@ -161,9 +162,9 @@ export default function ManagerPedidosClient() {
         ))}
       </div>
 
-      {/* Vacation requests */}
+      {/* Tab content */}
       {tab === 'vacation' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div key="vacation" className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredVacations.length === 0 && (
             <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{filter === 'pending' ? tx.empty : tx.allEmpty}</p>
           )}
@@ -183,9 +184,16 @@ export default function ManagerPedidosClient() {
                     <div style={{ fontSize: '0.8rem', color: '#3A3530' }}>
                       {v.startDate} → {v.endDate}
                     </div>
-                    {v.notes && <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#4A6878' }}>{v.notes}</p>}
+                    {v.notes && (
+                      <div style={{ margin: '8px 0 0', padding: '8px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: '3px solid #94A3B8', borderRadius: 6, fontSize: '0.78rem', color: '#3A4A5C', lineHeight: 1.5 }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 3 }}>{lang === 'pt' ? 'Mensagem' : 'Nachricht'}</span>
+                        {v.notes}
+                      </div>
+                    )}
                     {v.managerNote && !isPending && (
-                      <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: '#7A9BAD' }}><em>{tx.managerNote}:</em> {v.managerNote}</p>
+                      <div style={{ margin: '6px 0 0', padding: '6px 10px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 6, fontSize: '0.75rem', color: '#0369A1' }}>
+                        <em>{tx.managerNote}:</em> {v.managerNote}
+                      </div>
                     )}
                   </div>
 
@@ -225,7 +233,7 @@ export default function ManagerPedidosClient() {
 
       {/* Swap requests */}
       {tab === 'swap' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div key="swap" className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredSwaps.length === 0 && (
             <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{filter === 'pending' ? tx.empty : tx.allEmpty}</p>
           )}
@@ -249,9 +257,16 @@ export default function ManagerPedidosClient() {
                       {'  ↔  '}
                       <span style={{ color: '#4A6878' }}>{sw.targetEmployee.shortName}:</span> <strong>{sw.targetDate}</strong>
                     </div>
-                    {sw.requesterMessage && <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#4A6878' }}>{sw.requesterMessage}</p>}
+                    {sw.requesterMessage && (
+                      <div style={{ margin: '8px 0 0', padding: '8px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: '3px solid #94A3B8', borderRadius: 6, fontSize: '0.78rem', color: '#3A4A5C', lineHeight: 1.5 }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 3 }}>{lang === 'pt' ? 'Mensagem' : 'Nachricht'}</span>
+                        {sw.requesterMessage}
+                      </div>
+                    )}
                     {sw.managerNote && !isPending && (
-                      <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: '#7A9BAD' }}><em>{tx.managerNote}:</em> {sw.managerNote}</p>
+                      <div style={{ margin: '6px 0 0', padding: '6px 10px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 6, fontSize: '0.75rem', color: '#0369A1' }}>
+                        <em>{tx.managerNote}:</em> {sw.managerNote}
+                      </div>
                     )}
                   </div>
 
@@ -291,15 +306,15 @@ export default function ManagerPedidosClient() {
 
       {/* Saldos de férias — all employees */}
       {tab === 'saldos' && (
-        <div>
+        <div key="saldos" className="tab-content">
           <div style={{ marginBottom: 12, fontSize: '0.72rem', color: '#7A9BAD', letterSpacing: '0.06em' }}>
             {currentYear} · {lang === 'pt' ? 'Dias úteis (seg–sáb). Direito: 25 dias × % contrato.' : 'Werktage (Mo–Sa). Anspruch: 25 Tage × Vertragsprozent.'}
           </div>
 
           {/* Column headers */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 70px 70px 70px 80px', gap: 0, padding: '6px 14px', borderBottom: '1px solid #D8E2E8', marginBottom: 4 }}>
-            {['Colaborador', tx.entitlement, tx.approved, tx.pending, tx.remaining, '%'].map(h => (
-              <div key={h} style={{ fontSize: '0.65rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: h === 'Colaborador' ? 'left' : 'center' }}>{h}</div>
+            {[lang === 'de' ? 'Mitarbeiter' : 'Colaborador', tx.entitlement, tx.approved, tx.pending, tx.remaining, '%'].map(h => (
+              <div key={h} style={{ fontSize: '0.65rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: (h === 'Colaborador' || h === 'Mitarbeiter') ? 'left' : 'center' }}>{h}</div>
             ))}
           </div>
 

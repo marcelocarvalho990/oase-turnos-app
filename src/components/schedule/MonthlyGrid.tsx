@@ -5,6 +5,7 @@ import type { Employee, ShiftType, CoverageRule, AssignmentMap, DayInfo } from '
 import { ROLE_ORDER, ROLE_LABELS } from '@/types'
 import ShiftBadge from './ShiftBadge'
 import CellEditor from './CellEditor'
+import { computeDayViolations } from '@/lib/schedule-violations'
 
 interface Props {
   employees: Employee[]
@@ -22,6 +23,7 @@ const SUMMARY_COL_WIDTH = 64
 
 export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, coverageRules, days, onCellChange }: Props) {
   const [openCell, setOpenCell] = useState<{ employeeId: string; date: string } | null>(null)
+  const [hoveredWarning, setHoveredWarning] = useState<string | null>(null)
 
   // Group employees by role
   const grouped = ROLE_ORDER.map(role => ({
@@ -46,6 +48,12 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
     }
   }
 
+  // Pre-compute violations for all days (used in both header and footer)
+  const violationsPerDay: Record<string, string[]> = {}
+  for (const day of days) {
+    violationsPerDay[day.date] = computeDayViolations(day, employees, assignmentMap, days)
+  }
+
   const gridCols = `${NAME_COL_WIDTH}px ${PCT_COL_WIDTH}px ${days.map(() => `${DAY_COL_WIDTH}px`).join(' ')} ${SUMMARY_COL_WIDTH}px`
 
   return (
@@ -66,18 +74,23 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
         </div>
         {days.map(day => {
           const isWeekend = day.dayType === 'SATURDAY' || day.dayType === 'SUNDAY'
+          const hasViol = violationsPerDay[day.date]?.length > 0
           return (
             <div
               key={day.date}
-              className={`sticky top-0 z-20 border-b border-slate-200 flex flex-col items-center justify-end pb-1 pt-1 text-center
+              className={`sticky top-0 z-20 border-b border-slate-200 flex flex-col items-center justify-end pb-1 text-center overflow-hidden
                 ${isWeekend ? 'bg-[#F0F5F8]' : 'bg-white'}
                 ${day.isToday ? 'bg-[#E6EEF3] border-b-2 border-b-[#003A5D]' : ''}
               `}
             >
-              <span className={`text-[10px] font-medium ${isWeekend ? 'text-[#003A5D]' : 'text-slate-500'}`}>
+              {/* Red stripe at top for problem days */}
+              {hasViol && (
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#EF4444' }} />
+              )}
+              <span className={`text-[10px] font-medium mt-1 ${hasViol ? 'text-red-600' : isWeekend ? 'text-[#003A5D]' : 'text-slate-500'}`}>
                 {day.weekdayLabel}
               </span>
-              <span className={`text-xs font-bold ${day.isToday ? 'text-[#003A5D]' : isWeekend ? 'text-[#003A5D]' : 'text-slate-800'}`}>
+              <span className={`text-xs font-bold ${hasViol ? 'text-red-600' : day.isToday ? 'text-[#003A5D]' : isWeekend ? 'text-[#003A5D]' : 'text-slate-800'}`}>
                 {day.day}
               </span>
             </div>
@@ -110,20 +123,85 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
         </div>
         <div className="sticky bottom-0 bg-slate-50 border-t-2 border-slate-300" />
         {days.map(day => {
-          // Show F and S counts as key metrics
           const fCount = coverageMap[day.date]?.['F'] ?? 0
           const sCount = coverageMap[day.date]?.['S'] ?? 0
-          const fRule = coverageRules.find(r => r.shiftCode === 'F' && r.dayType === day.dayType)
-          const sRule = coverageRules.find(r => r.shiftCode === 'S' && r.dayType === day.dayType)
-          const fOk = fRule ? fCount >= fRule.minStaff : true
-          const sOk = sRule ? sCount >= sRule.minStaff : true
+          const violations = violationsPerDay[day.date] ?? []
+          const hasViolation = violations.length > 0
+          const cellId = `warn-${day.date}`
+          const isHovered = hoveredWarning === cellId
+
           return (
             <div
               key={day.date}
-              className="sticky bottom-0 bg-slate-50 border-t-2 border-slate-300 flex flex-col items-center justify-center gap-0.5 py-1"
+              className="sticky bottom-0 border-t-2 flex flex-col items-center justify-center gap-0.5 py-1 relative cursor-default"
+              style={{
+                background: hasViolation ? '#FEE2E2' : '#f8fafc',
+                borderTopColor: hasViolation ? '#EF4444' : '#CBD5E1',
+              }}
+              onMouseEnter={() => hasViolation && setHoveredWarning(cellId)}
+              onMouseLeave={() => setHoveredWarning(null)}
             >
-              <span className={`text-[9px] font-bold ${fOk ? 'text-green-700' : 'text-red-600'}`}>F{fCount}</span>
-              <span className={`text-[9px] font-bold ${sOk ? 'text-amber-700' : 'text-red-600'}`}>S{sCount}</span>
+              <span className={`text-[9px] font-bold ${fCount >= 4 ? 'text-green-700' : fCount > 0 ? 'text-amber-600' : 'text-red-700'}`}>
+                F{fCount}
+              </span>
+              <span className={`text-[9px] font-bold ${sCount >= 2 ? 'text-green-700' : sCount > 0 ? 'text-amber-600' : 'text-red-700'}`}>
+                S{sCount}
+              </span>
+
+              {/* Violation badge */}
+              {hasViolation && (
+                <div style={{
+                  background: '#EF4444',
+                  color: '#fff',
+                  borderRadius: 9,
+                  fontSize: 8,
+                  fontWeight: 800,
+                  lineHeight: 1,
+                  padding: '2px 4px',
+                  minWidth: 14,
+                  textAlign: 'center',
+                }}>
+                  {violations.length}
+                </div>
+              )}
+
+              {/* Tooltip */}
+              {isHovered && (
+                <div
+                  className="absolute bottom-full mb-2 z-50 pointer-events-none"
+                  style={{ left: '50%', transform: 'translateX(-50%)' }}
+                >
+                  <div style={{
+                    background: '#1E293B',
+                    color: '#F8FAFC',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    fontSize: 11,
+                    lineHeight: 1.6,
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    minWidth: 180,
+                  }}>
+                    <div style={{ fontWeight: 700, marginBottom: 6, color: '#FCA5A5', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 4 }}>
+                      Dia {day.day} — {violations.length} {violations.length === 1 ? 'problema' : 'problemas'}
+                    </div>
+                    {violations.map((v, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: i < violations.length - 1 ? 3 : 0 }}>
+                        <span style={{ color: '#F87171', flexShrink: 0, fontSize: 13, lineHeight: 1.3 }}>▸</span>
+                        <span>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{
+                    width: 0, height: 0,
+                    borderLeft: '6px solid transparent',
+                    borderRight: '6px solid transparent',
+                    borderTop: '6px solid #1E293B',
+                    margin: '0 auto',
+                  }} />
+                </div>
+              )}
             </div>
           )
         })}
