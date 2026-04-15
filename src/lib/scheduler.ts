@@ -578,7 +578,10 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     // F9 MANDATORY — always run when F9 shift type exists, regardless of coverage rules
     if (f9Shift) fillF9Shift(date)
 
-    // M and other shifts are excluded — only F, F9, S are generated
+    // M — last resort only. Max 1 per day. Only fills if someone is still below
+    // target after F/F9/S and there is a coverage rule or mShift exists.
+    // fillMShift already enforces the hard cap and atTarget check internally.
+    if (mShift) fillMShift(date)
   }
 
   // ── Second pass: MIN_SHIFT and MIN_WEEKENDS constraints ───────────────────
@@ -644,7 +647,7 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const targetMin = targetMinutes.get(emp.id) ?? 0
     if ((empAssignedMinutes.get(emp.id) ?? 0) >= targetMin) continue
 
-    const candidateShifts = workShifts.filter(s => ['F', 'S', 'F9'].includes(s.code))
+    const candidateShifts = workShifts.filter(s => ['F', 'S', 'F9', 'M'].includes(s.code))
 
     for (const dayInfo of dates) {
       if ((empAssignedMinutes.get(emp.id) ?? 0) >= targetMin) break
@@ -672,6 +675,10 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
           if (fSlot?.empIds.includes(emp.id)) continue
           const f9Slot = daySlots.get(date)!.get('F9')!
           if (f9Slot.empIds.length >= 1) continue
+        }
+        if (shift.code === 'M') {
+          const mSlot = daySlots.get(date)!.get('M')!
+          if (mSlot.empIds.length >= 1) continue // hard cap: max 1 M per day
         }
 
         assign(emp, date, shift.code)
