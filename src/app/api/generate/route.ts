@@ -208,11 +208,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Load all data needed for the solver
-    const [schedule, employees, shiftTypes, coverageRules, absences, preferences, existingAssignments] =
+    const [schedule, internalEmployees, externalEmployees, shiftTypes, coverageRules, absences, preferences, existingAssignments] =
       await Promise.all([
         prisma.schedule.findUnique({ where: { id: scheduleId } }),
+        // Internal staff — this team
         prisma.employee.findMany({
           where: { isActive: true, team },
+          orderBy: [{ role: 'asc' }, { name: 'asc' }],
+        }),
+        // External staff — other teams who are allowed to cover
+        prisma.employee.findMany({
+          where: { isActive: true, canCoverOtherTeams: true, team: { not: team } },
           orderBy: [{ role: 'asc' }, { name: 'asc' }],
         }),
         prisma.shiftType.findMany({ orderBy: { sortOrder: 'asc' } }),
@@ -234,6 +240,12 @@ export async function POST(request: NextRequest) {
           where: { scheduleId, origin: 'MANUAL' },
         }),
       ])
+
+    // Merge: internal employees first, external after
+    const employees = [
+      ...internalEmployees,
+      ...externalEmployees,
+    ]
 
     if (!schedule) {
       return Response.json({ error: 'Schedule not found' }, { status: 404 })
@@ -276,6 +288,7 @@ export async function POST(request: NextRequest) {
         name: e.name,
         role: e.role,
         workPercentage: e.workPercentage,
+        isExternal: e.team !== team,
         // Hard blocks: absence requests + dates with manual assignments
         hardBlocks: [
           ...(hardBlocksMap[e.id] ?? []),
@@ -301,10 +314,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse natural language instructions into structured constraints via AI
+    // Only internal employees are referenced in manager instructions
     const workShiftCodes = shiftTypes.filter(st => !st.isAbsence).map(st => st.code)
     const parsedConstraints = await parseInstructions(
       instructions ?? '',
-      employees.map(e => ({ id: e.id, name: e.name, shortName: e.shortName })),
+      internalEmployees.map(e => ({ id: e.id, name: e.name, shortName: e.shortName })),
       workShiftCodes
     )
 

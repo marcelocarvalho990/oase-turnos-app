@@ -7,22 +7,26 @@
  *   SRK  = FUNKTIONSSTUFE_1, LERNENDE
  *
  * HARD SHIFT COMPOSITION RULES
- *   Morning F — exactly 4 people:
- *     Option A:  1 HF   + 3 SRK
- *     Option B:  1 FAGE + 3 SRK
- *     Option C:  1 HF   + 1 FAGE + 2 SRK
+ *   Morning F — 3–5 people (target 4):
+ *     Option A:  1 HF   + 2–4 SRK
+ *     Option B:  1 FAGE + 2–4 SRK
+ *     Option C:  1 HF   + 1 FAGE + 1–3 SRK
  *     Rule: at least 1 qualified (HF or FAGE); never SRK-only
- *     F9:  one SRK slot per day is the designated food/logistics person
- *          (if a shift type "F9" exists it is filled separately alongside F)
+ *     F9:  MANDATORY — 1 SRK (or FAGE fallback) designated food/logistics person
+ *          assigned as separate shift code alongside F on every morning day
  *
  *   Afternoon S — exactly 2 people:
- *     1 FAGE + 1 SRK  (LERNENDE may NOT work S)
+ *     1 FAGE + 1 SRK (non-LERNENDE)
  *
- *   Middle M — optional:
- *     Only scheduled when F/S are understaffed OR an employee is below target
- *     Follows coverage rules set by the manager
+ *   Middle M — LAST RESORT ONLY:
+ *     Maximum 1 M per day.
+ *     Only used when workload target cannot be met via F or S placements.
+ *     Never used as a standard scheduling option.
  *
- * LERNENDE rule:  only eligible for F shift (school days → hardBlocks)
+ * EXTERNAL STAFF rule: employees with isExternal=true are sorted last in all
+ *   assignments and only used when internal staff cannot fill a slot.
+ *
+ * LERNENDE rule:  only eligible for F and F9 shifts (school days → hardBlocks)
  * No S→F rule:    employee who works S on day D may not work F on day D+1
  *
  * WORKLOAD TARGETS
@@ -36,6 +40,8 @@ export interface SchedulerEmployee {
   role: string
   workPercentage: number
   hardBlocks: string[]
+  /** True for staff borrowed from other teams — used last in all assignments */
+  isExternal?: boolean
 }
 
 export interface SchedulerShiftType {
@@ -281,11 +287,17 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   }
 
   /** Sort employees by how far they are from target (most under-assigned first).
+   *  External staff are always sorted after internal staff.
    *  On weekends also factor in weekend count for fairness. */
   function sortedByNeed(date: string, excludeAtTarget = false): SchedulerEmployee[] {
     return [...employees]
       .filter(emp => !excludeAtTarget || !atTarget(emp.id))
       .sort((a, b) => {
+        // External staff always go last — prefer internal employees first
+        const aExt = a.isExternal ? 1 : 0
+        const bExt = b.isExternal ? 1 : 0
+        if (aExt !== bExt) return aExt - bExt
+
         const aRatio = (empShiftCount.get(a.id) ?? 0) / (targetShifts.get(a.id) ?? 1)
         const bRatio = (empShiftCount.get(b.id) ?? 0) / (targetShifts.get(b.id) ?? 1)
         if (isWeekend(date)) {
@@ -333,11 +345,16 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   }
 
   // ── F shift fill ──────────────────────────────────────────────────────────
-  // Exactly 4 people:
-  //   Option A: 1 HF + 3 SRK
-  //   Option B: 1 FAGE + 3 SRK
-  //   Option C: 1 HF + 1 FAGE + 2 SRK
-  // At least 1 qualified required; SRK-only is forbidden.
+  // 3–5 people per morning, targeting 4:
+  //   Option A: 1 HF + 2–4 SRK
+  //   Option B: 1 FAGE + 2–4 SRK
+  //   Option C: 1 HF + 1 FAGE + 1–3 SRK
+  // At least 1 qualified required; SRK-only is strictly forbidden.
+  // Note: F9 is assigned separately alongside F (adds 1 more to the morning team).
+
+  const F_TARGET = 4  // target headcount in the F slot (F9 adds 1 on top)
+  const F_MAX = 5     // absolute maximum in the F slot
+  const F_MIN = 3     // minimum acceptable
 
   function fillFShift(date: string) {
     if (!fShift) return
@@ -370,68 +387,87 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     // Step 3: abort if still no qualified staff
     if (slot.hfCount + slot.fageCount === 0) return
 
-    // Step 4: fill SRK up to 4 (LERNENDE allowed on F)
+    // Step 4: fill SRK up to F_TARGET (LERNENDE allowed on F)
     for (const emp of eligible('SRK')) {
-      if (slot.empIds.length >= 4) break
+      if (slot.empIds.length >= F_TARGET) break
       assign(emp, date, 'F')
     }
 
-    // Step 5: if still < 4 with HF but no FAGE yet → try Option C (add FAGE)
-    if (slot.empIds.length < 4 && slot.hfCount > 0 && slot.fageCount === 0) {
+    // Step 5: if still < F_TARGET with HF but no FAGE → try Option C (add FAGE)
+    if (slot.empIds.length < F_TARGET && slot.hfCount > 0 && slot.fageCount === 0) {
       const fage = eligible('FAGE')[0]
       if (fage) assign(fage, date, 'F')
-      // Fill remaining with SRK
       for (const emp of eligible('SRK')) {
-        if (slot.empIds.length >= 4) break
+        if (slot.empIds.length >= F_TARGET) break
         assign(emp, date, 'F')
       }
     }
 
-    // Step 6: if still < 4 (staff shortage) — fill with any eligible person to avoid empty shift
-    if (slot.hfCount + slot.fageCount > 0 && slot.empIds.length < 4) {
+    // Step 6: if still < F_MIN (staff shortage) — fill with any eligible person
+    if (slot.hfCount + slot.fageCount > 0 && slot.empIds.length < F_MIN) {
       const extra = sorted.filter(
         e => canWork(e, date, 'F') && isEligible(e, fShift) && !slot.empIds.includes(e.id)
       )
       for (const emp of extra) {
-        if (slot.empIds.length >= 4) break
+        if (slot.empIds.length >= F_MAX) break
         assign(emp, date, 'F')
       }
     }
   }
 
-  // ── F9 fill (optional — only if shift type "F9" exists) ─────────────────
-  // Assigns 1 SRK-tier employee to the F9 slot (food/logistics responsibility).
-  // F9 is complementary to F on the same day (counts as part of morning team).
+  // ── F9 fill (MANDATORY — always required on every morning day) ──────────
+  // Assigns exactly 1 SRK-tier employee to the F9 slot (food/logistics role).
+  // F9 person works the exact same hours as F — they are part of the morning team.
+  // F9 is NEVER the same person as someone already assigned to F that day.
+  // Fallback: if no SRK is available, try FAGE before leaving F9 empty.
 
   function fillF9Shift(date: string) {
     if (!f9Shift) return
     const slot = daySlots.get(date)!.get('F9')!
     if (slot.empIds.length > 0) return // already filled
     const sorted = sortedByNeed(date)
+    const fSlotIds = daySlots.get(date)!.get('F')?.empIds ?? []
+
+    // First pass: SRK (preferred for F9)
     for (const emp of sorted) {
       if (
         getTier(emp.role) === 'SRK' &&
         canWork(emp, date, 'F9') &&
         isEligible(emp, f9Shift) &&
-        !daySlots.get(date)!.get('F')!.empIds.includes(emp.id)
+        !fSlotIds.includes(emp.id)
       ) {
         assign(emp, date, 'F9')
-        break
+        return
+      }
+    }
+
+    // Fallback: FAGE if no SRK is available
+    for (const emp of sorted) {
+      if (
+        getTier(emp.role) === 'FAGE' &&
+        canWork(emp, date, 'F9') &&
+        isEligible(emp, f9Shift) &&
+        !fSlotIds.includes(emp.id)
+      ) {
+        assign(emp, date, 'F9')
+        return
       }
     }
   }
 
-  // ── M shift fill (optional supplement) ───────────────────────────────────
-  // Fills M after F and S are done. Uses coverage rules to determine need.
-  // Only assigns employees who are below their shift target.
+  // ── M shift fill (LAST RESORT only) ─────────────────────────────────────
+  // M is only assigned when there is a genuine coverage gap that F/S cannot fill.
+  // MAXIMUM 1 M shift per day — never used as standard scheduling.
+  // Only assigns employees who are below their workload target.
 
-  function fillMShift(date: string, idealCount: number) {
-    if (!mShift || idealCount <= 0) return
+  function fillMShift(date: string) {
+    if (!mShift) return
     const slot = daySlots.get(date)!.get('M')!
+    if (slot.empIds.length >= 1) return // hard cap: max 1 M per day
     const sorted = sortedByNeed(date, /*excludeAtTarget=*/false)
 
     for (const emp of sorted) {
-      if (slot.empIds.length >= idealCount) break
+      if (slot.empIds.length >= 1) break
       if (
         !atTarget(emp.id) &&
         canWork(emp, date, 'M') &&
@@ -481,7 +517,7 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   }
 
   // ── Main scheduling loop ──────────────────────────────────────────────────
-  // For each day: fill S first (preserves FAGE), then F, then F9, then M.
+  // Order: S first (preserves FAGE), then F, then F9 (MANDATORY), then M (last resort).
 
   for (const dayInfo of dates) {
     const { date } = dayInfo
@@ -492,18 +528,23 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const fRule = rules.get('F')
     const mRule = rules.get('M')
 
-    // S first — needs FAGE reserved
+    // S first — must reserve FAGE before F takes them
     if (sRule && sRule.idealStaff > 0) fillSShift(date)
 
-    // F next — uses whatever qualified staff remains
+    // F next — uses remaining qualified staff
     if (fRule && fRule.idealStaff > 0) fillFShift(date)
-    else if (!fRule) fillFShift(date) // always schedule F if no rule defined (default on)
+    else if (!fRule) fillFShift(date) // default: always schedule F if no rule exists
 
-    // F9 if shift type exists
+    // F9 MANDATORY — always run when F9 shift type exists, regardless of coverage rules
     if (f9Shift) fillF9Shift(date)
 
-    // M only as supplement (not required)
-    if (mRule && mRule.idealStaff > 0) fillMShift(date, mRule.idealStaff)
+    // M — last resort: only if coverage rules indicate a gap AND capped at 1
+    const fSlotCount = daySlots.get(date)!.get('F')?.empIds.length ?? 0
+    const sSlotCount = daySlots.get(date)!.get('S')?.empIds.length ?? 0
+    const fMinRequired = fRule?.minStaff ?? 0
+    const sMinRequired = sRule?.minStaff ?? 0
+    const hasCoverageGap = fSlotCount < fMinRequired || sSlotCount < sMinRequired
+    if (mRule && mRule.idealStaff > 0 && hasCoverageGap) fillMShift(date)
 
     // Other shifts (not F, S, M, F9)
     for (const shift of workShifts) {
@@ -559,20 +600,32 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     }
   }
 
-  // ── Third pass: top-up employees below target using M or any available shift
-  // This ensures workload percentages are respected even if primary shifts are full.
+  // ── Third pass: top-up employees below workload target ───────────────────
+  // Tries F first, then S, then F9 — M is the absolute last resort.
+  // Respects all existing slot caps and composition rules.
 
-  for (const emp of employees) {
+  // Sort employees: internal first, then external; most-under-assigned first
+  const topUpOrder = [...employees].sort((a, b) => {
+    const aExt = a.isExternal ? 1 : 0
+    const bExt = b.isExternal ? 1 : 0
+    if (aExt !== bExt) return aExt - bExt
+    const aRatio = (empShiftCount.get(a.id) ?? 0) / (targetShifts.get(a.id) ?? 1)
+    const bRatio = (empShiftCount.get(b.id) ?? 0) / (targetShifts.get(b.id) ?? 1)
+    return aRatio - bRatio
+  })
+
+  for (const emp of topUpOrder) {
     const target = targetShifts.get(emp.id) ?? 0
     const current = empShiftCount.get(emp.id) ?? 0
     if (current >= target) continue
 
     const needed = target - current
 
-    // Try M first (supplement shift), then any other available shift
-    const candidateShifts = mShift
-      ? [mShift, ...workShifts.filter(s => s.code !== 'M')]
-      : workShifts
+    // Priority order: F → S → F9 → (M last resort)
+    const candidateShifts = [
+      ...workShifts.filter(s => s.code !== 'M'),
+      ...(mShift ? [mShift] : []),
+    ]
 
     let added = 0
     for (const dayInfo of dates) {
@@ -585,19 +638,36 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
         if (!isEligible(emp, shift)) continue
         if (!canWork(emp, date, shift.code)) continue
 
-        // For F and S: only add if slot composition can accommodate this role
+        // F slot: respect cap and composition rules
         if (shift.code === 'F') {
           const slot = daySlots.get(date)!.get('F')!
-          // Don't add SRK if no qualified present
           if (getTier(emp.role) === 'SRK' && slot.hfCount + slot.fageCount === 0) continue
-          // Don't add if slot is full
-          if (slot.empIds.length >= 4) continue
+          if (slot.empIds.length >= F_MAX) continue
         }
+        // S slot: respect exact 2-person cap
         if (shift.code === 'S') {
           const slot = daySlots.get(date)!.get('S')!
           if (slot.empIds.length >= 2) continue
           if (getTier(emp.role) === 'FAGE' && slot.fageCount >= 1) continue
           if (getTier(emp.role) === 'SRK' && slot.srkCount >= 1) continue
+        }
+        // F9: only if not already in F that day, and slot is empty
+        if (shift.code === 'F9') {
+          const fSlot = daySlots.get(date)!.get('F')
+          if (fSlot?.empIds.includes(emp.id)) continue
+          const f9Slot = daySlots.get(date)!.get('F9')!
+          if (f9Slot.empIds.length >= 1) continue
+        }
+        // M: hard cap 1 per day, only if coverage gap exists
+        if (shift.code === 'M') {
+          const mSlot = daySlots.get(date)!.get('M')!
+          if (mSlot.empIds.length >= 1) continue
+          // Only assign M if there's genuinely no other way to cover
+          const fSlot = daySlots.get(date)!.get('F')!
+          const sSlot = daySlots.get(date)!.get('S')!
+          const fFull = fSlot.empIds.length >= F_MAX
+          const sFull = sSlot.empIds.length >= 2
+          if (!fFull || !sFull) continue // still room in F or S — skip M
         }
 
         assign(emp, date, shift.code)

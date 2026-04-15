@@ -34,6 +34,17 @@ def get_day_type(year: int, month: int, day: int) -> str:
     return 'WEEKDAY'
 
 
+def get_role_tier(role: str) -> str:
+    """Map DB role strings to scheduling tiers."""
+    if role == 'TEAMLEITUNG':
+        return 'HF'
+    if role in ('FUNKTIONSSTUFE_3', 'FUNKTIONSSTUFE_2'):
+        return 'FAGE'
+    if role in ('FUNKTIONSSTUFE_1', 'LERNENDE'):
+        return 'SRK'
+    return 'UNKNOWN'
+
+
 def solve_schedule(problem: dict) -> dict:
     if not ORTOOLS_AVAILABLE:
         return {"status": "ERROR", "message": "ortools not installed. Run: pip install ortools"}
@@ -61,6 +72,26 @@ def solve_schedule(problem: dict) -> dict:
             parts = block_date.split('-')
             if len(parts) == 3 and int(parts[0]) == year and int(parts[1]) == month:
                 hard_blocks[emp_id].add(int(parts[2]))
+
+    # Role tier classification for composition constraints
+    hf_indices = [i for i, e in enumerate(employees) if get_role_tier(e.get('role', '')) == 'HF']
+    fage_indices = [i for i, e in enumerate(employees) if get_role_tier(e.get('role', '')) == 'FAGE']
+    srk_indices = [i for i, e in enumerate(employees) if get_role_tier(e.get('role', '')) == 'SRK']
+    lernende_indices = [i for i, e in enumerate(employees) if e.get('role', '') == 'LERNENDE']
+    non_lernende_srk_indices = [i for i in srk_indices if employees[i].get('role', '') != 'LERNENDE']
+    qualified_indices = hf_indices + fage_indices  # HF or FAGE
+
+    # Coverage rules lookup: dayType -> shiftCode -> rule
+    coverage_lookup = {}
+    for rule in coverage_rules:
+        dt = rule['dayType']
+        sc = rule['shiftCode']
+        if dt not in coverage_lookup:
+            coverage_lookup[dt] = {}
+        coverage_lookup[dt][sc] = rule
+
+    # External employee indices (used last in soft constraints)
+    external_indices = [i for i, e in enumerate(employees) if e.get('isExternal', False)]
 
     model = cp_model.CpModel()
 
@@ -116,6 +147,60 @@ def solve_schedule(problem: dict) -> dict:
                 if eligible_roles and emp_role not in eligible_roles:
                     model.add(x[e_idx][d][s] == 0)
 
+    # Constraint 6: F shift composition — at least 1 HF or FAGE when F is scheduled
+    # Prevents SRK-only morning shifts (illegal composition).
+    if 'F' in shift_codes and qualified_indices:
+        for d in days:
+            dt = get_day_type(year, month, d)
+            f_rule = coverage_lookup.get(dt, {}).get('F')
+            f_expected = (f_rule is None) or (f_rule.get('idealStaff', 0) > 0)
+            if f_expected:
+                total_f = sum(x[e_idx][d]['F'] for e_idx in range(len(employees)))
+                qualified_f = sum(x[e_idx][d]['F'] for e_idx in qualified_indices)
+                # If any F is assigned → at least 1 must be qualified
+                any_f = model.new_bool_var(f'any_f_{d}')
+                model.add(total_f >= 1).only_enforce_if(any_f)
+                model.add(total_f == 0).only_enforce_if(any_f.Not())
+                model.add(qualified_f >= 1).only_enforce_if(any_f)
+
+    # Constraint 7: S shift composition — exactly 1 FAGE + 1 non-LERNENDE SRK
+    # Enforced only on days where S has minStaff > 0 in coverage rules.
+    if 'S' in shift_codes:
+        for d in days:
+            dt = get_day_type(year, month, d)
+            s_rule = coverage_lookup.get(dt, {}).get('S')
+            if s_rule and s_rule.get('minStaff', 0) > 0:
+                if fage_indices:
+                    fage_on_s = sum(x[e_idx][d]['S'] for e_idx in fage_indices)
+                    model.add(fage_on_s == 1)
+                if non_lernende_srk_indices:
+                    srk_on_s = sum(x[e_idx][d]['S'] for e_idx in non_lernende_srk_indices)
+                    model.add(srk_on_s == 1)
+
+    # Constraint 8: M shift — at most 1 per day (last resort rule)
+    if 'M' in shift_codes:
+        for d in days:
+            model.add(
+                sum(x[e_idx][d]['M'] for e_idx in range(len(employees))) <= 1
+            )
+
+    # Constraint 9: F9 mandatory — exactly 1 F9 per morning day (when F9 shift type exists)
+    # F9 is a designated food/logistics role; one person must hold this role every morning.
+    if 'F9' in shift_codes and 'F' in shift_codes:
+        for d in days:
+            dt = get_day_type(year, month, d)
+            f_rule = coverage_lookup.get(dt, {}).get('F')
+            f_expected = (f_rule is None) or (f_rule.get('idealStaff', 0) > 0)
+            if f_expected:
+                total_f = sum(x[e_idx][d]['F'] for e_idx in range(len(employees)))
+                total_f9 = sum(x[e_idx][d]['F9'] for e_idx in range(len(employees)))
+                # When F is scheduled → exactly 1 F9
+                has_f = model.new_bool_var(f'has_f_{d}')
+                model.add(total_f >= 1).only_enforce_if(has_f)
+                model.add(total_f == 0).only_enforce_if(has_f.Not())
+                model.add(total_f9 == 1).only_enforce_if(has_f)
+                model.add(total_f9 == 0).only_enforce_if(has_f.Not())
+
     # Soft constraint: target hours
     # Each employee has a target number of shifts based on work percentage
     # 42h/week, 8.4h/day. Target shifts ≈ (workPercentage/100) * working_days
@@ -167,6 +252,14 @@ def solve_schedule(problem: dict) -> dict:
         we_diff = model.new_int_var(0, len(weekend_days), 'we_diff')
         model.add(we_diff == max_we - min_we)
         objective_terms.append(we_diff * 2)  # weight weekends heavier
+
+    # External staff penalty — strongly prefer internal employees
+    # Each shift assigned to an external employee adds a large penalty
+    if external_indices:
+        for e_idx in external_indices:
+            for d in days:
+                for s in shift_codes:
+                    objective_terms.append(x[e_idx][d][s] * 10)
 
     if objective_terms:
         model.minimize(sum(objective_terms))
