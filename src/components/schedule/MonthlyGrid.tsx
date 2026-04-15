@@ -341,7 +341,8 @@ const EmployeeRow = memo(function EmployeeRow({
   for (const a of Object.values(empAssignments)) {
     const st = shiftTypes.find(s => s.code === a?.shiftCode)
     if (st && !st.isAbsence && st.durationMinutes) {
-      hoursWorked += st.durationMinutes / 60
+      const breakMin = (a?.shiftCode === 'F' || a?.shiftCode === 'S') ? 36 : 0
+      hoursWorked += (st.durationMinutes - breakMin) / 60
     }
   }
 

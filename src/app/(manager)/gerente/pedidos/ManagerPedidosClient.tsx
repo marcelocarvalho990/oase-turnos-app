@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Check, X, ChevronDown, Trash2 } from 'lucide-react'
+import { Check, X, ChevronDown, Trash2, AlertTriangle } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
 
 type Lang = 'pt' | 'de'
@@ -67,6 +67,8 @@ export default function ManagerPedidosClient() {
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState('')
   const currentYear = new Date().getFullYear()
 
   const tx = t[lang]
@@ -110,10 +112,16 @@ export default function ManagerPedidosClient() {
   }
 
 
-  async function deleteVacation(id: string) {
-    if (!confirm(lang === 'pt' ? 'Apagar este pedido de férias?' : 'Diesen Urlaubsantrag löschen?')) return
-    setDeleteLoading(id)
-    await fetch(`/api/requests/vacation/${id}`, { method: 'DELETE' })
+  function openDeleteConfirm(id: string, label: string) {
+    setConfirmDeleteId(id)
+    setConfirmDeleteLabel(label)
+  }
+
+  async function confirmDelete() {
+    if (!confirmDeleteId) return
+    setDeleteLoading(confirmDeleteId)
+    setConfirmDeleteId(null)
+    await fetch(`/api/requests/vacation/${confirmDeleteId}`, { method: 'DELETE' })
     setDeleteLoading(null)
     await Promise.all([load(), loadSummaries()])
   }
@@ -236,7 +244,7 @@ export default function ManagerPedidosClient() {
                       </>
                     )}
                     <button
-                      onClick={() => deleteVacation(v.id)}
+                      onClick={() => openDeleteConfirm(v.id, `${v.employee.name} · ${v.startDate} → ${v.endDate}`)}
                       disabled={deleteLoading === v.id}
                       title={lang === 'pt' ? 'Apagar pedido' : 'Antrag löschen'}
                       style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'transparent', border: '1px solid #F87171', borderRadius: 6, color: '#DC2626', fontSize: '0.72rem', cursor: 'pointer', opacity: deleteLoading === v.id ? 0.5 : 1 }}
@@ -387,6 +395,44 @@ export default function ManagerPedidosClient() {
         </div>
       )}
       </div>{/* /padding wrapper */}
+
+      {/* Delete confirmation modal */}
+      {confirmDeleteId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: '32px 28px', maxWidth: 400, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AlertTriangle size={24} color="#DC2626" />
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#001E30' }}>
+                  {lang === 'pt' ? 'Apagar pedido de férias?' : 'Urlaubsantrag löschen?'}
+                </h3>
+                <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: '#7A9BAD', lineHeight: 1.5 }}>
+                  {confirmDeleteLabel}
+                </p>
+                <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
+                  {lang === 'pt' ? 'Esta ação não pode ser desfeita.' : 'Diese Aktion kann nicht rückgängig gemacht werden.'}
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                style={{ flex: 1, padding: '10px 0', background: '#F4F6F8', border: '1px solid #D8E2E8', borderRadius: 8, color: '#4A6878', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }}
+              >
+                {lang === 'pt' ? 'Cancelar' : 'Abbrechen'}
+              </button>
+              <button
+                onClick={confirmDelete}
+                style={{ flex: 1, padding: '10px 0', background: '#DC2626', border: 'none', borderRadius: 8, color: 'white', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                {lang === 'pt' ? 'Apagar' : 'Löschen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
