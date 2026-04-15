@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Settings, Save, RefreshCw } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
+import { useToast } from '@/components/ui/ToastProvider'
 
 const TEAM = '2.OG'
 
@@ -73,11 +74,39 @@ function getAvatarColor(name: string) {
   return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
 }
 
-function Spinner({ label }: { label: string }) {
+function LoadingSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center py-32 gap-3">
-      <span className="w-8 h-8 border-4 border-[#C5D9E3] border-t-[#003A5D] rounded-full animate-spin" />
-      <span className="text-sm text-slate-500">{label}</span>
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div className="skeleton h-4 w-48" />
+        <div className="skeleton h-3 w-full" />
+        <div className="skeleton h-3 w-3/4" />
+        <div className="flex gap-3 items-center">
+          <div className="skeleton h-9 w-28 rounded-lg" />
+          <div className="skeleton h-3 w-24" />
+          <div className="skeleton h-9 w-24 rounded-lg ml-auto" />
+        </div>
+      </div>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 space-y-2">
+          <div className="skeleton h-4 w-56" />
+          <div className="skeleton h-3 w-72" />
+        </div>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="grid grid-cols-[1fr_80px_100px_100px] gap-3 px-6 py-3 items-center border-b border-slate-50 last:border-b-0">
+            <div className="flex items-center gap-3">
+              <div className="skeleton w-8 h-8 rounded-full" style={{ flexShrink: 0 }} />
+              <div className="space-y-1.5 flex-1">
+                <div className="skeleton h-3 w-32" />
+                <div className="skeleton h-2.5 w-16" />
+              </div>
+            </div>
+            <div className="skeleton h-3 w-10 mx-auto rounded" />
+            <div className="skeleton h-8 w-16 mx-auto rounded-lg" />
+            <div className="skeleton h-7 w-16 mx-auto rounded-lg" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -85,13 +114,13 @@ function Spinner({ label }: { label: string }) {
 export default function DefinicoesPage() {
   const [lang] = useLang()
   const dx = DX[lang]
+  const { showToast } = useToast()
   const [settings, setSettings] = useState<TeamSettings | null>(null)
   const [employees, setEmployees] = useState<EmployeeVacation[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savingEmpId, setSavingEmpId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
   // Local editable state
   const [baseHours, setBaseHours] = useState<string>('160')
@@ -134,7 +163,6 @@ export default function DefinicoesPage() {
   async function saveSettings() {
     setSaving(true)
     setError(null)
-    setSuccessMsg(null)
     try {
       const res = await fetch(`/api/manager/settings?team=${encodeURIComponent(TEAM)}`, {
         method: 'PATCH',
@@ -144,7 +172,7 @@ export default function DefinicoesPage() {
       if (!res.ok) throw new Error(dx.errSettings)
       const updated: TeamSettings = await res.json()
       setSettings(updated)
-      setSuccessMsg(dx.successSettings)
+      showToast(dx.successSettings, 'success')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido')
     } finally {
@@ -155,7 +183,6 @@ export default function DefinicoesPage() {
   async function saveEmployeeVacDays(empId: string) {
     setSavingEmpId(empId)
     setError(null)
-    setSuccessMsg(null)
     try {
       const res = await fetch(`/api/staff/${empId}`, {
         method: 'PUT',
@@ -163,7 +190,7 @@ export default function DefinicoesPage() {
         body: JSON.stringify({ vacationDays: Number(empVacDays[empId] ?? 25) }),
       })
       if (!res.ok) throw new Error(dx.errVac)
-      setSuccessMsg(dx.successVac)
+      showToast(dx.successVac, 'success')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido')
     } finally {
@@ -196,19 +223,14 @@ export default function DefinicoesPage() {
           </button>
         </div>
 
-        {/* Feedback messages */}
+        {/* Error message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
             {error}
           </div>
         )}
-        {successMsg && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-xl">
-            {successMsg}
-          </div>
-        )}
 
-        {loading ? <Spinner label={dx.loading} /> : (
+        {loading ? <LoadingSkeleton /> : (
           <>
             {/* Team Settings Card */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">

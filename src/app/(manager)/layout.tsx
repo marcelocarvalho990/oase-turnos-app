@@ -1,5 +1,7 @@
 import { requireAuth } from '@/lib/auth'
 import ManagerSidebar from '@/components/layout/ManagerSidebar'
+import PageTransitionWrapper from '@/components/layout/PageTransitionWrapper'
+import ToastProvider from '@/components/ui/ToastProvider'
 
 export default async function ManagerLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAuth('MANAGER')
@@ -7,9 +9,11 @@ export default async function ManagerLayout({ children }: { children: React.Reac
   return (
     <div className="flex h-full">
       <ManagerSidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {children}
-      </div>
+      <ToastProvider>
+        <PageTransitionWrapper>
+          {children}
+        </PageTransitionWrapper>
+      </ToastProvider>
     </div>
   )
 }
