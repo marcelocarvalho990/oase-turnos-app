@@ -110,7 +110,9 @@ export async function GET(request: NextRequest) {
         totalShifts++
 
         if (shiftType) {
-          workedMinutes += shiftType.durationMinutes
+          // F and S shifts have a mandatory 36-min break not counted as work time
+          const breakDeduction = (assignment.shiftCode === 'F' || assignment.shiftCode === 'S') ? 36 : 0
+          workedMinutes += shiftType.durationMinutes - breakDeduction
         }
 
         if (isWeekend(assignment.date)) {

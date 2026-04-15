@@ -143,11 +143,11 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   const f9Shift = workShifts.find(s => s.code === 'F9') // mandatory when F is scheduled
 
   // ── Workload targets ──────────────────────────────────────────────────────
-  // 100% = 164.8h/month (Swiss standard), scaled by month length and contract %
+  // 100% = 164.8h/month (Swiss standard), flat per month regardless of length
   const TARGET_HOURS_100PCT = 164.8
   const targetMinutes = new Map<string, number>()
   for (const emp of employees) {
-    const raw = TARGET_HOURS_100PCT * 60 * (daysInMonth / 31) * (emp.workPercentage / 100)
+    const raw = TARGET_HOURS_100PCT * 60 * (emp.workPercentage / 100)
     targetMinutes.set(emp.id, Math.round(raw))
   }
 
@@ -242,8 +242,17 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     if (hardBlockSet.get(emp.id)?.has(date)) return false
     // Only one shift per day
     if (empAssignedDates.get(emp.id)?.has(date)) return false
-    // Max 6 consecutive days
-    if (consecutiveDays(emp.id, date) >= 6) return false
+    // Max 5 consecutive days
+    if (consecutiveDays(emp.id, date) >= 5) return false
+    // Min 2 rest days after a 5-day streak:
+    // if yesterday was a rest day AND the streak before that was ≥ 5, block today too
+    {
+      const yesterday = addDays(date, -1)
+      if (
+        !empAssignedDates.get(emp.id)?.has(yesterday) &&
+        consecutiveDays(emp.id, yesterday) >= 5
+      ) return false
+    }
     // No S shift followed by F shift next day
     if (shiftCode === 'F') {
       const prevDate = addDays(date, -1)
@@ -341,12 +350,12 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
         e => getTier(e.role) === 'FAGE' && canWork(e, date, 'S') && isEligible(e, sShift)
       )
       // Non-at-target first; fall back to at-target to preserve coverage
-      const pick = candidates.find(e => !atTarget(e.id)) ?? candidates[0]
+      const pick = candidates.find(e => !atTarget(e.id))
       if (pick) assign(pick, date, 'S')
     }
     if (slot.fageCount === 0) return // can't staff S without FAGE
 
-    // 2. Assign 1 SRK (not LERNENDE) — prefer employees who haven't reached their hour target
+    // 2. Assign 1 SRK (not LERNENDE) — only employees below their hour target
     if (slot.empIds.length < 2) {
       const candidates = sorted.filter(
         e =>
@@ -354,10 +363,10 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
           e.role !== 'LERNENDE' &&
           canWork(e, date, 'S') &&
           isEligible(e, sShift) &&
-          !slot.empIds.includes(e.id)
+          !slot.empIds.includes(e.id) &&
+          !atTarget(e.id)
       )
-      const pick = candidates.find(e => !atTarget(e.id)) ?? candidates[0]
-      if (pick) assign(pick, date, 'S')
+      if (candidates[0]) assign(candidates[0], date, 'S')
     }
   }
 
@@ -378,18 +387,17 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const slot = daySlots.get(date)!.get('F')!
     const sorted = sortedByNeed(date)
 
-    // eligible(): returns candidates sorted with non-at-target employees first
-    const eligible = (tier: RoleTier, allowLernende = true) => {
-      const all = sorted.filter(
+    // eligible(): only employees below their hour target (hard stop)
+    const eligible = (tier: RoleTier, allowLernende = true) =>
+      sorted.filter(
         e =>
           getTier(e.role) === tier &&
           (allowLernende || e.role !== 'LERNENDE') &&
           canWork(e, date, 'F') &&
           isEligible(e, fShift) &&
-          !slot.empIds.includes(e.id)
+          !slot.empIds.includes(e.id) &&
+          !atTarget(e.id)
       )
-      return [...all.filter(e => !atTarget(e.id)), ...all.filter(e => atTarget(e.id))]
-    }
 
     // Step 1: try 1 HF (preferred — preserves FAGE for S shift)
     if (slot.hfCount === 0) {
@@ -456,19 +464,19 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
         isEligible(e, f9Shift) &&
         !fSlotIds.includes(e.id)
     )
-    const srkPick = srkCandidates.find(e => !atTarget(e.id)) ?? srkCandidates[0]
+    const srkPick = srkCandidates.find(e => !atTarget(e.id))
     if (srkPick) { assign(srkPick, date, 'F9'); return }
 
-    // Fallback: FAGE if no SRK available — prefer below-target, skip eligibleRoles check (emergency)
+    // Fallback: FAGE if no SRK available — only below-target, skip eligibleRoles check (emergency)
     const fageCandidates = sorted.filter(
       e =>
         getTier(e.role) === 'FAGE' &&
         canWork(e, date, 'F9') &&
         !blockShifts.get(e.id)?.has('F9') &&
-        !fSlotIds.includes(e.id)
+        !fSlotIds.includes(e.id) &&
+        !atTarget(e.id)
     )
-    const fagePick = fageCandidates.find(e => !atTarget(e.id)) ?? fageCandidates[0]
-    if (fagePick) assign(fagePick, date, 'F9')
+    if (fageCandidates[0]) assign(fageCandidates[0], date, 'F9')
   }
 
   // ── M shift fill (LAST RESORT only) ─────────────────────────────────────
