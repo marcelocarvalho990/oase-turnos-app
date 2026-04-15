@@ -34,7 +34,6 @@ interface EditForm {
   endTime1: string
   durationMinutes: number
   description: string
-  breakTime: string
 }
 
 interface CreateForm {
@@ -44,7 +43,6 @@ interface CreateForm {
   startTime1: string
   endTime1: string
   durationMinutes: number
-  breakTime: string
   isAbsence: boolean
   colorPreset: number
 }
@@ -195,7 +193,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
       endTime1: shift.endTime1,
       durationMinutes: shift.durationMinutes,
       description: shift.description ?? '',
-      breakTime: shift.breakTime ?? '',
+
     })
     setError(null)
   }
@@ -221,7 +219,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
           endTime1: form.endTime1,
           durationMinutes: Number(form.durationMinutes),
           description: form.description || null,
-          breakTime: form.breakTime || null,
+
         }),
       })
       if (!res.ok) {
@@ -247,7 +245,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
       startTime1: '',
       endTime1: '',
       durationMinutes: 480,
-      breakTime: '',
+
       isAbsence: false,
       colorPreset: 0,
     })
@@ -272,7 +270,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
           startTime1: createForm.isAbsence ? '00:00' : createForm.startTime1,
           endTime1: createForm.isAbsence ? '00:00' : createForm.endTime1,
           durationMinutes: createForm.isAbsence ? 0 : Number(createForm.durationMinutes),
-          breakTime: createForm.breakTime || null,
+
           color: preset.color,
           bgColor: preset.bgColor,
           textColor: preset.textColor,
@@ -443,15 +441,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Hora de refeição</label>
-                    <input
-                      type="time"
-                      value={form.breakTime}
-                      onChange={(e) => setForm((f) => f ? { ...f, breakTime: e.target.value } : f)}
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
-                    />
-                  </div>
+
                 </>
               )}
               <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
@@ -542,12 +532,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                       onChange={(e) => setCreateForm((f) => f ? { ...f, durationMinutes: Number(e.target.value) } : f)}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]" />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Hora de refeição</label>
-                    <input type="time" value={createForm.breakTime}
-                      onChange={(e) => setCreateForm((f) => f ? { ...f, breakTime: e.target.value } : f)}
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]" />
-                  </div>
+
                 </>
               )}
               <div>

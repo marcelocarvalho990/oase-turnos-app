@@ -151,10 +151,15 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     targetMinutes.set(emp.id, Math.round(raw))
   }
 
-  // Pre-compute effective worked minutes per shift code
+  // Pre-compute effective worked minutes per shift code.
+  // F and S shifts include a mandatory 36-minute break that is not counted as work time.
+  const BREAK_MIN = 36
   const shiftEffectiveMin = new Map<string, number>()
   for (const s of workShifts) {
-    shiftEffectiveMin.set(s.code, s.durationMinutes)
+    const mins = (s.code === 'F' || s.code === 'S')
+      ? Math.max(0, s.durationMinutes - BREAK_MIN)
+      : s.durationMinutes
+    shiftEffectiveMin.set(s.code, mins)
   }
 
   // ── Coverage rules index ──────────────────────────────────────────────────
@@ -330,30 +335,29 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const slot = daySlots.get(date)!.get('S')!
     const sorted = sortedByNeed(date)
 
-    // 1. Assign 1 FAGE
+    // 1. Assign 1 FAGE — prefer employees who haven't reached their hour target
     if (slot.fageCount === 0) {
-      for (const emp of sorted) {
-        if (getTier(emp.role) === 'FAGE' && canWork(emp, date, 'S') && isEligible(emp, sShift)) {
-          assign(emp, date, 'S')
-          break
-        }
-      }
+      const candidates = sorted.filter(
+        e => getTier(e.role) === 'FAGE' && canWork(e, date, 'S') && isEligible(e, sShift)
+      )
+      // Non-at-target first; fall back to at-target to preserve coverage
+      const pick = candidates.find(e => !atTarget(e.id)) ?? candidates[0]
+      if (pick) assign(pick, date, 'S')
     }
     if (slot.fageCount === 0) return // can't staff S without FAGE
 
-    // 2. Assign 1 SRK (not LERNENDE)
-    for (const emp of sorted) {
-      if (slot.empIds.length >= 2) break
-      if (
-        getTier(emp.role) === 'SRK' &&
-        emp.role !== 'LERNENDE' &&
-        canWork(emp, date, 'S') &&
-        isEligible(emp, sShift) &&
-        !slot.empIds.includes(emp.id)
-      ) {
-        assign(emp, date, 'S')
-        break
-      }
+    // 2. Assign 1 SRK (not LERNENDE) — prefer employees who haven't reached their hour target
+    if (slot.empIds.length < 2) {
+      const candidates = sorted.filter(
+        e =>
+          getTier(e.role) === 'SRK' &&
+          e.role !== 'LERNENDE' &&
+          canWork(e, date, 'S') &&
+          isEligible(e, sShift) &&
+          !slot.empIds.includes(e.id)
+      )
+      const pick = candidates.find(e => !atTarget(e.id)) ?? candidates[0]
+      if (pick) assign(pick, date, 'S')
     }
   }
 
@@ -374,8 +378,9 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const slot = daySlots.get(date)!.get('F')!
     const sorted = sortedByNeed(date)
 
-    const eligible = (tier: RoleTier, allowLernende = true) =>
-      sorted.filter(
+    // eligible(): returns candidates sorted with non-at-target employees first
+    const eligible = (tier: RoleTier, allowLernende = true) => {
+      const all = sorted.filter(
         e =>
           getTier(e.role) === tier &&
           (allowLernende || e.role !== 'LERNENDE') &&
@@ -383,6 +388,8 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
           isEligible(e, fShift) &&
           !slot.empIds.includes(e.id)
       )
+      return [...all.filter(e => !atTarget(e.id)), ...all.filter(e => atTarget(e.id))]
+    }
 
     // Step 1: try 1 HF (preferred — preserves FAGE for S shift)
     if (slot.hfCount === 0) {
@@ -416,7 +423,7 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
       }
     }
 
-    // Step 6: if still < F_MIN (staff shortage) — fill with any eligible person
+    // Step 6: if still < F_MIN (staff shortage) — fill with any eligible person, including at-target
     if (slot.hfCount + slot.fageCount > 0 && slot.empIds.length < F_MIN) {
       const extra = sorted.filter(
         e => canWork(e, date, 'F') && isEligible(e, fShift) && !slot.empIds.includes(e.id)
@@ -441,31 +448,27 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     const sorted = sortedByNeed(date)
     const fSlotIds = daySlots.get(date)!.get('F')?.empIds ?? []
 
-    // First pass: SRK (preferred for F9)
-    for (const emp of sorted) {
-      if (
-        getTier(emp.role) === 'SRK' &&
-        canWork(emp, date, 'F9') &&
-        isEligible(emp, f9Shift) &&
-        !fSlotIds.includes(emp.id)
-      ) {
-        assign(emp, date, 'F9')
-        return
-      }
-    }
+    // First pass: SRK — prefer employees below their hour target
+    const srkCandidates = sorted.filter(
+      e =>
+        getTier(e.role) === 'SRK' &&
+        canWork(e, date, 'F9') &&
+        isEligible(e, f9Shift) &&
+        !fSlotIds.includes(e.id)
+    )
+    const srkPick = srkCandidates.find(e => !atTarget(e.id)) ?? srkCandidates[0]
+    if (srkPick) { assign(srkPick, date, 'F9'); return }
 
-    // Fallback: FAGE if no SRK available — skip eligibleRoles check (emergency fallback)
-    for (const emp of sorted) {
-      if (
-        getTier(emp.role) === 'FAGE' &&
-        canWork(emp, date, 'F9') &&
-        !blockShifts.get(emp.id)?.has('F9') &&
-        !fSlotIds.includes(emp.id)
-      ) {
-        assign(emp, date, 'F9')
-        return
-      }
-    }
+    // Fallback: FAGE if no SRK available — prefer below-target, skip eligibleRoles check (emergency)
+    const fageCandidates = sorted.filter(
+      e =>
+        getTier(e.role) === 'FAGE' &&
+        canWork(e, date, 'F9') &&
+        !blockShifts.get(e.id)?.has('F9') &&
+        !fSlotIds.includes(e.id)
+    )
+    const fagePick = fageCandidates.find(e => !atTarget(e.id)) ?? fageCandidates[0]
+    if (fagePick) assign(fagePick, date, 'F9')
   }
 
   // ── M shift fill (LAST RESORT only) ─────────────────────────────────────
