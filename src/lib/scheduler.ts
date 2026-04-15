@@ -538,20 +538,7 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     // F9 MANDATORY — always run when F9 shift type exists, regardless of coverage rules
     if (f9Shift) fillF9Shift(date)
 
-    // M — last resort: only if coverage rules indicate a gap AND capped at 1
-    const fSlotCount = daySlots.get(date)!.get('F')?.empIds.length ?? 0
-    const sSlotCount = daySlots.get(date)!.get('S')?.empIds.length ?? 0
-    const fMinRequired = fRule?.minStaff ?? 0
-    const sMinRequired = sRule?.minStaff ?? 0
-    const hasCoverageGap = fSlotCount < fMinRequired || sSlotCount < sMinRequired
-    if (mRule && mRule.idealStaff > 0 && hasCoverageGap) fillMShift(date)
-
-    // Other shifts (not F, S, M, F9)
-    for (const shift of workShifts) {
-      if (['F', 'S', 'M', 'F9'].includes(shift.code)) continue
-      const rule = rules.get(shift.code)
-      if (rule && rule.idealStaff > 0) fillGenericShift(date, shift, rule.idealStaff)
-    }
+    // M and other shifts are excluded — only F, F9, S are generated
   }
 
   // ── Second pass: MIN_SHIFT and MIN_WEEKENDS constraints ───────────────────
@@ -621,11 +608,8 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
 
     const needed = target - current
 
-    // Priority order: F → S → F9 → (M last resort)
-    const candidateShifts = [
-      ...workShifts.filter(s => s.code !== 'M'),
-      ...(mShift ? [mShift] : []),
-    ]
+    // Priority order: F → S → F9 (M excluded — only F, F9, S are generated)
+    const candidateShifts = workShifts.filter(s => ['F', 'S', 'F9'].includes(s.code))
 
     let added = 0
     for (const dayInfo of dates) {

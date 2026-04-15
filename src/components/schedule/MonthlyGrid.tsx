@@ -63,6 +63,22 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
     }
   }
 
+  // FTV = F-shift employee with highest role on each day
+  // STV = S-shift employee with highest role on each day
+  const ftvPerDay: Record<string, string> = {}
+  const stvPerDay: Record<string, string> = {}
+  for (const day of days) {
+    const fEmps = employees
+      .filter(e => assignmentMap[e.id]?.[day.date]?.shiftCode === 'F')
+      .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role))
+    if (fEmps.length > 0) ftvPerDay[day.date] = fEmps[0].id
+
+    const sEmps = employees
+      .filter(e => assignmentMap[e.id]?.[day.date]?.shiftCode === 'S')
+      .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role))
+    if (sEmps.length > 0) stvPerDay[day.date] = sEmps[0].id
+  }
+
   // Pre-compute violations for all days (used in both header and footer)
   const violationsPerDay: Record<string, string[]> = {}
   for (const day of days) {
@@ -131,6 +147,8 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
             onCellChange={onCellChange}
             colCount={days.length + 3}
             compact={compact}
+            ftvPerDay={ftvPerDay}
+            stvPerDay={stvPerDay}
           />
         ))}
 
@@ -246,7 +264,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
 
 // Role group component
 function RoleGroup({
-  label, employees, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, colCount, compact
+  label, employees, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, colCount, compact, ftvPerDay, stvPerDay
 }: {
   label: string
   employees: Employee[]
@@ -259,6 +277,8 @@ function RoleGroup({
   onCellChange: (employeeId: string, date: string, shiftCode: string | null) => void
   colCount: number
   compact: boolean
+  ftvPerDay: Record<string, string>
+  stvPerDay: Record<string, string>
 }) {
   const [collapsed, setCollapsed] = useState(false)
   return (
@@ -289,6 +309,8 @@ function RoleGroup({
           onCellClose={onCellClose}
           onCellChange={onCellChange}
           compact={compact}
+          ftvPerDay={ftvPerDay}
+          stvPerDay={stvPerDay}
         />
       ))}
     </>
@@ -297,7 +319,7 @@ function RoleGroup({
 
 // Employee row
 const EmployeeRow = memo(function EmployeeRow({
-  employee, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, compact
+  employee, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, compact, ftvPerDay, stvPerDay
 }: {
   employee: Employee
   days: DayInfo[]
@@ -308,6 +330,8 @@ const EmployeeRow = memo(function EmployeeRow({
   onCellClose: () => void
   onCellChange: (employeeId: string, date: string, shiftCode: string | null) => void
   compact: boolean
+  ftvPerDay: Record<string, string>
+  stvPerDay: Record<string, string>
 }) {
   const [tooltipDate, setTooltipDate] = useState<string | null>(null)
   const empAssignments = assignmentMap[employee.id] ?? {}
@@ -341,6 +365,8 @@ const EmployeeRow = memo(function EmployeeRow({
 
         const shiftType = assignment?.shiftCode ? shiftTypes.find(s => s.code === assignment.shiftCode) : null
         const isTooltipVisible = tooltipDate === day.date && shiftType != null
+        const isFTV = ftvPerDay[day.date] === employee.id && assignment?.shiftCode === 'F'
+        const isSTV = stvPerDay[day.date] === employee.id && assignment?.shiftCode === 'S'
 
         return (
           <div
@@ -356,7 +382,17 @@ const EmployeeRow = memo(function EmployeeRow({
             onMouseLeave={() => setTooltipDate(null)}
           >
             {assignment?.shiftCode ? (
-              <ShiftBadge code={assignment.shiftCode} shiftTypes={shiftTypes} />
+              <div className="relative">
+                <ShiftBadge code={assignment.shiftCode} shiftTypes={shiftTypes} />
+                {(isFTV || isSTV) && (
+                  <span
+                    className="absolute -top-1 -right-1 text-[7px] font-black leading-none px-[3px] py-[1px] rounded-sm text-white"
+                    style={{ background: isFTV ? '#003A5D' : '#6B21A8' }}
+                  >
+                    TV
+                  </span>
+                )}
+              </div>
             ) : (
               <span className="text-slate-200 text-xs select-none">—</span>
             )}

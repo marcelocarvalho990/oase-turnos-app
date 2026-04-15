@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Clock, Plus, Pencil, X, Timer } from 'lucide-react'
 import { ShiftType } from '@/types'
 import { useLang } from '@/hooks/useLang'
@@ -134,6 +134,17 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
   const [form, setForm] = useState<EditForm | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Auto-calculate duration whenever start/end times change
+  useEffect(() => {
+    if (!form?.startTime1 || !form?.endTime1) return
+    const [sh, sm] = form.startTime1.split(':').map(Number)
+    const [eh, em] = form.endTime1.split(':').map(Number)
+    let start = sh * 60 + sm
+    let end = eh * 60 + em
+    if (end <= start) end += 24 * 60 // overnight shift
+    setForm(f => f ? { ...f, durationMinutes: end - start } : f)
+  }, [form?.startTime1, form?.endTime1])
 
   const workShifts = shiftTypes.filter((s) => s.isWorkTime)
   const absenceShifts = shiftTypes.filter((s) => !s.isWorkTime)

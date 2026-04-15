@@ -279,6 +279,9 @@ export async function POST(request: NextRequest) {
       fixedMap[a.employeeId][a.date] = a.shiftCode
     }
 
+    // Only F, F9, S are generated — M and other shifts excluded
+    const GENERATE_SHIFT_CODES = new Set(['F', 'F9', 'S'])
+
     // Build problem JSON matching solver's expected format
     const problem = {
       year: yr,
@@ -295,19 +298,23 @@ export async function POST(request: NextRequest) {
           ...Object.keys(fixedMap[e.id] ?? {}),
         ],
       })),
-      shiftTypes: shiftTypes.map((st) => ({
-        code: st.code,
-        name: st.name,
-        durationMinutes: st.durationMinutes,
-        isAbsence: st.isAbsence,
-        eligibleRoles: JSON.parse(st.eligibleRoles || '[]'),
-      })),
-      coverageRules: coverageRules.map((r) => ({
-        shiftCode: r.shiftCode,
-        dayType: r.dayType,
-        minStaff: r.minStaff,
-        idealStaff: r.idealStaff,
-      })),
+      shiftTypes: shiftTypes
+        .filter(st => st.isAbsence || GENERATE_SHIFT_CODES.has(st.code))
+        .map((st) => ({
+          code: st.code,
+          name: st.name,
+          durationMinutes: st.durationMinutes,
+          isAbsence: st.isAbsence,
+          eligibleRoles: JSON.parse(st.eligibleRoles || '[]'),
+        })),
+      coverageRules: coverageRules
+        .filter(r => GENERATE_SHIFT_CODES.has(r.shiftCode))
+        .map((r) => ({
+          shiftCode: r.shiftCode,
+          dayType: r.dayType,
+          minStaff: r.minStaff,
+          idealStaff: r.idealStaff,
+        })),
       // Metadata only (not used by solver core)
       workingDays,
       dates: dates.map((d) => ({ date: d, dayType: getDayType(d) })),
