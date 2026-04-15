@@ -55,6 +55,18 @@ const ROLE_BADGE: Record<Role, string> = {
   LERNENDE: 'bg-slate-100 text-slate-700 border border-slate-200',
 }
 
+const ROLE_AVATAR_COLOR: Record<Role, { bg: string; color: string }> = {
+  TEAMLEITUNG:     { bg: '#003A5D', color: '#fff' },
+  FUNKTIONSSTUFE_3:{ bg: '#7C3AED', color: '#fff' },
+  FUNKTIONSSTUFE_2:{ bg: '#059669', color: '#fff' },
+  FUNKTIONSSTUFE_1:{ bg: '#D97706', color: '#fff' },
+  LERNENDE:        { bg: '#64748B', color: '#fff' },
+}
+
+function getInitials(name: string): string {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
+
 const PERCENTAGE_OPTIONS = [60, 70, 80, 90, 100]
 
 interface FormState {
@@ -242,15 +254,28 @@ export default function StaffPageClient({ employees: initialEmployees }: Props) 
             <tbody className="divide-y divide-slate-50">
               {displayed.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-400">
-                    {t.empty}
+                  <td colSpan={8} className="px-4 py-14 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
+                        <Users size={22} className="text-slate-300" />
+                      </div>
+                      <p className="text-sm text-slate-400">{t.empty}</p>
+                    </div>
                   </td>
                 </tr>
               )}
               {displayed.map((emp) => (
                 <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-4 py-3">
-                    <span className="text-sm font-medium text-slate-900">{emp.name}</span>
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold"
+                        style={{ background: ROLE_AVATAR_COLOR[emp.role].bg, color: ROLE_AVATAR_COLOR[emp.role].color }}
+                      >
+                        {getInitials(emp.name)}
+                      </div>
+                      <span className="text-sm font-medium text-slate-900">{emp.name}</span>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className="font-mono text-sm font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">

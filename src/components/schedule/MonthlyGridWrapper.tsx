@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useTransition, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Download, AlignJustify, List } from 'lucide-react'
 import { downloadSchedulePDF, downloadHoursPDF } from '@/lib/pdf-reports'
 import { countTotalViolations } from '@/lib/schedule-violations'
 // gridRef no longer needed for PDF — kept for potential future use
@@ -62,6 +62,7 @@ export default function MonthlyGridWrapper({
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateResult, setGenerateResult] = useState<{ status: string; count?: number; parsedConstraints?: number } | null>(null)
   const [view, setView] = useState<ViewMode>('month')
+  const [compact, setCompact] = useState(true)
   const [showPdfMenu, setShowPdfMenu] = useState(false)
   const [isPdfBusy, setIsPdfBusy] = useState(false)
   const pdfMenuRef = useRef<HTMLDivElement>(null)
@@ -268,6 +269,40 @@ export default function MonthlyGridWrapper({
         {/* Spacer */}
         <div style={{ flex: 1 }} />
 
+        {/* Compact / Comfortable toggle */}
+        <div style={{ display: 'flex', background: '#F0F4F7', borderRadius: 6, padding: 2, gap: 1 }}>
+          <button
+            onClick={() => setCompact(true)}
+            title={lang === 'de' ? 'Kompakt' : 'Compacto'}
+            style={{
+              padding: '4px 8px', borderRadius: 4, border: 'none',
+              background: compact ? 'white' : 'transparent',
+              color: compact ? '#003A5D' : '#7A9BAD',
+              cursor: 'pointer', transition: 'background 0.15s',
+              boxShadow: compact ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
+              display: 'flex', alignItems: 'center',
+            }}
+          >
+            <List size={14} />
+          </button>
+          <button
+            onClick={() => setCompact(false)}
+            title={lang === 'de' ? 'Komfortabel' : 'Confortável'}
+            style={{
+              padding: '4px 8px', borderRadius: 4, border: 'none',
+              background: !compact ? 'white' : 'transparent',
+              color: !compact ? '#003A5D' : '#7A9BAD',
+              cursor: 'pointer', transition: 'background 0.15s',
+              boxShadow: !compact ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
+              display: 'flex', alignItems: 'center',
+            }}
+          >
+            <AlignJustify size={14} />
+          </button>
+        </div>
+
+        <div style={{ width: 1, height: 18, background: '#D8E2E8', flexShrink: 0 }} />
+
         {/* PDF download dropdown */}
         <div ref={pdfMenuRef} style={{ position: 'relative' }}>
           <button
@@ -368,6 +403,7 @@ export default function MonthlyGridWrapper({
               coverageRules={coverageRules}
               days={displayDays}
               onCellChange={handleCellChange}
+              compact={compact}
             />
           )}
         </div>

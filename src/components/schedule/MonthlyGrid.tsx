@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, memo } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { Employee, ShiftType, CoverageRule, AssignmentMap, DayInfo } from '@/types'
 import { ROLE_ORDER, ROLE_LABELS } from '@/types'
 import ShiftBadge from './ShiftBadge'
@@ -14,6 +15,7 @@ interface Props {
   coverageRules: CoverageRule[]
   days: DayInfo[]
   onCellChange: (employeeId: string, date: string, shiftCode: string | null) => void
+  compact?: boolean
 }
 
 const DAY_COL_WIDTH = 44
@@ -21,7 +23,7 @@ const NAME_COL_WIDTH = 172
 const PCT_COL_WIDTH = 44
 const SUMMARY_COL_WIDTH = 64
 
-export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, coverageRules, days, onCellChange }: Props) {
+export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, coverageRules, days, onCellChange, compact = false }: Props) {
   const [openCell, setOpenCell] = useState<{ employeeId: string; date: string } | null>(null)
   const [hoveredWarning, setHoveredWarning] = useState<string | null>(null)
 
@@ -114,6 +116,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
             onCellClose={() => setOpenCell(null)}
             onCellChange={onCellChange}
             colCount={days.length + 3}
+            compact={compact}
           />
         ))}
 
@@ -228,7 +231,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
 
 // Role group component
 function RoleGroup({
-  label, employees, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, colCount
+  label, employees, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, colCount, compact
 }: {
   label: string
   employees: Employee[]
@@ -240,18 +243,26 @@ function RoleGroup({
   onCellClose: () => void
   onCellChange: (employeeId: string, date: string, shiftCode: string | null) => void
   colCount: number
+  compact: boolean
 }) {
+  const [collapsed, setCollapsed] = useState(false)
   return (
     <>
-      {/* Group header */}
+      {/* Group header — clickable to collapse */}
       <div
-        className="bg-slate-100 border-y border-slate-200 px-3 py-1"
-        style={{ gridColumn: `1 / span ${colCount}` }}
+        className="bg-slate-100 border-y border-slate-200 px-3 py-1 cursor-pointer select-none"
+        style={{ gridColumn: `1 / span ${colCount}`, display: 'flex', alignItems: 'center', gap: 6 }}
+        onClick={() => setCollapsed(v => !v)}
       >
+        {collapsed
+          ? <ChevronRight size={11} className="text-slate-400 shrink-0" />
+          : <ChevronDown  size={11} className="text-slate-400 shrink-0" />
+        }
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</span>
+        <span className="text-[10px] text-slate-400 ml-1">({employees.length})</span>
       </div>
       {/* Employee rows */}
-      {employees.map(emp => (
+      {!collapsed && employees.map(emp => (
         <EmployeeRow
           key={emp.id}
           employee={emp}
@@ -262,6 +273,7 @@ function RoleGroup({
           onCellClick={onCellClick}
           onCellClose={onCellClose}
           onCellChange={onCellChange}
+          compact={compact}
         />
       ))}
     </>
@@ -270,7 +282,7 @@ function RoleGroup({
 
 // Employee row
 const EmployeeRow = memo(function EmployeeRow({
-  employee, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange
+  employee, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, compact
 }: {
   employee: Employee
   days: DayInfo[]
@@ -280,6 +292,7 @@ const EmployeeRow = memo(function EmployeeRow({
   onCellClick: (employeeId: string, date: string) => void
   onCellClose: () => void
   onCellChange: (employeeId: string, date: string, shiftCode: string | null) => void
+  compact: boolean
 }) {
   const empAssignments = assignmentMap[employee.id] ?? {}
 
@@ -318,7 +331,7 @@ const EmployeeRow = memo(function EmployeeRow({
               ${isOpen ? 'bg-[#E6EEF3] ring-1 ring-inset ring-[#003A5D]' : 'hover:bg-slate-50'}
               ${assignment?.isExternal ? 'ring-1 ring-inset ring-red-400' : ''}
             `}
-            style={{ height: 34 }}
+            style={{ height: compact ? 30 : 42 }}
             onClick={() => isOpen ? onCellClose() : onCellClick(employee.id, day.date)}
           >
             {assignment?.shiftCode ? (

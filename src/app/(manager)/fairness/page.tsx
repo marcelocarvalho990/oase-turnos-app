@@ -238,19 +238,23 @@ export default function FairnessPage() {
                           {deviation >= 0 ? '+' : ''}{deviation.toFixed(1)}h
                         </span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      {/* Gradient track */}
+                      <div className="relative w-full h-2.5 rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #EF4444 0%, #F59E0B 40%, #10B981 70%, #10B981 100%)' }}>
+                        {/* White mask from right to cover unfilled portion */}
                         <div
-                          className={`h-2.5 rounded-full transition-all duration-500 ${healthColor}`}
-                          style={{ width: `${pct}%` }}
+                          className="absolute top-0 right-0 h-full rounded-r-full transition-all duration-500"
+                          style={{ width: `${100 - Math.min(pct, 100)}%`, background: '#F1F5F9' }}
                         />
                       </div>
-                      {/* Target marker line */}
+                      {/* Target marker */}
                       <div className="relative h-0">
                         <div
-                          className="absolute top-0 w-0.5 h-3 bg-slate-400 -translate-y-3 -translate-x-1/2"
-                          style={{ left: '100%' }}
+                          className="absolute -translate-x-1/2"
+                          style={{ left: '100%', top: -13 }}
                           title="Objetivo"
-                        />
+                        >
+                          <div style={{ width: 2, height: 12, background: '#64748B', borderRadius: 1 }} />
+                        </div>
                       </div>
                     </div>
 

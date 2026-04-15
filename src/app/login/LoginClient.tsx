@@ -225,6 +225,7 @@ export default function LoginClient() {
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div key={tab} style={{ animation: 'loginTabFade 0.18s ease-out both' }}>
             {tab === 'manager' ? (
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#1C3050', marginBottom: 6 }}>
@@ -320,6 +321,7 @@ export default function LoginClient() {
               </>
             )}
 
+            </div>
             {error && (
               <div style={{
                 padding: '8px 12px',
