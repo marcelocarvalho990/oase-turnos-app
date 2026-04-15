@@ -279,8 +279,8 @@ export async function POST(request: NextRequest) {
       fixedMap[a.employeeId][a.date] = a.shiftCode
     }
 
-    // Only F, F9, S are generated — M and other shifts excluded
-    const GENERATE_SHIFT_CODES = new Set(['F', 'F9', 'S'])
+    // F, F9, S are the primary shifts. M is included as last-resort fill.
+    const GENERATE_SHIFT_CODES = new Set(['F', 'F9', 'S', 'M'])
 
     // Build problem JSON matching solver's expected format
     const problem = {
