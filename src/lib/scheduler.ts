@@ -140,7 +140,7 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
   const fShift = workShifts.find(s => s.code === 'F')
   const sShift = workShifts.find(s => s.code === 'S')
   const mShift = workShifts.find(s => s.code === 'M')
-  const f9Shift = workShifts.find(s => s.code === 'F9') // optional
+  const f9Shift = workShifts.find(s => s.code === 'F9') // mandatory when F is scheduled
 
   // ── Workload targets ──────────────────────────────────────────────────────
   // 100% employee → 21 shifts in a 31-day month (scales with month and %)
@@ -441,12 +441,12 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
       }
     }
 
-    // Fallback: FAGE if no SRK is available
+    // Fallback: FAGE if no SRK available — skip eligibleRoles check (emergency fallback)
     for (const emp of sorted) {
       if (
         getTier(emp.role) === 'FAGE' &&
         canWork(emp, date, 'F9') &&
-        isEligible(emp, f9Shift) &&
+        !blockShifts.get(emp.id)?.has('F9') &&
         !fSlotIds.includes(emp.id)
       ) {
         assign(emp, date, 'F9')
@@ -658,16 +658,12 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
           const f9Slot = daySlots.get(date)!.get('F9')!
           if (f9Slot.empIds.length >= 1) continue
         }
-        // M: hard cap 1 per day, only if coverage gap exists
+        // M: hard cap 1 per day, only if F is truly full (S absence on weekends doesn't block M)
         if (shift.code === 'M') {
           const mSlot = daySlots.get(date)!.get('M')!
           if (mSlot.empIds.length >= 1) continue
-          // Only assign M if there's genuinely no other way to cover
           const fSlot = daySlots.get(date)!.get('F')!
-          const sSlot = daySlots.get(date)!.get('S')!
-          const fFull = fSlot.empIds.length >= F_MAX
-          const sFull = sSlot.empIds.length >= 2
-          if (!fFull || !sFull) continue // still room in F or S — skip M
+          if (fSlot.empIds.length < F_MAX) continue // still room in F — skip M
         }
 
         assign(emp, date, shift.code)

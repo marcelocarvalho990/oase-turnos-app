@@ -135,10 +135,10 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
         ))}
 
         {/* COVERAGE FOOTER */}
-        <div className="sticky bottom-0 bg-slate-50 border-t-2 border-slate-300 px-3 py-2 text-[10px] font-bold text-slate-700 flex items-center">
+        <div className="sticky bottom-0 left-0 bg-slate-50 border-t-2 border-slate-300 px-3 py-2 text-[10px] font-bold text-slate-700 flex items-center" style={{ zIndex: 20 }}>
           Cobertura
         </div>
-        <div className="sticky bottom-0 bg-slate-50 border-t-2 border-slate-300" />
+        <div className="sticky bottom-0 bg-slate-50 border-t-2 border-slate-300" style={{ zIndex: 20 }} />
         {days.map(day => {
           const fCount = coverageMap[day.date]?.['F'] ?? 0
           const sCount = coverageMap[day.date]?.['S'] ?? 0
@@ -154,6 +154,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
               style={{
                 background: hasViolation ? '#FEE2E2' : '#f8fafc',
                 borderTopColor: hasViolation ? '#EF4444' : '#CBD5E1',
+                zIndex: 20,
               }}
               onMouseEnter={() => hasViolation && setHoveredWarning(cellId)}
               onMouseLeave={() => setHoveredWarning(null)}
@@ -222,7 +223,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
             </div>
           )
         })}
-        <div className="sticky bottom-0 bg-slate-50 border-t-2 border-slate-300" />
+        <div className="sticky bottom-0 bg-slate-50 border-t-2 border-slate-300" style={{ zIndex: 20 }} />
       </div>
 
       {/* Cell editor overlay */}
