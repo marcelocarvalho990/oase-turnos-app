@@ -134,7 +134,7 @@ export default function TopBar({
     <>
       <header
         className="shrink-0 border-b px-5 py-3 flex items-center gap-3"
-        style={{ background: '#fff', borderColor: '#D8E2E8' }}
+        style={{ background: '#fff', borderColor: '#D8E2E8', boxShadow: '0 1px 4px rgba(0,58,93,0.06)' }}
       >
         {/* Month navigation — hidden in week/day view (handled in the bar below) */}
         {!hideMonthNav && (

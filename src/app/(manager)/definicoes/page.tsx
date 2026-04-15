@@ -63,6 +63,16 @@ interface EmployeeVacation {
   vacationDays: number
 }
 
+const AVATAR_COLORS = ['#003A5D', '#0F766E', '#7C3AED', '#B45309', '#0369A1', '#9D174D']
+
+function getInitials(name: string) {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
+
+function getAvatarColor(name: string) {
+  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
+}
+
 function Spinner({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-32 gap-3">
@@ -268,9 +278,21 @@ export default function DefinicoesPage() {
                       key={emp.id}
                       className="grid grid-cols-[1fr_80px_100px_100px] gap-3 px-6 py-3 items-center"
                     >
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">{emp.name}</p>
-                        <p className="text-xs text-slate-400 font-mono">{emp.shortName}</p>
+                      <div className="flex items-center gap-3">
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%',
+                          background: getAvatarColor(emp.name),
+                          color: 'white',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '0.7rem', fontWeight: 700, flexShrink: 0,
+                          letterSpacing: '0.02em',
+                        }}>
+                          {getInitials(emp.name)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{emp.name}</p>
+                          <p className="text-xs text-slate-400 font-mono">{emp.shortName}</p>
+                        </div>
                       </div>
                       <div className="text-center">
                         <span className="text-sm text-slate-600">{emp.workPercentage}%</span>

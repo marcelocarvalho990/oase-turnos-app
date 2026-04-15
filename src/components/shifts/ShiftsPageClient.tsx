@@ -60,7 +60,22 @@ function ShiftCard({ shift, onEdit, absLabel }: { shift: ShiftType; onEdit: (s: 
   const hasTime = shift.isWorkTime && t1Start && t1End
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    <div
+      className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col"
+      style={{
+        boxShadow: '0 1px 3px rgba(0,58,93,0.07)',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        cursor: 'default',
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'
+        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(0,58,93,0.13)'
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,58,93,0.07)'
+      }}
+    >
       {/* Colored header */}
       <div
         className="px-4 py-5 flex items-center justify-between"

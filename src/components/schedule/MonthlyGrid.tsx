@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { useState, memo, useRef, useEffect } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { Employee, ShiftType, CoverageRule, AssignmentMap, DayInfo } from '@/types'
 import { ROLE_ORDER, ROLE_LABELS } from '@/types'
@@ -26,6 +26,19 @@ const SUMMARY_COL_WIDTH = 64
 export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, coverageRules, days, onCellChange, compact = false }: Props) {
   const [openCell, setOpenCell] = useState<{ employeeId: string; date: string } | null>(null)
   const [hoveredWarning, setHoveredWarning] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const todayRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (todayRef.current && containerRef.current) {
+      const container = containerRef.current
+      const today = todayRef.current
+      const todayLeft = today.offsetLeft
+      const todayWidth = today.offsetWidth
+      const containerWidth = container.clientWidth
+      container.scrollLeft = todayLeft - containerWidth / 2 + todayWidth / 2
+    }
+  }, [])
 
   // Group employees by role
   const grouped = ROLE_ORDER.map(role => ({
@@ -59,7 +72,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
   const gridCols = `${NAME_COL_WIDTH}px ${PCT_COL_WIDTH}px ${days.map(() => `${DAY_COL_WIDTH}px`).join(' ')} ${SUMMARY_COL_WIDTH}px`
 
   return (
-    <div className="relative h-full overflow-auto">
+    <div ref={containerRef} className="relative h-full overflow-auto">
       <div
         style={{
           display: 'grid',
@@ -80,6 +93,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
           return (
             <div
               key={day.date}
+              ref={day.isToday ? todayRef : undefined}
               className={`sticky top-0 z-20 border-b border-slate-200 flex flex-col items-center justify-end pb-1 text-center overflow-hidden
                 ${isWeekend ? 'bg-[#F0F5F8]' : 'bg-white'}
                 ${day.isToday ? 'bg-[#E6EEF3] border-b-2 border-b-[#003A5D]' : ''}
@@ -294,6 +308,7 @@ const EmployeeRow = memo(function EmployeeRow({
   onCellChange: (employeeId: string, date: string, shiftCode: string | null) => void
   compact: boolean
 }) {
+  const [tooltipDate, setTooltipDate] = useState<string | null>(null)
   const empAssignments = assignmentMap[employee.id] ?? {}
 
   // Calculate hours worked
@@ -323,21 +338,59 @@ const EmployeeRow = memo(function EmployeeRow({
         const isOpen = openCell?.employeeId === employee.id && openCell?.date === day.date
         const isWeekend = day.dayType === 'SATURDAY' || day.dayType === 'SUNDAY'
 
+        const shiftType = assignment?.shiftCode ? shiftTypes.find(s => s.code === assignment.shiftCode) : null
+        const isTooltipVisible = tooltipDate === day.date && shiftType != null
+
         return (
           <div
             key={day.date}
-            className={`border-b border-slate-100 flex items-center justify-center cursor-pointer transition-colors
+            className={`border-b border-slate-100 flex items-center justify-center cursor-pointer transition-colors relative
               ${isWeekend ? 'bg-[#F0F5F8]/50' : 'bg-white'}
               ${isOpen ? 'bg-[#E6EEF3] ring-1 ring-inset ring-[#003A5D]' : 'hover:bg-slate-50'}
               ${assignment?.isExternal ? 'ring-1 ring-inset ring-red-400' : ''}
             `}
             style={{ height: compact ? 30 : 42 }}
             onClick={() => isOpen ? onCellClose() : onCellClick(employee.id, day.date)}
+            onMouseEnter={() => setTooltipDate(day.date)}
+            onMouseLeave={() => setTooltipDate(null)}
           >
             {assignment?.shiftCode ? (
               <ShiftBadge code={assignment.shiftCode} shiftTypes={shiftTypes} />
             ) : (
               <span className="text-slate-200 text-xs select-none">—</span>
+            )}
+
+            {isTooltipVisible && (
+              <div
+                className="absolute bottom-full mb-1.5 z-50 pointer-events-none"
+                style={{ left: '50%', transform: 'translateX(-50%)' }}
+              >
+                <div style={{
+                  background: '#1E293B',
+                  color: '#F8FAFC',
+                  borderRadius: 7,
+                  padding: '6px 10px',
+                  fontSize: 11,
+                  lineHeight: 1.5,
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                }}>
+                  <div style={{ fontWeight: 700, color: '#CBD5E1' }}>{shiftType!.code} — {shiftType!.name}</div>
+                  {shiftType!.durationMinutes && (
+                    <div style={{ color: '#94A3B8', fontSize: 10 }}>
+                      {(shiftType!.durationMinutes / 60).toFixed(1)}h
+                      {shiftType!.startTime1 && shiftType!.endTime1 ? ` · ${shiftType!.startTime1}–${shiftType!.endTime1}` : ''}
+                    </div>
+                  )}
+                </div>
+                <div style={{
+                  width: 0, height: 0,
+                  borderLeft: '5px solid transparent',
+                  borderRight: '5px solid transparent',
+                  borderTop: '5px solid #1E293B',
+                  margin: '0 auto',
+                }} />
+              </div>
             )}
           </div>
         )
