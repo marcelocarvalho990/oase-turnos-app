@@ -127,15 +127,11 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
     }
   }
 
-  // Don't render until we have data
-  if (!activeReport && !hasFetched) return null
-  if (!activeReport) return null
-
-  const { summary, quality, evaluation, problems, suggestions, managerNotes } = activeReport
-  const visibleSuggestions = suggestions.filter(s => !dismissed.has(s.id))
-  const totalProblems = problems.critical.length + problems.important.length + problems.moderate.length
+  // Derived values — safe-guarded for when activeReport is null (loading state)
+  const visibleSuggestions = (activeReport?.suggestions ?? []).filter(s => !dismissed.has(s.id))
+  const totalProblems = (activeReport?.problems.critical.length ?? 0) + (activeReport?.problems.important.length ?? 0) + (activeReport?.problems.moderate.length ?? 0)
   const pendingSuggestions = visibleSuggestions.length
-
+  const quality = activeReport?.quality ?? 'moderada'
   const qualityColour = quality === 'boa' ? C.green : quality === 'moderada' ? C.amber : C.red
   const qualityBg = quality === 'boa' ? C.greenBg : quality === 'moderada' ? C.amberBg : C.redBg
 
@@ -189,7 +185,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
   const tabDef: { key: Tab; label: string; icon: React.ReactNode; badge?: number; badgeColour?: string }[] = [
     { key: 'resumo',    label: 'Resumo',    icon: <ClipboardList size={13} />, badge: undefined },
-    { key: 'problemas', label: 'Problemas', icon: <AlertTriangle size={13} />, badge: totalProblems,    badgeColour: problems.critical.length > 0 ? C.red : C.amber },
+    { key: 'problemas', label: 'Problemas', icon: <AlertTriangle size={13} />, badge: totalProblems,    badgeColour: (activeReport?.problems.critical.length ?? 0) > 0 ? C.red : C.amber },
     { key: 'sugestoes', label: 'Sugestões', icon: <Lightbulb size={13} />,     badge: pendingSuggestions, badgeColour: '#5B21B6' },
   ]
 
@@ -269,15 +265,25 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
           {/* Tab content */}
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-            {tab === 'resumo' && <ResumoTab summary={summary} evaluation={evaluation} managerNotes={managerNotes} />}
-            {tab === 'problemas' && <ProblemasTab problems={problems} />}
-            {tab === 'sugestoes' && (
-              <SugestoesTab
-                suggestions={visibleSuggestions}
-                applying={applying}
-                onAccept={applySuggestion}
-                onDismiss={id => setDismissed(prev => new Set([...prev, id]))}
-              />
+            {!activeReport ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center', color: C.muted, fontSize: '0.82rem' }}>
+                {isRefreshing
+                  ? <><div style={{ display: 'inline-block', width: 20, height: 20, border: `2px solid ${C.border}`, borderTopColor: C.primary, borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 8 }} /><br />A analisar escala...</>
+                  : 'Gera a escala para ver o relatório IA.'}
+              </div>
+            ) : (
+              <>
+                {tab === 'resumo' && <ResumoTab summary={activeReport.summary} evaluation={activeReport.evaluation} managerNotes={activeReport.managerNotes} />}
+                {tab === 'problemas' && <ProblemasTab problems={activeReport.problems} />}
+                {tab === 'sugestoes' && (
+                  <SugestoesTab
+                    suggestions={visibleSuggestions}
+                    applying={applying}
+                    onAccept={applySuggestion}
+                    onDismiss={id => setDismissed(prev => new Set([...prev, id]))}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>

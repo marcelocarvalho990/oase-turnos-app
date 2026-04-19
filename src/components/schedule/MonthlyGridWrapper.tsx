@@ -63,7 +63,7 @@ export default function MonthlyGridWrapper({
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateResult, setGenerateResult] = useState<{ status: string; count?: number; mode?: string } | null>(null)
   const [generationReport, setGenerationReport] = useState<GenerationReport | null>(null)
-  const [suggestionsTrigger, setSuggestionsTrigger] = useState(0)
+  const [suggestionsTrigger, setSuggestionsTrigger] = useState(1) // 1 = fetch on mount
   const [view, setView] = useState<ViewMode>('month')
   const [compact, setCompact] = useState(true)
   const [showPdfMenu, setShowPdfMenu] = useState(false)
