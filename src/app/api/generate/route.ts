@@ -318,8 +318,19 @@ function validateAssignments(
 
 // ── Call LLM to generate schedule ────────────────────────────────────────────
 
-async function generateWithLLM(userMessage: string): Promise<LLMGenerationResult | null> {
+const LANG_INSTRUCTIONS: Record<string, string> = {
+  de: 'WICHTIG: Schreibe alle Texte (summary, problems, suggestions descriptions/reasons, managerNotes) AUSSCHLIEßLICH auf Deutsch.',
+  pt: 'IMPORTANTE: Escreve todos os textos (summary, problems, suggestions descriptions/reasons, managerNotes) EXCLUSIVAMENTE em português europeu.',
+  en: 'IMPORTANT: Write all text content (summary, problems, suggestions descriptions/reasons, managerNotes) EXCLUSIVELY in English.',
+  fr: 'IMPORTANT : Écris tout le contenu textuel (summary, problems, suggestions descriptions/reasons, managerNotes) EXCLUSIVEMENT en français.',
+  it: 'IMPORTANTE: Scrivi tutto il contenuto testuale (summary, problems, suggestions descriptions/reasons, managerNotes) ESCLUSIVAMENTE in italiano.',
+}
+
+async function generateWithLLM(userMessage: string, lang = 'de'): Promise<LLMGenerationResult | null> {
   if (!OPENROUTER_API_KEY) return null
+
+  const langInstruction = LANG_INSTRUCTIONS[lang] ?? LANG_INSTRUCTIONS['de']
+  const systemPromptWithLang = `${SYSTEM_PROMPT}\n\n${langInstruction}`
 
   try {
     const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
@@ -335,7 +346,7 @@ async function generateWithLLM(userMessage: string): Promise<LLMGenerationResult
         max_tokens: 12000,
         temperature: 0.2,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPromptWithLang },
           { role: 'user', content: userMessage },
         ],
       }),
@@ -393,7 +404,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { scheduleId, year, month, team, instructions } = body
+    const { scheduleId, year, month, team, instructions, lang = 'de' } = body
 
     if (!scheduleId || !year || !month || !team) {
       return Response.json({ error: 'scheduleId, year, month, and team are required' }, { status: 400 })
@@ -493,7 +504,7 @@ export async function POST(request: NextRequest) {
       instructions,
     })
 
-    const llmResult = await generateWithLLM(userMessage)
+    const llmResult = await generateWithLLM(userMessage, lang)
 
     if (llmResult) {
       const employeeIds = new Set(employees.map(e => e.id))
@@ -591,6 +602,19 @@ export async function POST(request: NextRequest) {
     for (const a of [...filteredAssignments, ...existingAssignments]) {
       if (COVERAGE_SHIFTS.has(a.shiftCode)) coverageByDate.get(a.date)?.add(a.shiftCode)
     }
+    const noCoverageLabel: Record<string, string> = {
+      de: 'Keine Abdeckung', pt: 'Sem cobertura', en: 'No coverage', fr: 'Pas de couverture', it: 'Nessuna copertura',
+    }
+    const andLabel: Record<string, string> = {
+      de: ' und ', pt: ' e ', en: ' and ', fr: ' et ', it: ' e ',
+    }
+    const dateLocale: Record<string, string> = {
+      de: 'de-DE', pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', it: 'it-IT',
+    }
+    const coverageLabel = noCoverageLabel[lang] ?? noCoverageLabel['de']
+    const andSep = andLabel[lang] ?? andLabel['de']
+    const coverageLocale = dateLocale[lang] ?? dateLocale['de']
+
     const uncoveredProblems: Array<{ description: string; affected: string }> = []
     for (const d of dates) {
       const shifts = coverageByDate.get(d) ?? new Set()
@@ -598,8 +622,8 @@ export async function POST(request: NextRequest) {
       if (!shifts.has('F') && !shifts.has('F9')) missing.push('F/F9')
       if (!shifts.has('S')) missing.push('S')
       if (missing.length > 0) {
-        const label = new Date(d + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })
-        uncoveredProblems.push({ description: `Sem cobertura: ${missing.join(' e ')}`, affected: label })
+        const label = new Date(d + 'T00:00:00').toLocaleDateString(coverageLocale, { weekday: 'short', day: 'numeric', month: 'short' })
+        uncoveredProblems.push({ description: `${coverageLabel}: ${missing.join(andSep)}`, affected: label })
       }
     }
     if (llmReport && uncoveredProblems.length > 0) {

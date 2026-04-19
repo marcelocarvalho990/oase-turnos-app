@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Sem permissão' }, { status: 403 })
   }
 
-  const { scheduleId, year, month, team } = await request.json()
+  const { scheduleId, year, month, team, lang = 'de' } = await request.json()
   if (!scheduleId || !year || !month || !team) {
     return Response.json({ error: 'Parâmetros em falta' }, { status: 400 })
   }
@@ -106,7 +106,18 @@ export async function POST(request: NextRequest) {
     return Response.json({ suggestions: [] })
   }
 
+  const langInstructions: Record<string, string> = {
+    de: 'Antworte AUSSCHLIEßLICH auf Deutsch. Alle Texte in "description" und "reason" müssen auf Deutsch sein.',
+    pt: 'Responde EXCLUSIVAMENTE em português europeu. Todos os textos em "description" e "reason" devem estar em português.',
+    en: 'Respond EXCLUSIVELY in English. All text in "description" and "reason" must be in English.',
+    fr: 'Réponds EXCLUSIVEMENT en français. Tous les textes dans "description" et "reason" doivent être en français.',
+    it: 'Rispondi ESCLUSIVAMENTE in italiano. Tutti i testi in "description" e "reason" devono essere in italiano.',
+  }
+  const langInstruction = langInstructions[lang] ?? langInstructions['de']
+
   const prompt = `És um gestor de turnos experiente. Analisa os dados e gera sugestões para equilibrar as horas dos colaboradores.
+
+IDIOMA: ${langInstruction}
 
 MÊS: ${year}-${String(month).padStart(2, '0')}
 TURNOS DISPONÍVEIS: ${shiftInfo.join(' | ')}

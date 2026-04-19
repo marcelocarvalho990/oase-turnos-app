@@ -166,7 +166,7 @@ export default function MonthlyGridWrapper({
     try {
       const res = await fetch('/api/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduleId: schedule.id, year, month, team, instructions }),
+        body: JSON.stringify({ scheduleId: schedule.id, year, month, team, instructions, lang }),
       })
       const data = await res.json()
       setGenerateResult({ status: data.status, count: data.count, mode: data.mode })

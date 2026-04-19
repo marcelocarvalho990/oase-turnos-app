@@ -188,7 +188,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       const res = await fetch('/api/suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduleId, year, month, team }),
+        body: JSON.stringify({ scheduleId, year, month, team, lang }),
       })
       if (!res.ok) return
       const data = await res.json()
@@ -224,7 +224,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       const res = await fetch('/api/suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduleId, year, month, team }),
+        body: JSON.stringify({ scheduleId, year, month, team, lang }),
       })
       if (!res.ok) return
       const data = await res.json()
@@ -236,7 +236,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
     } finally {
       setIsRefreshing(false)
     }
-  }, [scheduleId, year, month, team])
+  }, [scheduleId, year, month, team, lang])
 
   async function applySuggestion(suggestion: Suggestion) {
     setApplying(suggestion.id)
