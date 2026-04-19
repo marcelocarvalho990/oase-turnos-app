@@ -49,7 +49,8 @@ interface Props {
   year: number
   month: number
   team: string
-  report: GenerationReport | null        // from generation (LLM)
+  report: GenerationReport | null        // from LLM generation (preferred)
+  fetchTrigger: number                   // fallback: increment to fetch from /api/suggestions
   onApplied: () => void
 }
 
@@ -69,25 +70,65 @@ const C = {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function SuggestionsPanel({ scheduleId, year, month, team, report, onApplied }: Props) {
+export default function SuggestionsPanel({ scheduleId, year, month, team, report, fetchTrigger, onApplied }: Props) {
   const [expanded, setExpanded] = useState(true)
   const [tab, setTab] = useState<Tab>('resumo')
   const [activeReport, setActiveReport] = useState<GenerationReport | null>(report)
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [applying, setApplying] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [hasFetched, setHasFetched] = useState(false)
 
-  // Sync when new report arrives from generation
+  // When LLM report arrives directly from generation → use it
   useEffect(() => {
     if (report) {
       setActiveReport(report)
       setDismissed(new Set())
       setTab('resumo')
       setExpanded(true)
+      setHasFetched(true)
     }
   }, [report])
 
+  // Fallback: when LLM didn't produce a report, fetch suggestions from /api/suggestions
+  useEffect(() => {
+    if (fetchTrigger > 0 && !report) {
+      fetchFallbackSuggestions()
+    }
+  }, [fetchTrigger]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function fetchFallbackSuggestions() {
+    setIsRefreshing(true)
+    try {
+      const res = await fetch('/api/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduleId, year, month, team }),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.suggestions?.length > 0) {
+        // Build a minimal report with just suggestions
+        setActiveReport({
+          summary: 'Escala gerada. Sugestões de equilíbrio de horas abaixo.',
+          quality: 'moderada',
+          evaluation: [],
+          problems: { critical: [], important: [], moderate: [] },
+          suggestions: data.suggestions,
+          managerNotes: '',
+        })
+        setDismissed(new Set())
+        setTab('sugestoes')
+        setExpanded(true)
+        setHasFetched(true)
+      }
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   // Don't render until we have data
+  if (!activeReport && !hasFetched) return null
   if (!activeReport) return null
 
   const { summary, quality, evaluation, problems, suggestions, managerNotes } = activeReport
@@ -98,7 +139,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
   const qualityColour = quality === 'boa' ? C.green : quality === 'moderada' ? C.amber : C.red
   const qualityBg = quality === 'boa' ? C.greenBg : quality === 'moderada' ? C.amberBg : C.redBg
 
-  // ── Refresh suggestions only ──────────────────────────────────────────────
+  // ── Refresh suggestions (manual button) ──────────────────────────────────
 
   const refreshSuggestions = useCallback(async () => {
     setIsRefreshing(true)

@@ -219,9 +219,11 @@ export function runScheduler(input: SchedulerInput): SchedulerAssignment[] {
     daySlots.set(d.date, m)
   }
 
-  // Weekend cap: roughly (weekendDays * 2) / employees, ±1 buffer
+  // Weekend cap: target ~4 slots per weekend day spread across employees.
+  // Using ×4 so that employees aren't blocked on the last weekend of the month
+  // just because they worked earlier weekends (old ×2 formula was too restrictive).
   const weekendDays = dates.filter(d => isWeekend(d.date)).length
-  const maxWeekendPerEmp = Math.ceil((weekendDays * 2) / Math.max(employees.length, 1)) + 1
+  const maxWeekendPerEmp = Math.ceil((weekendDays * 4) / Math.max(employees.length, 1)) + 1
 
   const result: SchedulerAssignment[] = []
 

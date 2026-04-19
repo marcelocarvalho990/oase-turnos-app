@@ -63,6 +63,7 @@ export default function MonthlyGridWrapper({
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateResult, setGenerateResult] = useState<{ status: string; count?: number; mode?: string } | null>(null)
   const [generationReport, setGenerationReport] = useState<GenerationReport | null>(null)
+  const [suggestionsTrigger, setSuggestionsTrigger] = useState(0)
   const [view, setView] = useState<ViewMode>('month')
   const [compact, setCompact] = useState(true)
   const [showPdfMenu, setShowPdfMenu] = useState(false)
@@ -150,7 +151,13 @@ export default function MonthlyGridWrapper({
       })
       const data = await res.json()
       setGenerateResult({ status: data.status, count: data.count, mode: data.mode })
-      if (data.report) setGenerationReport(data.report)
+      if (data.report) {
+        setGenerationReport(data.report)
+      } else {
+        // LLM fallback was used — trigger /api/suggestions fetch in panel
+        setGenerationReport(null)
+        setSuggestionsTrigger(t => t + 1)
+      }
       startTransition(() => router.refresh())
     } catch { setGenerateResult({ status: 'ERROR' }) }
     finally { setIsGenerating(false) }
@@ -412,13 +419,14 @@ export default function MonthlyGridWrapper({
         </div>
       </div>
 
-      {/* AI report panel — fixed bottom-right, appears after generation */}
+      {/* AI report + suggestions panel — fixed bottom-right */}
       <SuggestionsPanel
         scheduleId={schedule.id}
         year={year}
         month={month}
         team={team}
         report={generationReport}
+        fetchTrigger={suggestionsTrigger}
         onApplied={() => startTransition(() => router.refresh())}
       />
     </div>

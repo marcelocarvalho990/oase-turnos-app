@@ -126,6 +126,12 @@ REGRAS SOFT (respeitar ao máximo, alertar quando violadas):
 - Turno S seguido de turno F no dia seguinte: não ideal, detetar e sinalizar, não bloquear absolutamente
 - Distribuição equilibrada de horas e turnos por colaborador
 
+FINS DE SEMANA (SATURDAY e SUNDAY):
+- São dias de trabalho normais — atribuir turnos F, F9 e S exactamente como em dias de semana
+- NUNCA deixar fins de semana sem cobertura por serem fim de semana
+- Distribuir fins de semana de forma justa — cada colaborador deve trabalhar aproximadamente o mesmo número de fins de semana
+- Um colaborador pode trabalhar no máximo ~4 dias de fim de semana por mês (2 fins de semana completos)
+
 SOBRE ALVOS DE HORAS:
 - 100% = 164.8h/mês
 - O número de turnos NÃO é fixo — varia com o mês, as ausências e a realidade operacional

@@ -1,6 +1,8 @@
 import type { Employee, ShiftType, AssignmentMap, DayInfo } from '@/types'
 import { ROLE_ORDER, ROLE_LABELS } from '@/types'
 
+const BREAK_DEDUCTION_MIN = 36 // F and S shifts have a mandatory 36-min break
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function minutesToHours(mins: number) {
@@ -177,7 +179,47 @@ export async function downloadSchedulePDF(opts: {
     }),
   ]]
 
-  const body: object[][] = []
+  // ── FTV/STV rows (responsible per day) ──────────────────────────────────
+  // FTV = responsible for F shift (TEAMLEITUNG preferred, else FUNKTIONSSTUFE_2/3)
+  // STV = responsible for S shift (FUNKTIONSSTUFE_2/3)
+  const HF_ROLES = new Set(['TEAMLEITUNG'])
+  const FAGE_ROLES = new Set(['FUNKTIONSSTUFE_2', 'FUNKTIONSSTUFE_3'])
+
+  const ftvCells: object[] = [{
+    content: 'FTV',
+    styles: { fillColor: [0, 80, 130] as [number, number, number], textColor: WHITE, fontStyle: 'bold' as const, fontSize: 6.5 },
+  }]
+  const stvCells: object[] = [{
+    content: 'STV',
+    styles: { fillColor: [0, 80, 130] as [number, number, number], textColor: WHITE, fontStyle: 'bold' as const, fontSize: 6.5 },
+  }]
+
+  for (const day of days) {
+    // FTV: find HF or FAGE in F shift
+    let ftvName = ''
+    for (const emp of sorted) {
+      const a = assignmentMap[emp.id]?.[day.date]
+      if (a?.shiftCode === 'F' && (HF_ROLES.has(emp.role) || FAGE_ROLES.has(emp.role))) {
+        ftvName = emp.name.split(' ')[0] // first name only to save space
+        break
+      }
+    }
+    // STV: find FAGE in S shift
+    let stvName = ''
+    for (const emp of sorted) {
+      const a = assignmentMap[emp.id]?.[day.date]
+      if (a?.shiftCode === 'S' && FAGE_ROLES.has(emp.role)) {
+        stvName = emp.name.split(' ')[0]
+        break
+      }
+    }
+
+    const cellStyle = { halign: 'center' as const, fontSize: 5.5, fillColor: [232, 240, 248] as [number, number, number], textColor: [0, 58, 93] as [number, number, number] }
+    ftvCells.push({ content: ftvName || '–', styles: { ...cellStyle, fontStyle: ftvName ? 'bold' as const : 'normal' as const } })
+    stvCells.push({ content: stvName || '–', styles: { ...cellStyle, fontStyle: stvName ? 'bold' as const : 'normal' as const } })
+  }
+
+  const body: object[][] = [ftvCells, stvCells]
   let currentRole: string | null = null
 
   for (const emp of sorted) {
@@ -316,7 +358,8 @@ export async function downloadHoursPDF(opts: {
       const s = shiftMap[a.shiftCode]
       if (!s?.isWorkTime) continue
       workDays++
-      workMins += s.durationMinutes
+      const breakMin = (a.shiftCode === 'F' || a.shiftCode === 'S') ? BREAK_DEDUCTION_MIN : 0
+      workMins += s.durationMinutes - breakMin
       codeCounts[a.shiftCode] = (codeCounts[a.shiftCode] ?? 0) + 1
     }
 
