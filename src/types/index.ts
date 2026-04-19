@@ -63,6 +63,7 @@ export interface Assignment {
   employeeId: string
   date: string
   shiftCode: string
+  halfOf?: 'FULL' | 'FIRST' | 'SECOND'
   isExternal: boolean
   origin: Origin
   notes?: string | null

@@ -46,6 +46,7 @@ interface LLMAssignment {
   employeeId: string
   date: string
   shiftCode: string
+  halfOf?: 'FULL' | 'FIRST' | 'SECOND'
 }
 
 interface LLMEvaluationItem {
@@ -206,7 +207,7 @@ function buildUserMessage(params: {
   "summary": "resumo geral em 2-4 frases",
   "quality": "boa|moderada|fraca",
   "assignments": [
-    {"employeeId": "<id exacto>", "date": "YYYY-MM-DD", "shiftCode": "<código>"}
+    {"employeeId": "<id exacto>", "date": "YYYY-MM-DD", "shiftCode": "<código>", "halfOf": "FULL|FIRST|SECOND"}
   ],
   "evaluation": [
     {
@@ -240,6 +241,9 @@ function buildUserMessage(params: {
 }`
 
   return `Gera a escala mensal para ${monthName}.
+
+## MEIO TURNO (halfOf)
+Podes atribuir meio turno (halfOf: FIRST ou SECOND) quando necessário para equilibrar horas — por exemplo meio turno S para cobrir apenas parte da tarde. Por omissão usa FULL. O campo halfOf é opcional — só inclui no JSON quando não for FULL.
 
 ## EQUIPA (usa os IDs exactos no JSON de output)
 
@@ -298,7 +302,9 @@ function validateAssignments(
     // Check fixed assignments (MANUAL)
     if (fixedMap[a.employeeId]?.[a.date]) continue
 
-    valid.push(a)
+    // Validate halfOf field
+    const halfOf = a.halfOf && ['FULL', 'FIRST', 'SECOND'].includes(a.halfOf) ? a.halfOf : 'FULL'
+    valid.push({ ...a, halfOf })
   }
 
   return valid
@@ -387,7 +393,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'scheduleId, year, month, and team are required' }, { status: 400 })
     }
 
-    const [schedule, internalEmployees, externalEmployees, shiftTypes, coverageRules, absences, existingAssignments] =
+    const [schedule, internalEmployees, externalEmployees, shiftTypes, coverageRules, absences, existingAssignments, wunschfreiApproved] =
       await Promise.all([
         prisma.schedule.findUnique({ where: { id: scheduleId } }),
         prisma.employee.findMany({ where: { isActive: true, team }, orderBy: [{ role: 'asc' }, { name: 'asc' }] }),
@@ -396,6 +402,7 @@ export async function POST(request: NextRequest) {
         prisma.coverageRule.findMany({ where: { team } }),
         prisma.absenceRequest.findMany({ where: { employee: { team }, status: 'APPROVED' }, include: { employee: true } }),
         prisma.assignment.findMany({ where: { scheduleId, origin: 'MANUAL' } }),
+        prisma.wunschfreiRequest.findMany({ where: { employee: { team }, year: Number(year), month: Number(month), status: 'APPROVED' } }),
       ])
 
     if (!schedule) return Response.json({ error: 'Schedule not found' }, { status: 404 })
@@ -416,6 +423,12 @@ export async function POST(request: NextRequest) {
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         hardBlocksMap[abs.employeeId].push(d.toISOString().split('T')[0])
       }
+    }
+
+    // Add approved Wunschfrei dates to hard blocks
+    for (const wf of wunschfreiApproved) {
+      if (!hardBlocksMap[wf.employeeId]) hardBlocksMap[wf.employeeId] = []
+      if (!hardBlocksMap[wf.employeeId].includes(wf.date)) hardBlocksMap[wf.employeeId].push(wf.date)
     }
 
     // Fixed manual assignments
@@ -524,6 +537,7 @@ export async function POST(request: NextRequest) {
           employeeId: a.employeeId,
           date: a.date,
           shiftCode: a.shiftCode,
+          halfOf: (a as LLMAssignment).halfOf ?? 'FULL',
           origin: 'AUTO',
         })),
       })

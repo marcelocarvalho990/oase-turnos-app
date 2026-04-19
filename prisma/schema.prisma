@@ -26,6 +26,7 @@ model Employee {
   swapRequestsSent      ShiftSwapRequest[] @relation("SwapRequester")
   swapRequestsReceived  ShiftSwapRequest[] @relation("SwapTarget")
   confirmations         ShiftConfirmation[]
+  wunschfreiRequests    WunschfreiRequest[]
 
   @@index([team])
   @@index([isActive])
@@ -79,6 +80,7 @@ model Assignment {
   employeeId String
   date       String
   shiftCode  String
+  halfOf     String   @default("FULL")
   isExternal Boolean  @default(false)
   origin     String   @default("MANUAL")
   notes      String?
@@ -179,6 +181,25 @@ model TeamSettings {
   team             String   @unique
   baseMonthlyHours Float    @default(160)
   updatedAt        DateTime @updatedAt
+}
+
+model WunschfreiRequest {
+  id          String   @id @default(cuid())
+  employeeId  String
+  year        Int
+  month       Int
+  date        String   // YYYY-MM-DD
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED | CANCELLED
+  managerNote String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([status])
+  @@index([year, month])
 }
 
 model ShiftConfirmation {

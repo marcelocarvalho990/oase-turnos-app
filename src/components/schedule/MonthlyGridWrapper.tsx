@@ -130,7 +130,7 @@ export default function MonthlyGridWrapper({
     setAssignmentMap(prev => {
       const next = { ...prev, [employeeId]: { ...prev[employeeId] } }
       if (!shiftCode) { delete next[employeeId][date] }
-      else { next[employeeId][date] = { id: '', scheduleId: schedule.id, employeeId, date, shiftCode, isExternal: false, origin: 'MANUAL' } as Assignment }
+      else { next[employeeId][date] = { id: '', scheduleId: schedule.id, employeeId, date, shiftCode, halfOf: 'FULL', isExternal: false, origin: 'MANUAL' } as Assignment }
       return next
     })
     try {

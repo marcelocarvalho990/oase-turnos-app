@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Check, X, ChevronDown, Trash2, AlertTriangle } from 'lucide-react'
+import { Check, X, Trash2, AlertTriangle } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
 
 type Lang = 'pt' | 'de'
 type ReqStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
-type TabType = 'vacation' | 'swap' | 'saldos'
+type TabType = 'vacation' | 'swap' | 'saldos' | 'wunschfrei'
 
 interface EmployeeVacSummary {
   id: string; name: string; shortName: string; workPercentage: number;
@@ -23,6 +23,11 @@ interface SwapRequest {
   requester: { name: string; shortName: string };
   targetEmployee: { name: string; shortName: string };
 }
+interface WunschfreiRequest {
+  id: string; date: string; year: number; month: number; status: ReqStatus;
+  managerNote: string | null; createdAt: string;
+  employee: { name: string; shortName: string };
+}
 
 const STATUS_COLORS: Record<ReqStatus, { bg: string; color: string; label: { pt: string; de: string } }> = {
   PENDING:   { bg: '#FEF3C7', color: '#D97706', label: { pt: 'Pendente', de: 'Ausstehend' } },
@@ -33,8 +38,8 @@ const STATUS_COLORS: Record<ReqStatus, { bg: string; color: string; label: { pt:
 
 const t = {
   pt: {
-    title: 'Aprovações', subtitle: 'Pedidos de férias e trocas de turno',
-    vacation: 'Férias', swap: 'Trocas', saldos: 'Saldos',
+    title: 'Aprovações', subtitle: 'Pedidos de férias, trocas de turno e Wunschfrei',
+    vacation: 'Férias', swap: 'Trocas', saldos: 'Saldos', wunschfrei: 'Wunschfrei',
     approve: 'Aprovar', reject: 'Rejeitar',
     noteLabel: 'Nota (opcional)', noteBtn: 'Adicionar nota',
     empty: 'Sem pedidos pendentes.', allEmpty: 'Sem pedidos.',
@@ -42,9 +47,10 @@ const t = {
     managerNote: 'Nota do gestor', lang: 'DE',
     filterAll: 'Todos', filterPending: 'Pendentes',
     entitlement: 'Direito', approved: 'Gozadas', pending: 'Pendentes', remaining: 'Restantes', days: 'dias',
+    wunschfreiDate: 'Data', wunschfreiRequested: 'Pedido em',
   },
   de: {
-    title: 'Genehmigungen', subtitle: 'Urlaubs- und Schichttauschanfragen',
+    title: 'Genehmigungen', subtitle: 'Urlaubs-, Schichttausch- und Wunschfreitag-Anfragen',
     vacation: 'Urlaub', swap: 'Schichttausch',
     approve: 'Genehmigen', reject: 'Ablehnen',
     noteLabel: 'Notiz (optional)', noteBtn: 'Notiz hinzufügen',
@@ -52,8 +58,9 @@ const t = {
     from: 'von', to: 'bis', for: 'für',
     managerNote: 'Manager-Notiz', lang: 'PT',
     filterAll: 'Alle', filterPending: 'Ausstehend',
-    saldos: 'Salden',
+    saldos: 'Salden', wunschfrei: 'Wunschfrei',
     entitlement: 'Anspruch', approved: 'Genommen', pending: 'Ausstehend', remaining: 'Verbleibend', days: 'Tage',
+    wunschfreiDate: 'Datum', wunschfreiRequested: 'Beantragt am',
   },
 }
 
@@ -64,6 +71,7 @@ export default function ManagerPedidosClient() {
   const [vacations, setVacations] = useState<VacationRequest[]>([])
   const [swaps, setSwaps] = useState<SwapRequest[]>([])
   const [empSummaries, setEmpSummaries] = useState<EmployeeVacSummary[]>([])
+  const [wunschfreiList, setWunschfreiList] = useState<WunschfreiRequest[]>([])
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
@@ -73,7 +81,7 @@ export default function ManagerPedidosClient() {
 
   const tx = t[lang]
 
-  useEffect(() => { load(); loadSummaries() }, [])
+  useEffect(() => { load(); loadSummaries(); loadWunschfrei() }, [])
 
   async function loadSummaries() {
     const r = await fetch(`/api/manager/vacation-summary?year=${new Date().getFullYear()}`)
@@ -87,6 +95,11 @@ export default function ManagerPedidosClient() {
     ])
     if (Array.isArray(vr)) setVacations(vr)
     if (Array.isArray(sr)) setSwaps(sr)
+  }
+
+  async function loadWunschfrei() {
+    const r = await fetch('/api/manager/wunschfrei')
+    if (r.ok) setWunschfreiList(await r.json())
   }
 
   async function actVacation(id: string, status: 'APPROVED' | 'REJECTED') {
@@ -111,6 +124,16 @@ export default function ManagerPedidosClient() {
     await load()
   }
 
+  async function actWunschfrei(id: string, status: 'APPROVED' | 'REJECTED') {
+    setActionLoading(id)
+    await fetch(`/api/requests/wunschfrei/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, managerNote: notes[id] || null }),
+    })
+    setActionLoading(null)
+    await loadWunschfrei()
+  }
 
   function openDeleteConfirm(id: string, label: string) {
     setConfirmDeleteId(id)
@@ -128,9 +151,11 @@ export default function ManagerPedidosClient() {
 
   const filteredVacations = filter === 'pending' ? vacations.filter(v => v.status === 'PENDING') : vacations
   const filteredSwaps = filter === 'pending' ? swaps.filter(s => s.status === 'PENDING') : swaps
+  const filteredWunschfrei = filter === 'pending' ? wunschfreiList.filter(w => w.status === 'PENDING') : wunschfreiList
 
   const pendingVacCount = vacations.filter(v => v.status === 'PENDING').length
   const pendingSwapCount = swaps.filter(s => s.status === 'PENDING').length
+  const pendingWfCount = wunschfreiList.filter(w => w.status === 'PENDING').length
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -156,25 +181,28 @@ export default function ManagerPedidosClient() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #D8E2E8', marginBottom: 24 }}>
-        {(['vacation', 'swap', 'saldos'] as TabType[]).map(t => (
+        {(['vacation', 'swap', 'wunschfrei', 'saldos'] as TabType[]).map(tabKey => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             style={{
               padding: '10px 20px', background: 'transparent', border: 'none',
-              borderBottom: tab === t ? '2px solid #003A5D' : '2px solid transparent',
-              color: tab === t ? '#001E30' : '#7A9BAD',
-              fontSize: '0.82rem', fontWeight: tab === t ? 500 : 400,
+              borderBottom: tab === tabKey ? '2px solid #003A5D' : '2px solid transparent',
+              color: tab === tabKey ? '#001E30' : '#7A9BAD',
+              fontSize: '0.82rem', fontWeight: tab === tabKey ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
               display: 'flex', alignItems: 'center', gap: 6,
             }}
           >
-            {t === 'vacation' ? tx.vacation : t === 'swap' ? tx.swap : tx.saldos}
-            {t === 'vacation' && pendingVacCount > 0 && (
+            {tabKey === 'vacation' ? tx.vacation : tabKey === 'swap' ? tx.swap : tabKey === 'wunschfrei' ? tx.wunschfrei : tx.saldos}
+            {tabKey === 'vacation' && pendingVacCount > 0 && (
               <span style={{ padding: '1px 7px', background: '#003A5D', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingVacCount}</span>
             )}
-            {t === 'swap' && pendingSwapCount > 0 && (
+            {tabKey === 'swap' && pendingSwapCount > 0 && (
               <span style={{ padding: '1px 7px', background: '#003A5D', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingSwapCount}</span>
+            )}
+            {tabKey === 'wunschfrei' && pendingWfCount > 0 && (
+              <span style={{ padding: '1px 7px', background: '#003A5D', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingWfCount}</span>
             )}
           </button>
         ))}
@@ -321,6 +349,72 @@ export default function ManagerPedidosClient() {
                         placeholder={tx.noteLabel}
                         value={notes[sw.id] ?? ''}
                         onChange={e => setNotes(n => ({ ...n, [sw.id]: e.target.value }))}
+                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Wunschfrei requests */}
+      {tab === 'wunschfrei' && (
+        <div key="wunschfrei" className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filteredWunschfrei.length === 0 && (
+            <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>{filter === 'pending' ? tx.empty : tx.allEmpty}</p>
+          )}
+          {filteredWunschfrei.map(wf => {
+            const s = STATUS_COLORS[wf.status]
+            const isPending = wf.status === 'PENDING'
+            return (
+              <div key={wf.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: '16px 18px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{wf.employee.name}</span>
+                      <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
+                        {s.label[lang]}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#3A3530', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>
+                      {wf.date}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#7A9BAD', marginTop: 2 }}>
+                      {tx.wunschfreiRequested} {new Date(wf.createdAt).toLocaleDateString(lang === 'de' ? 'de-DE' : 'pt-PT')}
+                    </div>
+                    {wf.managerNote && !isPending && (
+                      <div style={{ margin: '6px 0 0', padding: '6px 10px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 6, fontSize: '0.75rem', color: '#0369A1' }}>
+                        <em>{tx.managerNote}:</em> {wf.managerNote}
+                      </div>
+                    )}
+                  </div>
+
+                  {isPending && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => actWunschfrei(wf.id, 'APPROVED')}
+                          disabled={actionLoading === wf.id}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: '#059669', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.75rem', cursor: 'pointer', opacity: actionLoading === wf.id ? 0.5 : 1 }}
+                        >
+                          <Check size={13} /> {tx.approve}
+                        </button>
+                        <button
+                          onClick={() => actWunschfrei(wf.id, 'REJECTED')}
+                          disabled={actionLoading === wf.id}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: '#DC2626', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.75rem', cursor: 'pointer', opacity: actionLoading === wf.id ? 0.5 : 1 }}
+                        >
+                          <X size={13} /> {tx.reject}
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder={tx.noteLabel}
+                        value={notes[wf.id] ?? ''}
+                        onChange={e => setNotes(n => ({ ...n, [wf.id]: e.target.value }))}
                         style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
                       />
                     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
 
 type Lang = 'pt' | 'de'
@@ -19,6 +19,10 @@ interface SwapRequest {
   targetEmployee: { name: string; shortName: string };
   requesterId: string; targetEmployeeId: string;
 }
+interface WunschfreiRequest {
+  id: string; date: string; year: number; month: number; status: ReqStatus;
+  managerNote: string | null; createdAt: string;
+}
 
 const STATUS_COLORS: Record<ReqStatus, { bg: string; color: string; label: { pt: string; de: string } }> = {
   PENDING:   { bg: '#FEF3C7', color: '#D97706', label: { pt: 'Pendente', de: 'Ausstehend' } },
@@ -30,11 +34,11 @@ const STATUS_COLORS: Record<ReqStatus, { bg: string; color: string; label: { pt:
 const t = {
   pt: {
     title: 'Os Meus Pedidos',
-    subtitle: 'Férias e trocas de turno',
+    subtitle: 'Férias, trocas de turno e Wunschfrei',
     vacationBalance: 'Saldo de Férias',
     entitlement: 'Direito', approved: 'Gozadas', pending: 'Pendentes', remaining: 'Restantes',
     days: 'dias',
-    vacation: 'Férias', swap: 'Troca de Turno',
+    vacation: 'Férias', swap: 'Troca de Turno', wunschfrei: 'Wunschfrei',
     newVacation: 'Pedir Férias', newSwap: 'Pedir Troca',
     startDate: 'Data de início', endDate: 'Data de fim',
     message: 'Mensagem (opcional)', submit: 'Submeter',
@@ -45,14 +49,21 @@ const t = {
     from: 'de', to: 'a', lang: 'DE',
     you: '(tu)', them: 'deles',
     confirmCancel: 'Cancelar este pedido?',
+    wunschfreiLabel: 'Dias Livres (Wunschfrei)',
+    wunschfreiCounter: (n: number) => `${n} / 4 dias selecionados este mês`,
+    wunschfreiAddDate: 'Adicionar data',
+    wunschfreiAdd: 'Adicionar',
+    wunschfreiEmpty: 'Nenhum dia Wunschfrei pedido este mês.',
+    wunschfreiMaxError: 'Limite de 4 dias Wunschfrei por mês atingido.',
+    wunschfreiPickDate: 'Escolhe uma data',
   },
   de: {
     title: 'Meine Anfragen',
-    subtitle: 'Urlaub und Schichttausch',
+    subtitle: 'Urlaub, Schichttausch und Wunschfrei',
     vacationBalance: 'Urlaubskonto',
     entitlement: 'Anspruch', approved: 'Genommen', pending: 'Ausstehend', remaining: 'Verbleibend',
     days: 'Tage',
-    vacation: 'Urlaub', swap: 'Schichttausch',
+    vacation: 'Urlaub', swap: 'Schichttausch', wunschfrei: 'Wunschfrei',
     newVacation: 'Urlaub beantragen', newSwap: 'Tausch beantragen',
     startDate: 'Startdatum', endDate: 'Enddatum',
     message: 'Nachricht (optional)', submit: 'Einreichen',
@@ -63,10 +74,17 @@ const t = {
     from: 'von', to: 'bis', lang: 'PT',
     you: '(du)', them: 'von ihnen',
     confirmCancel: 'Diese Anfrage abbrechen?',
+    wunschfreiLabel: 'Wunschtage',
+    wunschfreiCounter: (n: number) => `${n} / 4 Tage diesen Monat ausgewählt`,
+    wunschfreiAddDate: 'Datum hinzufügen',
+    wunschfreiAdd: 'Hinzufügen',
+    wunschfreiEmpty: 'Keine Wunschtage diesen Monat beantragt.',
+    wunschfreiMaxError: 'Limit von 4 Wunschtagen pro Monat erreicht.',
+    wunschfreiPickDate: 'Datum wählen',
   },
 }
 
-type ActiveTab = 'vacation' | 'swap'
+type ActiveTab = 'vacation' | 'swap' | 'wunschfrei'
 type FormMode = null | 'vacation' | 'swap'
 
 interface Props { employeeId: string; colleagues: Colleague[] }
@@ -77,11 +95,13 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
   const [form, setForm] = useState<FormMode>(null)
   const [vacations, setVacations] = useState<VacationRequest[]>([])
   const [swaps, setSwaps] = useState<SwapRequest[]>([])
+  const [wunschfreiList, setWunschfreiList] = useState<WunschfreiRequest[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [summary, setSummary] = useState<VacationSummary | null>(null)
   const tx = t[lang]
   const currentYear = new Date().getFullYear()
+  const currentMonth = new Date().getMonth() + 1
 
   // Vacation form state
   const [vStartDate, setVStartDate] = useState('')
@@ -94,7 +114,12 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
   const [sTheirDate, setSTheirDate] = useState('')
   const [sMessage, setSMessage] = useState('')
 
-  useEffect(() => { loadVacations(); loadSwaps(); loadSummary() }, [])
+  // Wunschfrei form state
+  const [wfDate, setWfDate] = useState('')
+  const [wfSubmitting, setWfSubmitting] = useState(false)
+  const [wfError, setWfError] = useState('')
+
+  useEffect(() => { loadVacations(); loadSwaps(); loadSummary(); loadWunschfrei() }, [])
 
   async function loadSummary() {
     const r = await fetch(`/api/employee/vacation-summary?year=${new Date().getFullYear()}`)
@@ -109,6 +134,11 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
   async function loadSwaps() {
     const r = await fetch('/api/requests/swap')
     if (r.ok) setSwaps(await r.json())
+  }
+
+  async function loadWunschfrei() {
+    const r = await fetch(`/api/requests/wunschfrei?year=${currentYear}&month=${currentMonth}`)
+    if (r.ok) setWunschfreiList(await r.json())
   }
 
   async function submitVacation(e: React.FormEvent) {
@@ -139,6 +169,26 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
     await loadSwaps()
   }
 
+  async function submitWunschfrei(e: React.FormEvent) {
+    e.preventDefault()
+    setWfError('')
+    if (!wfDate) { setWfError(tx.wunschfreiPickDate); return }
+
+    const activeCount = wunschfreiList.filter(w => w.status === 'PENDING' || w.status === 'APPROVED').length
+    if (activeCount >= 4) { setWfError(tx.wunschfreiMaxError); return }
+
+    setWfSubmitting(true)
+    const r = await fetch('/api/requests/wunschfrei', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: wfDate, year: currentYear, month: currentMonth }),
+    })
+    setWfSubmitting(false)
+    if (!r.ok) { setWfError((await r.json()).error || 'Erro'); return }
+    setWfDate('')
+    await loadWunschfrei()
+  }
+
   async function cancelVacation(id: string) {
     if (!confirm(tx.confirmCancel)) return
     await fetch(`/api/requests/vacation/${id}`, {
@@ -159,12 +209,24 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
     await loadSwaps()
   }
 
+  async function cancelWunschfrei(id: string) {
+    if (!confirm(tx.confirmCancel)) return
+    await fetch(`/api/requests/wunschfrei/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'CANCELLED' }),
+    })
+    await loadWunschfrei()
+  }
+
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px 12px', background: 'white',
     border: '1px solid #D8E2E8', borderRadius: 6,
     color: '#001E30', fontSize: '0.85rem', outline: 'none',
     boxSizing: 'border-box',
   }
+
+  const activeWfCount = wunschfreiList.filter(w => w.status === 'PENDING' || w.status === 'APPROVED').length
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -212,27 +274,27 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #D8E2E8', marginBottom: 24 }}>
-        {(['vacation', 'swap'] as ActiveTab[]).map(t => (
+        {(['vacation', 'swap', 'wunschfrei'] as ActiveTab[]).map(tabKey => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             style={{
               padding: '10px 20px', background: 'transparent', border: 'none',
-              borderBottom: tab === t ? '2px solid #003A5D' : '2px solid transparent',
-              color: tab === t ? '#001E30' : '#7A9BAD',
-              fontSize: '0.82rem', fontWeight: tab === t ? 500 : 400,
+              borderBottom: tab === tabKey ? '2px solid #003A5D' : '2px solid transparent',
+              color: tab === tabKey ? '#001E30' : '#7A9BAD',
+              fontSize: '0.82rem', fontWeight: tab === tabKey ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
             }}
           >
-            {t === 'vacation' ? tx.vacation : tx.swap}
+            {tabKey === 'vacation' ? tx.vacation : tabKey === 'swap' ? tx.swap : tx.wunschfrei}
           </button>
         ))}
       </div>
 
-      {/* New request button */}
-      {form === null && (
+      {/* New request button — only for vacation and swap tabs */}
+      {form === null && tab !== 'wunschfrei' && (
         <button
-          onClick={() => setForm(tab)}
+          onClick={() => setForm(tab as 'vacation' | 'swap')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '9px 16px', background: '#003A5D', border: 'none',
@@ -405,6 +467,93 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
           })}
         </div>
       )}
+
+      {/* Wunschfrei tab */}
+      {tab === 'wunschfrei' && (
+        <div key="wunschfrei" className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Counter and label */}
+          <div style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: '16px 20px' }}>
+            <div style={{ fontSize: '0.68rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+              {tx.wunschfreiLabel}
+            </div>
+            {/* Progress bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <div style={{ flex: 1, height: 8, background: '#F0EBE3', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${Math.min(100, (activeWfCount / 4) * 100)}%`,
+                  background: activeWfCount >= 4 ? '#DC2626' : activeWfCount >= 3 ? '#D97706' : '#003A5D',
+                  borderRadius: 4,
+                  transition: 'width 0.3s',
+                }} />
+              </div>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: activeWfCount >= 4 ? '#DC2626' : '#001E30', whiteSpace: 'nowrap' }}>
+                {tx.wunschfreiCounter(activeWfCount)}
+              </span>
+            </div>
+
+            {/* Add date form */}
+            {activeWfCount < 4 && (
+              <form onSubmit={submitWunschfrei} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {tx.wunschfreiAddDate}
+                  </label>
+                  <input
+                    type="date"
+                    value={wfDate}
+                    onChange={e => { setWfDate(e.target.value); setWfError('') }}
+                    style={{ width: '100%', padding: '8px 12px', background: 'white', border: '1px solid #D8E2E8', borderRadius: 6, color: '#001E30', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={wfSubmitting || !wfDate}
+                  style={{ padding: '8px 16px', background: '#003A5D', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: wfSubmitting || !wfDate ? 'not-allowed' : 'pointer', opacity: wfSubmitting || !wfDate ? 0.6 : 1, whiteSpace: 'nowrap', flexShrink: 0 }}
+                >
+                  <Plus size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                  {tx.wunschfreiAdd}
+                </button>
+              </form>
+            )}
+            {wfError && <div style={{ color: '#DC2626', fontSize: '0.75rem', marginTop: 8 }}>{wfError}</div>}
+          </div>
+
+          {/* List of wunschfrei requests */}
+          {wunschfreiList.length === 0 && (
+            <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '4px 0' }}>{tx.wunschfreiEmpty}</p>
+          )}
+          {wunschfreiList.map(wf => {
+            const s = STATUS_COLORS[wf.status]
+            return (
+              <div key={wf.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30', fontFamily: "'IBM Plex Mono', monospace" }}>
+                      {wf.date}
+                    </span>
+                    <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
+                      {s.label[lang]}
+                    </span>
+                  </div>
+                  {wf.managerNote && (
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#7A9BAD' }}><em>{tx.managerNote}:</em> {wf.managerNote}</p>
+                  )}
+                </div>
+                {wf.status === 'PENDING' && (
+                  <button
+                    onClick={() => cancelWunschfrei(wf.id)}
+                    style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #D8E2E8', borderRadius: 6, color: '#7A9BAD', fontSize: '0.72rem', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                  >
+                    {tx.cancelRequest}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       </div>{/* /padding wrapper */}
     </div>
   )

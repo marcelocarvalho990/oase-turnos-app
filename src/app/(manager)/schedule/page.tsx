@@ -50,6 +50,7 @@ export default async function SchedulePage({ searchParams }: PageProps) {
       employeeId: a.employeeId,
       date: a.date,
       shiftCode: a.shiftCode,
+      halfOf: (a.halfOf as 'FULL' | 'FIRST' | 'SECOND' | undefined) ?? 'FULL',
       isExternal: a.isExternal,
       origin: a.origin as 'AUTO' | 'MANUAL',
       notes: a.notes,

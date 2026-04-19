@@ -342,7 +342,8 @@ const EmployeeRow = memo(function EmployeeRow({
     const st = shiftTypes.find(s => s.code === a?.shiftCode)
     if (st && !st.isAbsence && st.durationMinutes) {
       const breakMin = (a?.shiftCode === 'F' || a?.shiftCode === 'S') ? 36 : 0
-      hoursWorked += (st.durationMinutes - breakMin) / 60
+      const halfFactor = (a?.halfOf && a.halfOf !== 'FULL') ? 0.5 : 1
+      hoursWorked += ((st.durationMinutes - breakMin) / 60) * halfFactor
     }
   }
 
@@ -383,17 +384,41 @@ const EmployeeRow = memo(function EmployeeRow({
             onMouseLeave={() => setTooltipDate(null)}
           >
             {assignment?.shiftCode ? (
-              <div className="relative">
-                <ShiftBadge code={assignment.shiftCode} shiftTypes={shiftTypes} />
-                {(isFTV || isSTV) && (
-                  <span
-                    className="absolute -top-1 -right-1 text-[7px] font-black leading-none px-[3px] py-[1px] rounded-sm text-white"
-                    style={{ background: isFTV ? '#003A5D' : '#6B21A8' }}
-                  >
-                    TV
-                  </span>
-                )}
-              </div>
+              (() => {
+                // Half shift rendering
+                if (assignment.halfOf && assignment.halfOf !== 'FULL') {
+                  const shiftPart = (
+                    <div style={{ width: 32, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: shiftType?.bgColor ?? '#E2E8F0', borderRadius: 2 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: shiftType?.textColor ?? '#fff' }}>{assignment.shiftCode}</span>
+                    </div>
+                  )
+                  const freePart = (
+                    <div style={{ width: 32, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E2E8F0', borderRadius: 2 }}>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#94A3B8' }} />
+                    </div>
+                  )
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {assignment.halfOf === 'FIRST' ? shiftPart : freePart}
+                      {assignment.halfOf === 'SECOND' ? shiftPart : freePart}
+                    </div>
+                  )
+                }
+                // Full shift rendering
+                return (
+                  <div className="relative">
+                    <ShiftBadge code={assignment.shiftCode} shiftTypes={shiftTypes} />
+                    {(isFTV || isSTV) && (
+                      <span
+                        className="absolute -top-1 -right-1 text-[7px] font-black leading-none px-[3px] py-[1px] rounded-sm text-white"
+                        style={{ background: isFTV ? '#003A5D' : '#6B21A8' }}
+                      >
+                        TV
+                      </span>
+                    )}
+                  </div>
+                )
+              })()
             ) : (
               <span className="text-slate-200 text-xs select-none">—</span>
             )}
