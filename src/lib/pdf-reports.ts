@@ -145,8 +145,9 @@ export async function downloadSchedulePDF(opts: {
     doc.setFillColor(r, g, b)
     doc.roundedRect(lx, ly, 2.5, 2.5, 0.4, 0.4, 'F')
     doc.setTextColor(60, 60, 60)
-    doc.text(`${s.code} ${s.name}`, lx + 3.5, ly + 2)
-    lx += 26
+    const legendLabel = `${s.code} ${s.name}`
+    doc.text(legendLabel, lx + 3.5, ly + 2)
+    lx += doc.getTextWidth(legendLabel) + 9
     if (lx > pageW - 30) { lx = 14; ly += 5 }
   }
 
@@ -179,47 +180,29 @@ export async function downloadSchedulePDF(opts: {
     }),
   ]]
 
-  // ── FTV/STV rows (responsible per day) ──────────────────────────────────
-  // FTV = responsible for F shift (TEAMLEITUNG preferred, else FUNKTIONSSTUFE_2/3)
-  // STV = responsible for S shift (FUNKTIONSSTUFE_2/3)
-  const HF_ROLES = new Set(['TEAMLEITUNG'])
+  // ── TV badge: FTV/STV per day ────────────────────────────────────────────
+  const HF_ROLES  = new Set(['TEAMLEITUNG'])
   const FAGE_ROLES = new Set(['FUNKTIONSSTUFE_2', 'FUNKTIONSSTUFE_3'])
 
-  const ftvCells: object[] = [{
-    content: 'FTV',
-    styles: { fillColor: [0, 80, 130] as [number, number, number], textColor: WHITE, fontStyle: 'bold' as const, fontSize: 6.5 },
-  }]
-  const stvCells: object[] = [{
-    content: 'STV',
-    styles: { fillColor: [0, 80, 130] as [number, number, number], textColor: WHITE, fontStyle: 'bold' as const, fontSize: 6.5 },
-  }]
+  const ftvPerDay = new Map<string, string>() // date → employeeId
+  const stvPerDay = new Map<string, string>() // date → employeeId
 
   for (const day of days) {
-    // FTV: find HF or FAGE in F shift
-    let ftvName = ''
     for (const emp of sorted) {
       const a = assignmentMap[emp.id]?.[day.date]
-      if (a?.shiftCode === 'F' && (HF_ROLES.has(emp.role) || FAGE_ROLES.has(emp.role))) {
-        ftvName = emp.name.split(' ')[0] // first name only to save space
-        break
+      if (!ftvPerDay.has(day.date) && a?.shiftCode === 'F' && (HF_ROLES.has(emp.role) || FAGE_ROLES.has(emp.role))) {
+        ftvPerDay.set(day.date, emp.id)
+      }
+      if (!stvPerDay.has(day.date) && a?.shiftCode === 'S' && FAGE_ROLES.has(emp.role)) {
+        stvPerDay.set(day.date, emp.id)
       }
     }
-    // STV: find FAGE in S shift
-    let stvName = ''
-    for (const emp of sorted) {
-      const a = assignmentMap[emp.id]?.[day.date]
-      if (a?.shiftCode === 'S' && FAGE_ROLES.has(emp.role)) {
-        stvName = emp.name.split(' ')[0]
-        break
-      }
-    }
-
-    const cellStyle = { halign: 'center' as const, fontSize: 5.5, fillColor: [232, 240, 248] as [number, number, number], textColor: [0, 58, 93] as [number, number, number] }
-    ftvCells.push({ content: ftvName || '–', styles: { ...cellStyle, fontStyle: ftvName ? 'bold' as const : 'normal' as const } })
-    stvCells.push({ content: stvName || '–', styles: { ...cellStyle, fontStyle: stvName ? 'bold' as const : 'normal' as const } })
   }
 
-  const body: object[][] = [ftvCells, stvCells]
+  // ── Build body with row-to-employee tracking ──────────────────────────────
+  const bodyRowToEmployee = new Map<number, Employee>()
+  let bodyRowIdx = 0
+  const body: object[][] = []
   let currentRole: string | null = null
 
   for (const emp of sorted) {
@@ -230,7 +213,10 @@ export async function downloadSchedulePDF(opts: {
         colSpan: 1 + days.length,
         styles: { fillColor: LIGHT, textColor: NAVY, fontStyle: 'bold' as const, fontSize: 6.5 },
       }])
+      bodyRowIdx++ // role header — not mapped to employee
     }
+
+    bodyRowToEmployee.set(bodyRowIdx, emp)
 
     const empAssign = assignmentMap[emp.id] ?? {}
     const cells: object[] = [
@@ -263,8 +249,10 @@ export async function downloadSchedulePDF(opts: {
       })
     }
     body.push(cells)
+    bodyRowIdx++
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   autoTable(doc, {
     head, body,
     startY: tableTop,
@@ -275,6 +263,40 @@ export async function downloadSchedulePDF(opts: {
       ...Object.fromEntries(days.map((_, i) => [i + 1, { cellWidth: dayColW, halign: 'center' as const }])),
     },
     theme: 'grid',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    didDrawCell: (data: any) => {
+      if (data.section !== 'body') return
+      if (data.column.index === 0) return // name column
+
+      const cellEmp = bodyRowToEmployee.get(data.row.index)
+      if (!cellEmp) return // role header row
+
+      const dayIdx = data.column.index - 1
+      if (dayIdx < 0 || dayIdx >= days.length) return
+
+      const day = days[dayIdx]
+      const isFTV = ftvPerDay.get(day.date) === cellEmp.id
+      const isSTV = stvPerDay.get(day.date) === cellEmp.id
+      if (!isFTV && !isSTV) return
+
+      const { x, y, width } = data.cell as { x: number; y: number; width: number }
+      const bW = 3.8; const bH = 2.0
+      const bx = x + width - bW - 0.3
+      const by = y + 0.3
+
+      const [cr, cg, cb] = isFTV ? [0, 58, 93] : [107, 33, 168]
+      doc.setFillColor(cr, cg, cb)
+      doc.roundedRect(bx, by, bW, bH, 0.3, 0.3, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(3)
+      doc.setFont('helvetica', 'bold')
+      doc.text('TV', bx + bW / 2, by + bH * 0.72, { align: 'center' as const })
+
+      // Restore defaults for autoTable
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(0, 0, 0)
+    },
   })
 
   const suffix = view === 'week' ? 'semana' : 'mes'

@@ -564,6 +564,32 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // ── Server-side coverage detection (always runs, even if LLM missed it) ──
+    const COVERAGE_SHIFTS = new Set(['F', 'F9', 'S', 'M'])
+    const coverageByDate = new Map<string, Set<string>>()
+    for (const d of dates) coverageByDate.set(d, new Set())
+    for (const a of [...filteredAssignments, ...existingAssignments]) {
+      if (COVERAGE_SHIFTS.has(a.shiftCode)) coverageByDate.get(a.date)?.add(a.shiftCode)
+    }
+    const uncoveredProblems: Array<{ description: string; affected: string }> = []
+    for (const d of dates) {
+      const shifts = coverageByDate.get(d) ?? new Set()
+      const missing: string[] = []
+      if (!shifts.has('F') && !shifts.has('F9')) missing.push('F/F9')
+      if (!shifts.has('S')) missing.push('S')
+      if (missing.length > 0) {
+        const label = new Date(d + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })
+        uncoveredProblems.push({ description: `Sem cobertura: ${missing.join(' e ')}`, affected: label })
+      }
+    }
+    if (llmReport && uncoveredProblems.length > 0) {
+      const seenAffected = new Set(llmReport.problems.critical.map(p => p.affected ?? ''))
+      for (const p of uncoveredProblems) {
+        if (!seenAffected.has(p.affected)) llmReport.problems.critical.push(p)
+      }
+      if (llmReport.quality === 'boa') llmReport.quality = 'moderada'
+    }
+
     // ── Update schedule status ──────────────────────────────────────────────
 
     await prisma.schedule.update({

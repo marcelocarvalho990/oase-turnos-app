@@ -192,46 +192,74 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
   return (
     <div style={{
-      position: 'fixed', bottom: 24, right: 24, width: 380, zIndex: 200,
+      position: 'fixed', bottom: 24, right: 24,
+      width: expanded ? 380 : 'auto',
+      zIndex: 200,
       fontFamily: "'IBM Plex Sans', sans-serif",
-      filter: 'drop-shadow(0 4px 32px rgba(0,58,93,0.20))',
+      filter: 'drop-shadow(0 4px 24px rgba(0,58,93,0.22))',
     }}>
       {/* ── Header ── */}
-      <div style={{
-        background: 'linear-gradient(135deg, #003A5D 0%, #0066A1 100%)',
-        borderRadius: expanded ? '12px 12px 0 0' : '12px',
-        padding: '10px 14px',
-        display: 'flex', alignItems: 'center', gap: 8,
-      }}>
-        <Sparkles size={15} color="#7DD3FC" style={{ flexShrink: 0 }} />
-        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: C.white, flex: 1 }}>
-          Relatório IA
-        </span>
+      <div
+        onClick={() => !expanded && setExpanded(true)}
+        style={{
+          background: 'linear-gradient(135deg, #003A5D 0%, #0066A1 100%)',
+          borderRadius: expanded ? '12px 12px 0 0' : '20px',
+          padding: expanded ? '10px 14px' : '7px 11px',
+          display: 'flex', alignItems: 'center', gap: expanded ? 8 : 6,
+          cursor: expanded ? 'default' : 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <Sparkles size={expanded ? 15 : 13} color="#7DD3FC" style={{ flexShrink: 0 }} />
 
-        {/* Quality badge */}
-        <span style={{
-          fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 8,
-          background: qualityBg, color: qualityColour,
-        }}>
-          {quality.toUpperCase()}
-        </span>
+        {expanded ? (
+          <>
+            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: C.white, flex: 1 }}>
+              Relatório IA
+            </span>
 
-        {/* Refresh suggestions */}
-        <button
-          onClick={refreshSuggestions}
-          disabled={isRefreshing}
-          title="Atualizar sugestões"
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', padding: 2 }}
-        >
-          {isRefreshing
-            ? <div style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: C.white, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            : <RefreshCw size={12} />
-          }
-        </button>
+            {/* Quality badge */}
+            <span style={{
+              fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 8,
+              background: qualityBg, color: qualityColour,
+            }}>
+              {quality.toUpperCase()}
+            </span>
+
+            {/* Refresh suggestions */}
+            <button
+              onClick={refreshSuggestions}
+              disabled={isRefreshing}
+              title="Atualizar sugestões"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', padding: 2 }}
+            >
+              {isRefreshing
+                ? <div style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: C.white, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                : <RefreshCw size={12} />
+              }
+            </button>
+          </>
+        ) : (
+          <>
+            <span style={{ fontWeight: 700, fontSize: '0.78rem', color: C.white }}>IA</span>
+            {(totalProblems + pendingSuggestions) > 0 && (
+              <span style={{
+                background: (activeReport?.problems.critical.length ?? 0) > 0 ? C.red : '#5B21B6',
+                color: C.white, borderRadius: 10, padding: '1px 5px',
+                fontSize: '0.62rem', fontWeight: 700, minWidth: 14, textAlign: 'center',
+              }}>
+                {totalProblems + pendingSuggestions}
+              </span>
+            )}
+          </>
+        )}
 
         {/* Expand/collapse */}
-        <button onClick={() => setExpanded(e => !e)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)', display: 'flex' }}>
-          {expanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(v => !v) }}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', padding: 2 }}
+        >
+          {expanded ? <ChevronDown size={16} /> : <ChevronUp size={14} />}
         </button>
       </div>
 
