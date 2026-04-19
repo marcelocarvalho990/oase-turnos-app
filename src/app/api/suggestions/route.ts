@@ -137,8 +137,9 @@ ${overTarget.length > 0
   : '(nenhum significativo)'}
 
 REGRAS OBRIGATÓRIAS:
+- Hierarquia: HF (TEAMLEITUNG=Teamleitung, FUNKTIONSSTUFE_3=HF) > FAGE (FUNKTIONSSTUFE_2) > SRK (FUNKTIONSSTUFE_1) > LERNENDE
 - LERNENDE: só podem fazer F e F9
-- Turno S: precisa de 1 FAGE + 1 SRK (não LERNENDE)
+- Turno S: precisa de 1 HF/FAGE (TEAMLEITUNG, FUNKTIONSSTUFE_3 ou FUNKTIONSSTUFE_2) + 1 SRK (FUNKTIONSSTUFE_1), sem LERNENDE
 - Turno F9: apenas 1 SRK por dia
 - Máximo 1 turno M por dia
 - Máximo 5 dias consecutivos de trabalho por colaborador
@@ -199,7 +200,7 @@ Array JSON:`
       comp[emp.role] = (comp[emp.role] ?? 0) + 1
     }
 
-    const FAGE = new Set(['FUNKTIONSSTUFE_3', 'FUNKTIONSSTUFE_2'])
+    const FAGE = new Set(['TEAMLEITUNG', 'FUNKTIONSSTUFE_3', 'FUNKTIONSSTUFE_2']) // HF counts as qualified leader
     const SRK = new Set(['FUNKTIONSSTUFE_1'])
 
     function countGroup(comp: Record<string, number>, roles: Set<string>): number {

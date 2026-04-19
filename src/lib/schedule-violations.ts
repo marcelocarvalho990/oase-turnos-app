@@ -1,7 +1,7 @@
 import type { Employee, AssignmentMap, DayInfo, Role } from '@/types'
 
-const HF_ROLES: Role[] = ['TEAMLEITUNG']
-const FAGE_ROLES: Role[] = ['FUNKTIONSSTUFE_3', 'FUNKTIONSSTUFE_2']
+const HF_ROLES: Role[] = ['TEAMLEITUNG', 'FUNKTIONSSTUFE_3']
+const FAGE_ROLES: Role[] = ['FUNKTIONSSTUFE_2']
 const SRK_ROLES: Role[] = ['FUNKTIONSSTUFE_1']
 const WORK_CODES = new Set(['F', 'F9', 'S', 'M'])
 const MAX_CONSECUTIVE = 5

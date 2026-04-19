@@ -65,10 +65,10 @@ export async function POST(request: NextRequest) {
 
     const roleLabel: Record<string, string> = {
       TEAMLEITUNG:     'HF (Teamleitung)',
-      FUNKTIONSSTUFE_3:'FAGE (Funktionsstufe 3)',
+      FUNKTIONSSTUFE_3:'HF (Funktionsstufe 3)',
       FUNKTIONSSTUFE_2:'FAGE (Funktionsstufe 2)',
       FUNKTIONSSTUFE_1:'SRK (Funktionsstufe 1)',
-      LERNENDE:        'SRK (Lernende)',
+      LERNENDE:        'Lernende',
     }
 
     // --- Employees ---

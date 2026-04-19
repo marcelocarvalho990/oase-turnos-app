@@ -116,7 +116,8 @@ FASE 5 — DETETAR problemas: críticos (sem cobertura, sem responsável F/S), i
 FASE 6 — SUGESTÕES práticas e acionáveis
 
 REGRAS HARD (respeitar sempre):
-- Em cada turno F e S: deve existir exatamente 1 responsável qualificado (HF=TEAMLEITUNG ou FAGE=FUNKTIONSSTUFE_2/3)
+- Em cada turno F e S: deve existir exatamente 1 responsável qualificado (HF=TEAMLEITUNG ou HF=FUNKTIONSSTUFE_3 ou FAGE=FUNKTIONSSTUFE_2)
+- Hierarquia: HF (TEAMLEITUNG, FUNKTIONSSTUFE_3) > FAGE (FUNKTIONSSTUFE_2) > SRK (FUNKTIONSSTUFE_1) > LERNENDE
 - Cada trabalhador só pode ter 1 turno por dia
 - Respeitar bloqueios absolutos (férias aprovadas, atribuições manuais fixas)
 - LERNENDE: apenas turnos F e F9
