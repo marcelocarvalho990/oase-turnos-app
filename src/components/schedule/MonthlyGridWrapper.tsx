@@ -9,7 +9,7 @@ import { countTotalViolations } from '@/lib/schedule-violations'
 import MonthlyGrid from './MonthlyGrid'
 import CellEditor from './CellEditor'
 import TopBar from '../layout/TopBar'
-import SuggestionsPanel from './SuggestionsPanel'
+import SuggestionsPanel, { type GenerationReport } from './SuggestionsPanel'
 import { useLang } from '@/hooks/useLang'
 import { formatMonthYear, addMonths } from '@/lib/date-utils'
 import type { Employee, ShiftType, Schedule, CoverageRule, AssignmentMap, DayInfo, Assignment } from '@/types'
@@ -61,8 +61,8 @@ export default function MonthlyGridWrapper({
   const [lang] = useLang()
   const [assignmentMap, setAssignmentMap] = useState<AssignmentMap>(initialMap)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [generateResult, setGenerateResult] = useState<{ status: string; count?: number; parsedConstraints?: number } | null>(null)
-  const [suggestionsTrigger, setSuggestionsTrigger] = useState(0)
+  const [generateResult, setGenerateResult] = useState<{ status: string; count?: number; mode?: string } | null>(null)
+  const [generationReport, setGenerationReport] = useState<GenerationReport | null>(null)
   const [view, setView] = useState<ViewMode>('month')
   const [compact, setCompact] = useState(true)
   const [showPdfMenu, setShowPdfMenu] = useState(false)
@@ -149,8 +149,8 @@ export default function MonthlyGridWrapper({
         body: JSON.stringify({ scheduleId: schedule.id, year, month, team, instructions }),
       })
       const data = await res.json()
-      setGenerateResult({ status: data.status, count: data.count, parsedConstraints: data.parsedConstraints })
-      if (data.status !== 'ERROR') setSuggestionsTrigger(t => t + 1)
+      setGenerateResult({ status: data.status, count: data.count, mode: data.mode })
+      if (data.report) setGenerationReport(data.report)
       startTransition(() => router.refresh())
     } catch { setGenerateResult({ status: 'ERROR' }) }
     finally { setIsGenerating(false) }
@@ -412,13 +412,13 @@ export default function MonthlyGridWrapper({
         </div>
       </div>
 
-      {/* AI Suggestions panel — fixed bottom-right, persists across views */}
+      {/* AI report panel — fixed bottom-right, appears after generation */}
       <SuggestionsPanel
         scheduleId={schedule.id}
         year={year}
         month={month}
         team={team}
-        fetchTrigger={suggestionsTrigger}
+        report={generationReport}
         onApplied={() => startTransition(() => router.refresh())}
       />
     </div>

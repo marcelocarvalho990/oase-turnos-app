@@ -1,27 +1,22 @@
 import { prisma } from '@/lib/prisma'
-import { runScheduler, type SchedulerConstraint } from '@/lib/scheduler'
+import { runScheduler } from '@/lib/scheduler'
 import { type NextRequest } from 'next/server'
-import path from 'path'
-import { spawn } from 'child_process'
+
+// Allow up to 120s on Vercel Pro (LLM scheduling takes time)
+export const maxDuration = 120
+
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1'
+const BREAK_MIN = 36
+const TARGET_HOURS_100PCT = 164.8
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getDayType(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00')
-  const dow = date.getDay()
+  const dow = new Date(dateStr + 'T00:00:00').getDay()
   if (dow === 6) return 'SATURDAY'
   if (dow === 0) return 'SUNDAY'
   return 'WEEKDAY'
-}
-
-function getWorkingDays(year: number, month: number): number {
-  const days = new Date(year, month, 0).getDate()
-  let count = 0
-  for (let d = 1; d <= days; d++) {
-    const dow = new Date(year, month - 1, d).getDay()
-    if (dow !== 0 && dow !== 6) count++
-  }
-  return count
 }
 
 function buildDatesForMonth(year: number, month: number): string[] {
@@ -35,124 +30,278 @@ function buildDatesForMonth(year: number, month: number): string[] {
   return dates
 }
 
-function runSolver(
-  problemJson: string,
-  solverPath: string,
-  timeoutMs = 60000
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const proc = spawn('python3', [solverPath], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-    })
-
-    let stdout = ''
-    let stderr = ''
-
-    proc.stdout.on('data', (chunk: Buffer) => {
-      stdout += chunk.toString()
-    })
-
-    proc.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString()
-    })
-
-    proc.on('close', (code) => {
-      if (code === 0) {
-        resolve(stdout)
-      } else {
-        reject(new Error(`Solver exited with code ${code}. stderr: ${stderr}`))
-      }
-    })
-
-    proc.on('error', (err) => {
-      reject(err)
-    })
-
-    // Write problem to stdin and close it
-    proc.stdin.write(problemJson)
-    proc.stdin.end()
-
-    // Safety timeout
-    const timer = setTimeout(() => {
-      proc.kill('SIGTERM')
-      reject(new Error('Solver timed out'))
-    }, timeoutMs)
-
-    proc.on('close', () => clearTimeout(timer))
-  })
+function getWorkingDays(year: number, month: number): number {
+  const days = new Date(year, month, 0).getDate()
+  let count = 0
+  for (let d = 1; d <= days; d++) {
+    const dow = new Date(year, month - 1, d).getDay()
+    if (dow !== 0 && dow !== 6) count++
+  }
+  return count
 }
 
-interface ParsedEmployee {
-  id: string
-  name: string
-  shortName: string
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface LLMAssignment {
+  employeeId: string
+  date: string
+  shiftCode: string
 }
 
-async function parseInstructions(
-  instructionsText: string,
-  employees: ParsedEmployee[],
-  allShiftCodes: string[]
-): Promise<SchedulerConstraint[]> {
-  if (!instructionsText?.trim()) return []
+interface LLMEvaluationItem {
+  employeeId: string
+  employeeName: string
+  assignedShifts: number
+  expectedShifts: number
+  workedHours: number
+  targetHours: number
+  deltaHours: number
+  alerts: string[]
+}
 
-  const employeeList = employees
-    .map(e => `- id: "${e.id}", nome: "${e.name}", abreviatura: "${e.shortName}"`)
-    .join('\n')
+interface LLMProblem {
+  description: string
+  affected?: string
+}
 
-  const workShiftList = allShiftCodes.join(', ')
+interface LLMSuggestion {
+  type: 'ADD' | 'SWAP'
+  description: string
+  reason: string
+  // ADD
+  employeeId?: string
+  employeeName?: string
+  date?: string
+  shiftCode?: string
+  // SWAP
+  fromEmployeeId?: string
+  fromEmployeeName?: string
+  fromDate?: string
+  fromShiftCode?: string
+  toEmployeeId?: string
+  toEmployeeName?: string
+  toDate?: string
+  toShiftCode?: string
+}
 
-  const prompt = `És um assistente que converte instruções de um gestor de turnos em restrições JSON estruturadas.
+interface LLMGenerationResult {
+  assignments: LLMAssignment[]
+  summary: string
+  quality: 'boa' | 'moderada' | 'fraca'
+  evaluation: LLMEvaluationItem[]
+  problems: {
+    critical: LLMProblem[]
+    important: LLMProblem[]
+    moderate: LLMProblem[]
+  }
+  suggestions: LLMSuggestion[]
+  managerNotes: string
+}
 
-COLABORADORES (usa o id exato):
-${employeeList}
+// ── LLM system prompt ─────────────────────────────────────────────────────────
 
-TURNOS DISPONÍVEIS: ${workShiftList}
-Legenda: F = manhã/morning, S = tarde/afternoon/Nachmittag. Outros turnos: ${allShiftCodes.filter(c => c !== 'F' && c !== 'S').join(', ') || 'nenhum'}
+const SYSTEM_PROMPT = `Tu és um motor profissional de geração e avaliação de escalas de trabalho para equipas com múltiplos trabalhadores, diferentes percentagens de contrato, diferentes funções, diferentes hierarquias e restrições humanas reais.
 
-TIPOS DE RESTRIÇÃO:
-- BLOCK_SHIFT: bloqueia um turno específico para o colaborador
-- MAX_SHIFT: máximo de vezes que pode fazer esse turno
-- MIN_SHIFT: mínimo de vezes que deve fazer esse turno
-- MAX_WEEKENDS: máximo de fins de semana a trabalhar
-- MIN_WEEKENDS: mínimo de fins de semana a trabalhar
+A tua função NÃO é gerar uma escala "perfeita" a qualquer custo.
+A tua função é gerar uma escala mensal REALISTA, OPERACIONALMENTE VIÁVEL, HUMANAMENTE ACEITÁVEL e AJUSTÁVEL PELO MANAGER, respeitando ao máximo as regras e mostrando claramente os desvios, conflitos e sugestões.
 
-REGRAS DE CONVERSÃO (aplica a CADA instrução individualmente):
+PRINCÍPIO CENTRAL: Nunca sacrificar realismo humano para satisfazer perfeição matemática.
 
-"não trabalha" / "de folga" / "ausente" / "não escalar este mês"
-→ BLOCK_SHIFT para CADA turno de ${workShiftList} (uma entrada por turno)
+FASE 1 — LER todos os dados antes de gerar
+FASE 2 — SEPARAR regras em hard constraints (cobertura, hierarquia, bloqueios, compatibilidade básica) e soft constraints (turnos consecutivos, S→F, equilíbrio de horas)
+FASE 3 — GERAR escala base suficientemente boa (cobrir turnos, respeitar hierarquia F/S, distribuir carga)
+FASE 4 — AVALIAR: calcular horas atribuídas vs esperadas, alertas, desvios por colaborador
+FASE 5 — DETETAR problemas: críticos (sem cobertura, sem responsável F/S), importantes (desvio alto, excesso consecutivo), moderados (pequenas imperfeições)
+FASE 6 — SUGESTÕES práticas e acionáveis
 
-"só faz turno da manhã" / "só manhãs" / "apenas turno F"
-→ BLOCK_SHIFT para cada turno EXCEPTO F
+REGRAS HARD (respeitar sempre):
+- Em cada turno F e S: deve existir exatamente 1 responsável qualificado (HF=TEAMLEITUNG ou FAGE=FUNKTIONSSTUFE_2/3)
+- Cada trabalhador só pode ter 1 turno por dia
+- Respeitar bloqueios absolutos (férias aprovadas, atribuições manuais fixas)
+- LERNENDE: apenas turnos F e F9
+- Turno S: 1 FAGE + 1 SRK não-LERNENDE
 
-"só faz turno da tarde" / "só tardes" / "apenas turno S" / "só S"
-→ BLOCK_SHIFT para cada turno EXCEPTO S
+REGRAS SOFT (respeitar ao máximo, alertar quando violadas):
+- Máximo recomendado 5 dias consecutivos (soft — alertar se 6+, nunca bloquear absolutamente se inevitável)
+- Turno S seguido de turno F no dia seguinte: não ideal, detetar e sinalizar, não bloquear absolutamente
+- Distribuição equilibrada de horas e turnos por colaborador
 
-"faz turno da manhã" / "turno F" (sem "só")
-→ BLOCK_SHIFT para cada turno EXCEPTO F (interpretado como restrição exclusiva)
+SOBRE ALVOS DE HORAS:
+- 100% = 164.8h/mês
+- O número de turnos NÃO é fixo — varia com o mês, as ausências e a realidade operacional
+- Aceitar pequenas diferenças entre meses
 
-"evitar turno X" / "sem turno X"
-→ BLOCK_SHIFT apenas para X
+COMPORTAMENTOS PROIBIDOS:
+- Esconder desvios ou problemas
+- Fingir que a escala está perfeita quando não está
+- Gerar soluções desumanas só porque fecham matematicamente
+- Omitir validação de responsável qualificado nos turnos F e S
 
-"trabalhar todos os dias" / "máximo de dias" / "escalar sempre"
-→ MIN_SHIFT com shiftCode do turno que lhe foi atribuído, count: 22
+Responde SEMPRE exclusivamente com JSON válido, sem texto adicional, sem markdown, sem explicações fora do JSON.`
 
-"mínimo N fins de semana" → MIN_WEEKENDS count: N
-"máximo N fins de semana" → MAX_WEEKENDS count: N
-"máximo N turnos X" → MAX_SHIFT shiftCode: X, count: N
-"mínimo N turnos X" → MIN_SHIFT shiftCode: X, count: N
+// ── Build LLM user message ────────────────────────────────────────────────────
 
-PROCESSO:
-1. Identifica TODOS os colaboradores mencionados nas instruções (por nome parcial, apelido ou abreviatura)
-2. Para CADA colaborador, analisa o que é pedido e gera as restrições correspondentes
-3. Processa TODAS as instruções — não ignores nenhuma
+function buildUserMessage(params: {
+  year: number
+  month: number
+  team: string
+  dates: string[]
+  employees: Array<{
+    id: string; name: string; role: string; workPercentage: number
+    isExternal: boolean; hardBlocks: string[]
+  }>
+  shiftTypes: Array<{ code: string; name: string; durationMinutes: number; isAbsence: boolean; eligibleRoles: string[] }>
+  coverageRules: Array<{ shiftCode: string; dayType: string; minStaff: number; idealStaff: number }>
+  fixedAssignments: Array<{ employeeId: string; date: string; shiftCode: string }>
+  instructions?: string
+}): string {
+  const { year, month, dates, employees, shiftTypes, coverageRules, fixedAssignments, instructions } = params
 
-INSTRUÇÕES DO GESTOR:
-"${instructionsText}"
+  const monthName = new Date(year, month - 1, 1).toLocaleString('pt-PT', { month: 'long', year: 'numeric' })
+  const workShifts = shiftTypes.filter(s => !s.isAbsence)
 
-Responde APENAS com um array JSON válido. Formato de cada elemento:
-{"type": "BLOCK_SHIFT"|"MAX_SHIFT"|"MIN_SHIFT"|"MAX_WEEKENDS"|"MIN_WEEKENDS", "employeeId": "<id>", "shiftCode": "<código ou omite>", "count": <número ou omite>}
+  // Shift descriptions with effective hours
+  const shiftDesc = workShifts.map(s => {
+    const brk = (s.code === 'F' || s.code === 'S') ? BREAK_MIN : 0
+    const effH = ((s.durationMinutes - brk) / 60).toFixed(1)
+    const roles = s.eligibleRoles.length > 0 ? ` [elegível: ${s.eligibleRoles.join(', ')}]` : ' [todos]'
+    return `  ${s.code} "${s.name}": ${s.durationMinutes}min total, ${effH}h efectivas (pausa ${brk}min)${roles}`
+  }).join('\n')
 
-Array JSON:`
+  // Coverage rules
+  const coverageDesc = coverageRules.length > 0
+    ? coverageRules.map(r => `  ${r.shiftCode} em ${r.dayType}: mín ${r.minStaff}, ideal ${r.idealStaff}`).join('\n')
+    : '  (usar regras operacionais padrão)'
+
+  // Employee table
+  const empTable = employees.map(e => {
+    const targetH = ((e.workPercentage / 100) * TARGET_HOURS_100PCT).toFixed(1)
+    const avgShiftH = 7.4 // approx effective hours per shift
+    const expectedShifts = Math.round((e.workPercentage / 100) * TARGET_HOURS_100PCT / avgShiftH)
+    const blocks = e.hardBlocks.length > 0 ? e.hardBlocks.join(', ') : 'nenhum'
+    const ext = e.isExternal ? ' [EXTERNO — usar por último]' : ''
+    return `  ID="${e.id}" | ${e.name} | ${e.role} | ${e.workPercentage}% | alvo ~${targetH}h (~${expectedShifts} turnos)${ext}\n    Bloqueios: ${blocks}`
+  }).join('\n')
+
+  // Fixed assignments
+  const fixedDesc = fixedAssignments.length > 0
+    ? fixedAssignments.map(a => `  ${a.date} → ${employees.find(e => e.id === a.employeeId)?.name ?? a.employeeId}: ${a.shiftCode} (NÃO alterar)`).join('\n')
+    : '  (nenhuma)'
+
+  // Calendar
+  const calendarDesc = dates.map(d => {
+    const dt = getDayType(d)
+    const dow = new Date(d + 'T00:00:00').toLocaleString('pt-PT', { weekday: 'short' })
+    return `  ${d} (${dow}, ${dt})`
+  }).join('\n')
+
+  // JSON schema for response
+  const schema = `{
+  "summary": "resumo geral em 2-4 frases",
+  "quality": "boa|moderada|fraca",
+  "assignments": [
+    {"employeeId": "<id exacto>", "date": "YYYY-MM-DD", "shiftCode": "<código>"}
+  ],
+  "evaluation": [
+    {
+      "employeeId": "<id>",
+      "employeeName": "<nome>",
+      "assignedShifts": <N>,
+      "expectedShifts": <N>,
+      "workedHours": <N.N>,
+      "targetHours": <N.N>,
+      "deltaHours": <N.N>,
+      "alerts": ["texto do alerta se existir"]
+    }
+  ],
+  "problems": {
+    "critical": [{"description": "...", "affected": "nome ou data"}],
+    "important": [{"description": "...", "affected": "..."}],
+    "moderate": [{"description": "...", "affected": "..."}]
+  },
+  "suggestions": [
+    {
+      "type": "ADD",
+      "description": "...",
+      "reason": "...",
+      "employeeId": "<id>",
+      "employeeName": "<nome>",
+      "date": "YYYY-MM-DD",
+      "shiftCode": "<código>"
+    }
+  ],
+  "managerNotes": "observações importantes para revisão manual"
+}`
+
+  return `Gera a escala mensal para ${monthName}.
+
+## EQUIPA (usa os IDs exactos no JSON de output)
+
+${empTable}
+
+## TURNOS DISPONÍVEIS
+
+${shiftDesc}
+
+## REGRAS DE COBERTURA
+
+${coverageDesc}
+
+## CALENDÁRIO (${dates.length} dias)
+
+${calendarDesc}
+
+## ATRIBUIÇÕES FIXAS (MANUAL — não alterar, não incluir no output assignments)
+
+${fixedDesc}
+
+## INSTRUÇÕES DO MANAGER
+
+${instructions?.trim() || '(nenhuma instrução específica)'}
+
+## FORMATO DE RESPOSTA OBRIGATÓRIO
+
+Responde EXCLUSIVAMENTE com JSON válido seguindo este schema exacto (sem texto, sem markdown):
+
+${schema}`
+}
+
+// ── Validate and clean LLM assignments ───────────────────────────────────────
+
+function validateAssignments(
+  raw: LLMAssignment[],
+  employeeIds: Set<string>,
+  validShiftCodes: Set<string>,
+  hardBlocksMap: Record<string, string[]>,
+  fixedMap: Record<string, Record<string, string>>,
+): LLMAssignment[] {
+  const seen = new Set<string>() // empId::date
+  const valid: LLMAssignment[] = []
+
+  for (const a of raw) {
+    if (!a.employeeId || !a.date || !a.shiftCode) continue
+    if (!employeeIds.has(a.employeeId)) continue
+    if (!validShiftCodes.has(a.shiftCode)) continue
+
+    const key = `${a.employeeId}::${a.date}`
+    if (seen.has(key)) continue // duplicate
+    seen.add(key)
+
+    // Check hard blocks (absences)
+    if (hardBlocksMap[a.employeeId]?.includes(a.date)) continue
+    // Check fixed assignments (MANUAL)
+    if (fixedMap[a.employeeId]?.[a.date]) continue
+
+    valid.push(a)
+  }
+
+  return valid
+}
+
+// ── Call LLM to generate schedule ────────────────────────────────────────────
+
+async function generateWithLLM(userMessage: string): Promise<LLMGenerationResult | null> {
+  if (!OPENROUTER_API_KEY) return null
 
   try {
     const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
@@ -164,34 +313,62 @@ Array JSON:`
         'X-Title': 'Turnos Tertianum',
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-haiku-4-5',
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: prompt }],
+        model: 'anthropic/claude-sonnet-4-5',
+        max_tokens: 12000,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userMessage },
+        ],
       }),
     })
 
     if (!res.ok) {
-      console.error('[parseInstructions] OpenRouter error:', res.status, await res.text())
-      return []
+      console.error('[generate/LLM] OpenRouter error:', res.status, await res.text())
+      return null
     }
 
     const json = await res.json() as { choices: Array<{ message: { content: string } }> }
     const text = json.choices?.[0]?.message?.content?.trim() ?? ''
 
-    // Extract JSON array from response (handle possible markdown fences)
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
+    // Extract JSON (handle markdown code blocks)
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      console.error('[generate/LLM] No JSON in response:', text.slice(0, 500))
+      return null
+    }
 
-    const parsed = JSON.parse(jsonMatch[0]) as SchedulerConstraint[]
-    // Validate each constraint has required fields and a valid employee id
-    return parsed.filter(
-      c => c.type && c.employeeId && employees.some(e => e.id === c.employeeId)
-    )
+    const parsed = JSON.parse(jsonMatch[0]) as LLMGenerationResult
+    if (!Array.isArray(parsed.assignments)) return null
+
+    return parsed
   } catch (err) {
-    console.error('[parseInstructions] AI parse failed:', err)
-    return []
+    console.error('[generate/LLM] Error:', err)
+    return null
   }
 }
+
+// ── TypeScript fallback scheduler ─────────────────────────────────────────────
+
+function buildFallbackInput(params: {
+  yr: number; mo: number
+  employees: Array<{ id: string; name: string; role: string; workPercentage: number; isExternal: boolean; hardBlocks: string[] }>
+  shiftTypes: Array<{ code: string; name: string; durationMinutes: number; isAbsence: boolean; eligibleRoles: string[] }>
+  coverageRules: Array<{ shiftCode: string; dayType: string; minStaff: number; idealStaff: number }>
+  dates: string[]
+}) {
+  const GENERATE_SHIFT_CODES = new Set(['F', 'F9', 'S', 'M'])
+  return {
+    year: params.yr,
+    month: params.mo,
+    employees: params.employees,
+    shiftTypes: params.shiftTypes.filter(st => st.isAbsence || GENERATE_SHIFT_CODES.has(st.code)),
+    coverageRules: params.coverageRules.filter(r => GENERATE_SHIFT_CODES.has(r.shiftCode)) as import('@/lib/scheduler').SchedulerCoverageRule[],
+    dates: params.dates.map(d => ({ date: d, dayType: getDayType(d) as 'WEEKDAY' | 'SATURDAY' | 'SUNDAY' })),
+  }
+}
+
+// ── Main handler ──────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -201,188 +378,142 @@ export async function POST(request: NextRequest) {
     const { scheduleId, year, month, team, instructions } = body
 
     if (!scheduleId || !year || !month || !team) {
-      return Response.json(
-        { error: 'scheduleId, year, month, and team are required' },
-        { status: 400 }
-      )
+      return Response.json({ error: 'scheduleId, year, month, and team are required' }, { status: 400 })
     }
 
-    // Load all data needed for the solver
-    const [schedule, internalEmployees, externalEmployees, shiftTypes, coverageRules, absences, preferences, existingAssignments] =
+    const [schedule, internalEmployees, externalEmployees, shiftTypes, coverageRules, absences, existingAssignments] =
       await Promise.all([
         prisma.schedule.findUnique({ where: { id: scheduleId } }),
-        // Internal staff — this team
-        prisma.employee.findMany({
-          where: { isActive: true, team },
-          orderBy: [{ role: 'asc' }, { name: 'asc' }],
-        }),
-        // External staff — other teams who are allowed to cover
-        prisma.employee.findMany({
-          where: { isActive: true, canCoverOtherTeams: true, team: { not: team } },
-          orderBy: [{ role: 'asc' }, { name: 'asc' }],
-        }),
+        prisma.employee.findMany({ where: { isActive: true, team }, orderBy: [{ role: 'asc' }, { name: 'asc' }] }),
+        prisma.employee.findMany({ where: { isActive: true, canCoverOtherTeams: true, team: { not: team } }, orderBy: [{ role: 'asc' }, { name: 'asc' }] }),
         prisma.shiftType.findMany({ orderBy: { sortOrder: 'asc' } }),
         prisma.coverageRule.findMany({ where: { team } }),
-        prisma.absenceRequest.findMany({
-          where: {
-            employee: { team },
-            status: 'APPROVED',
-          },
-          include: { employee: true },
-        }),
-        prisma.shiftPreference.findMany({
-          where: {
-            employee: { team },
-          },
-          include: { employee: true },
-        }),
-        prisma.assignment.findMany({
-          where: { scheduleId, origin: 'MANUAL' },
-        }),
+        prisma.absenceRequest.findMany({ where: { employee: { team }, status: 'APPROVED' }, include: { employee: true } }),
+        prisma.assignment.findMany({ where: { scheduleId, origin: 'MANUAL' } }),
       ])
 
-    // Merge: internal employees first, external after
-    const employees = [
-      ...internalEmployees,
-      ...externalEmployees,
-    ]
-
-    if (!schedule) {
-      return Response.json({ error: 'Schedule not found' }, { status: 404 })
-    }
-
-    if (schedule.status === 'PUBLISHED') {
-      return Response.json({ error: 'Cannot regenerate a published schedule. Clear it first.' }, { status: 409 })
-    }
+    if (!schedule) return Response.json({ error: 'Schedule not found' }, { status: 404 })
+    if (schedule.status === 'PUBLISHED') return Response.json({ error: 'Cannot regenerate a published schedule. Clear it first.' }, { status: 409 })
 
     const yr = Number(year)
     const mo = Number(month)
     const dates = buildDatesForMonth(yr, mo)
     const workingDays = getWorkingDays(yr, mo)
+    const employees = [...internalEmployees, ...externalEmployees]
 
-    // Build hard blocks per employee from absence requests (already filtered: APPROVED + isHardBlock)
+    // Build hard blocks from absences
     const hardBlocksMap: Record<string, string[]> = {}
     for (const abs of absences) {
-      const empId = abs.employeeId
-      if (!hardBlocksMap[empId]) hardBlocksMap[empId] = []
-      // Expand date range
+      if (!hardBlocksMap[abs.employeeId]) hardBlocksMap[abs.employeeId] = []
       const start = new Date(abs.startDate + 'T00:00:00')
       const end = new Date(abs.endDate + 'T00:00:00')
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        hardBlocksMap[empId].push(d.toISOString().split('T')[0])
+        hardBlocksMap[abs.employeeId].push(d.toISOString().split('T')[0])
       }
     }
-    // Also add MANUAL assignments as fixed blocks (employee has a set shift)
+
+    // Fixed manual assignments
     const fixedMap: Record<string, Record<string, string>> = {}
     for (const a of existingAssignments) {
       if (!fixedMap[a.employeeId]) fixedMap[a.employeeId] = {}
       fixedMap[a.employeeId][a.date] = a.shiftCode
     }
 
-    // F, F9, S are the primary shifts. M is included as last-resort fill.
-    const GENERATE_SHIFT_CODES = new Set(['F', 'F9', 'S', 'M'])
+    // Employees with hard blocks for the LLM
+    const employeesForLLM = employees.map(e => ({
+      id: e.id,
+      name: e.name,
+      role: e.role,
+      workPercentage: e.workPercentage,
+      isExternal: e.team !== team,
+      hardBlocks: [
+        ...(hardBlocksMap[e.id] ?? []),
+        ...Object.keys(fixedMap[e.id] ?? {}),
+      ],
+    }))
 
-    // Build problem JSON matching solver's expected format
-    const problem = {
-      year: yr,
-      month: mo,
-      employees: employees.map((e) => ({
-        id: e.id,
-        name: e.name,
-        role: e.role,
-        workPercentage: e.workPercentage,
-        isExternal: e.team !== team,
-        // Hard blocks: absence requests + dates with manual assignments
-        hardBlocks: [
-          ...(hardBlocksMap[e.id] ?? []),
-          ...Object.keys(fixedMap[e.id] ?? {}),
-        ],
-      })),
-      shiftTypes: shiftTypes
-        .filter(st => st.isAbsence || GENERATE_SHIFT_CODES.has(st.code))
-        .map((st) => ({
-          code: st.code,
-          name: st.name,
-          durationMinutes: st.durationMinutes,
-          isAbsence: st.isAbsence,
-          eligibleRoles: JSON.parse(st.eligibleRoles || '[]'),
-        })),
-      coverageRules: coverageRules
-        .filter(r => GENERATE_SHIFT_CODES.has(r.shiftCode))
-        .map((r) => ({
-          shiftCode: r.shiftCode,
-          dayType: r.dayType,
-          minStaff: r.minStaff,
-          idealStaff: r.idealStaff,
-        })),
-      // Metadata only (not used by solver core)
-      workingDays,
-      dates: dates.map((d) => ({ date: d, dayType: getDayType(d) })),
-    }
+    const shiftTypesForLLM = shiftTypes.map(st => ({
+      code: st.code,
+      name: st.name,
+      durationMinutes: st.durationMinutes,
+      isAbsence: st.isAbsence,
+      eligibleRoles: JSON.parse(st.eligibleRoles || '[]') as string[],
+    }))
 
-    // Parse natural language instructions into structured constraints via AI
-    // Only internal employees are referenced in manager instructions
-    const workShiftCodes = shiftTypes.filter(st => !st.isAbsence).map(st => st.code)
-    const parsedConstraints = await parseInstructions(
-      instructions ?? '',
-      internalEmployees.map(e => ({ id: e.id, name: e.name, shortName: e.shortName })),
-      workShiftCodes
-    )
+    const coverageRulesForLLM = coverageRules.map(r => ({
+      shiftCode: r.shiftCode,
+      dayType: r.dayType,
+      minStaff: r.minStaff,
+      idealStaff: r.idealStaff,
+    }))
 
-    const solverPath = path.join(process.cwd(), 'solver', 'solver.py')
+    const fixedAssignmentsForLLM = existingAssignments.map(a => ({
+      employeeId: a.employeeId,
+      date: a.date,
+      shiftCode: a.shiftCode,
+    }))
+
+    // ── Try LLM generation ──────────────────────────────────────────────────
 
     let solutionAssignments: Array<{ employeeId: string; date: string; shiftCode: string }>
+    let llmReport: Omit<LLMGenerationResult, 'assignments'> | null = null
+    let generationMode = 'LLM'
 
-    try {
-      const rawOutput = await runSolver(JSON.stringify(problem), solverPath)
-      const solution = JSON.parse(rawOutput)
+    const userMessage = buildUserMessage({
+      year: yr, month: mo, team, dates,
+      employees: employeesForLLM,
+      shiftTypes: shiftTypesForLLM,
+      coverageRules: coverageRulesForLLM,
+      fixedAssignments: fixedAssignmentsForLLM,
+      instructions,
+    })
 
-      if (!solution.assignments || !Array.isArray(solution.assignments)) {
-        throw new Error('Solver returned invalid solution format')
+    const llmResult = await generateWithLLM(userMessage)
+
+    if (llmResult) {
+      const employeeIds = new Set(employees.map(e => e.id))
+      const validShiftCodes = new Set(shiftTypes.filter(s => !s.isAbsence).map(s => s.code))
+
+      const validated = validateAssignments(
+        llmResult.assignments,
+        employeeIds,
+        validShiftCodes,
+        hardBlocksMap,
+        fixedMap,
+      )
+
+      solutionAssignments = validated
+      llmReport = {
+        summary: llmResult.summary ?? '',
+        quality: llmResult.quality ?? 'moderada',
+        evaluation: llmResult.evaluation ?? [],
+        problems: llmResult.problems ?? { critical: [], important: [], moderate: [] },
+        suggestions: (llmResult.suggestions ?? []).map((s, i) => ({ ...s, id: `sug_${Date.now()}_${i}` })),
+        managerNotes: llmResult.managerNotes ?? '',
       }
+    } else {
+      // Fallback: TypeScript greedy scheduler
+      generationMode = 'FALLBACK'
+      console.warn('[generate] LLM failed or unavailable — falling back to TypeScript scheduler')
 
-      solutionAssignments = solution.assignments
-    } catch (solverError) {
-      const errMessage = solverError instanceof Error ? solverError.message : String(solverError)
+      const fallbackInput = buildFallbackInput({
+        yr, mo, employees: employeesForLLM, shiftTypes: shiftTypesForLLM,
+        coverageRules: coverageRulesForLLM, dates,
+      })
 
-      // Python not available — fall back to built-in JS scheduler
-      if (
-        errMessage.includes('ENOENT') ||
-        errMessage.includes('not found') ||
-        errMessage.includes('No such file')
-      ) {
-        solutionAssignments = runScheduler({
-          year: yr,
-          month: mo,
-          employees: problem.employees,
-          shiftTypes: problem.shiftTypes,
-          coverageRules: problem.coverageRules as import('@/lib/scheduler').SchedulerCoverageRule[],
-          dates: problem.dates as import('@/lib/scheduler').SchedulerDate[],
-          constraints: parsedConstraints,
-        })
-      } else {
-        throw solverError
-      }
+      solutionAssignments = runScheduler(fallbackInput)
     }
 
-    // Build a set of MANUAL assignment keys to avoid conflicts
-    const manualKeys = new Set(
-      existingAssignments.map((a) => `${a.employeeId}::${a.date}`)
-    )
+    // ── Save to DB ──────────────────────────────────────────────────────────
 
-    // Filter out solver assignments that conflict with manual ones
-    const filteredAssignments = solutionAssignments.filter(
-      (a) => !manualKeys.has(`${a.employeeId}::${a.date}`)
-    )
+    const manualKeys = new Set(existingAssignments.map(a => `${a.employeeId}::${a.date}`))
+    const filteredAssignments = solutionAssignments.filter(a => !manualKeys.has(`${a.employeeId}::${a.date}`))
 
-    // Clear existing AUTO assignments and bulk insert new ones
-    await prisma.assignment.deleteMany({
-      where: { scheduleId, origin: 'AUTO' },
-    })
+    await prisma.assignment.deleteMany({ where: { scheduleId, origin: 'AUTO' } })
 
     if (filteredAssignments.length > 0) {
       await prisma.assignment.createMany({
-        data: filteredAssignments.map((a) => ({
+        data: filteredAssignments.map(a => ({
           scheduleId,
           employeeId: a.employeeId,
           date: a.date,
@@ -391,10 +522,9 @@ export async function POST(request: NextRequest) {
         })),
       })
     }
-    solutionAssignments = filteredAssignments
 
-    // Insert absence assignments for approved vacation days within this month
-    // Build a set of all already-assigned employee+date pairs
+    // ── Insert absence assignments ──────────────────────────────────────────
+
     const assignedKeys = new Set([
       ...filteredAssignments.map(a => `${a.employeeId}::${a.date}`),
       ...existingAssignments.map(a => `${a.employeeId}::${a.date}`),
@@ -404,7 +534,6 @@ export async function POST(request: NextRequest) {
     const monthPrefix = `${String(yr)}-${String(mo).padStart(2, '0')}-`
 
     for (const abs of absences) {
-      const shiftCode = abs.type  // 'Ferien', 'Krank30', etc. — matches ShiftType.code
       const start = new Date(abs.startDate + 'T00:00:00')
       const end = new Date(abs.endDate + 'T00:00:00')
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -413,7 +542,7 @@ export async function POST(request: NextRequest) {
         const key = `${abs.employeeId}::${dateStr}`
         if (assignedKeys.has(key)) continue
         assignedKeys.add(key)
-        absenceAssignments.push({ employeeId: abs.employeeId, date: dateStr, shiftCode })
+        absenceAssignments.push({ employeeId: abs.employeeId, date: dateStr, shiftCode: abs.type })
       }
     }
 
@@ -429,7 +558,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Update schedule status
+    // ── Update schedule status ──────────────────────────────────────────────
+
     await prisma.schedule.update({
       where: { id: scheduleId },
       data: { status: 'GENERATED', generatedAt: new Date() },
@@ -437,24 +567,22 @@ export async function POST(request: NextRequest) {
 
     const durationMs = Date.now() - startTime
 
-    const logViolations = instructions
-      ? `[instructions] ${instructions}\n[parsed] ${JSON.stringify(parsedConstraints)}`
-      : undefined
-
     await prisma.solverLog.create({
       data: {
         scheduleId,
         status: 'FEASIBLE',
         durationMs,
-        ...(logViolations ? { violations: logViolations } : {}),
+        ...(instructions ? { violations: `[mode:${generationMode}] [instructions] ${instructions}` } : { violations: `[mode:${generationMode}]` }),
       },
     })
 
     return Response.json({
       status: 'FEASIBLE',
-      count: solutionAssignments.length,
-      durationMs,
-      parsedConstraints: parsedConstraints.length,
+      count: filteredAssignments.length,
+      mode: generationMode,
+      workingDays,
+      // Rich report from LLM (null if fallback was used)
+      report: llmReport,
     })
   } catch (error) {
     const durationMs = Date.now() - startTime
@@ -472,9 +600,7 @@ export async function POST(request: NextRequest) {
           },
         })
       }
-    } catch {
-      // ignore logging error
-    }
+    } catch { /* ignore logging error */ }
 
     return Response.json({ error: 'Failed to generate schedule' }, { status: 500 })
   }
