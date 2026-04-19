@@ -180,7 +180,7 @@ export default function MonthlyGridWrapper({
       startTransition(() => router.refresh())
     } catch { setGenerateResult({ status: 'ERROR' }) }
     finally { setIsGenerating(false) }
-  }, [schedule.id, year, month, team, router])
+  }, [schedule.id, year, month, team, lang, router])
 
   const handleClear = useCallback(async () => {
     await fetch(`/api/schedules/clear?scheduleId=${schedule.id}`, { method: 'DELETE' })

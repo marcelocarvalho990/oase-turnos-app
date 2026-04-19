@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Sparkles, ChevronDown, ChevronUp, Check, X, RefreshCw,
   ArrowRightLeft, PlusCircle, Loader, AlertTriangle, Info, AlertCircle,
@@ -181,6 +181,18 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       fetchFallbackSuggestions()
     }
   }, [fetchTrigger]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When lang changes, clear AI-generated text and re-fetch suggestions in new lang
+  const prevLangRef = useRef(lang)
+  useEffect(() => {
+    if (prevLangRef.current === lang) return
+    prevLangRef.current = lang
+    if (!hasFetched) return
+    // Clear summary/problems (they need a full regeneration to translate)
+    // and re-fetch only the suggestions in the new lang
+    setActiveReport(prev => prev ? { ...prev, summary: '', problems: { critical: [], important: [], moderate: [] }, managerNotes: '' } : prev)
+    refreshSuggestions()
+  }, [lang]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchFallbackSuggestions() {
     setIsRefreshing(true)
