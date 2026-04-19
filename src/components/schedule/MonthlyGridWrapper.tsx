@@ -26,6 +26,7 @@ interface Props {
   year: number
   month: number
   team: string
+  wunschfreiSet?: Set<string>
 }
 
 type ViewMode = 'month' | 'week' | 'day'
@@ -55,7 +56,7 @@ const NAV_BTN: React.CSSProperties = {
 
 export default function MonthlyGridWrapper({
   schedule, employees, assignmentMap: initialMap, shiftTypes,
-  coverageRules, days, year, month, team,
+  coverageRules, days, year, month, team, wunschfreiSet,
 }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -434,6 +435,7 @@ export default function MonthlyGridWrapper({
               days={displayDays}
               onCellChange={handleCellChange}
               compact={compact}
+              wunschfreiSet={wunschfreiSet}
             />
           )}
         </div>

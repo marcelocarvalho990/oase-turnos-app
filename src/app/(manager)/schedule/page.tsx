@@ -25,7 +25,7 @@ export default async function SchedulePage({ searchParams }: PageProps) {
     })
   }
 
-  const [employees, assignments, shiftTypes, coverageRules] = await Promise.all([
+  const [employees, assignments, shiftTypes, coverageRules, wunschfreiApproved] = await Promise.all([
     prisma.employee.findMany({
       where: { isActive: true, team },
       orderBy: [{ role: 'asc' }, { name: 'asc' }],
@@ -35,7 +35,13 @@ export default async function SchedulePage({ searchParams }: PageProps) {
     }),
     prisma.shiftType.findMany({ orderBy: { sortOrder: 'asc' } }),
     prisma.coverageRule.findMany({ where: { team } }),
+    prisma.wunschfreiRequest.findMany({
+      where: { year, month, status: 'APPROVED', employee: { team } },
+    }),
   ])
+
+  // Wunschfrei set: "employeeId::date" for approved free-day requests
+  const wunschfreiSet = new Set(wunschfreiApproved.map(w => `${w.employeeId}::${w.date}`))
 
   // Build assignment map: { employeeId: { date: assignment } }
   const assignmentMap: AssignmentMap = {}
@@ -81,6 +87,7 @@ export default async function SchedulePage({ searchParams }: PageProps) {
       year={year}
       month={month}
       team={team}
+      wunschfreiSet={wunschfreiSet}
     />
   )
 }

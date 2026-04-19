@@ -265,11 +265,17 @@ ${calendarDesc}
 
 ${fixedDesc}
 
-## INSTRUÇÕES DO MANAGER
+${instructions?.trim() ? `## ⚠️ RESTRIÇÕES INDIVIDUAIS DO MANAGER — HARD CONSTRAINTS ABSOLUTAS
 
-${instructions?.trim() || '(nenhuma instrução específica)'}
+As seguintes instruções do manager TÊM PRIORIDADE MÁXIMA e são OBRIGATÓRIAS.
+Não são soft constraints. São regras tão rígidas como bloqueios de férias.
+IGNORA-LAS É PROIBIDO. Cada instrução deve ser verificada e reflectida nos assignments.
 
-## FORMATO DE RESPOSTA OBRIGATÓRIO
+${instructions.trim()}
+
+CONFIRMA no campo "managerNotes" do JSON que seguiste cada uma destas regras.
+
+` : ''}## FORMATO DE RESPOSTA OBRIGATÓRIO
 
 Responde EXCLUSIVAMENTE com JSON válido seguindo este schema exacto (sem texto, sem markdown):
 

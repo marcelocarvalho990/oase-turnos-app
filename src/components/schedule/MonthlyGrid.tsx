@@ -16,6 +16,7 @@ interface Props {
   days: DayInfo[]
   onCellChange: (employeeId: string, date: string, shiftCode: string | null) => void
   compact?: boolean
+  wunschfreiSet?: Set<string>
 }
 
 const DAY_COL_WIDTH = 44
@@ -23,7 +24,7 @@ const NAME_COL_WIDTH = 172
 const PCT_COL_WIDTH = 44
 const SUMMARY_COL_WIDTH = 64
 
-export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, coverageRules, days, onCellChange, compact = false }: Props) {
+export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, coverageRules, days, onCellChange, compact = false, wunschfreiSet }: Props) {
   const [openCell, setOpenCell] = useState<{ employeeId: string; date: string } | null>(null)
   const [hoveredWarning, setHoveredWarning] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -149,6 +150,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
             compact={compact}
             ftvPerDay={ftvPerDay}
             stvPerDay={stvPerDay}
+            wunschfreiSet={wunschfreiSet}
           />
         ))}
 
@@ -264,7 +266,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
 
 // Role group component
 function RoleGroup({
-  label, employees, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, colCount, compact, ftvPerDay, stvPerDay
+  label, employees, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, colCount, compact, ftvPerDay, stvPerDay, wunschfreiSet
 }: {
   label: string
   employees: Employee[]
@@ -279,6 +281,7 @@ function RoleGroup({
   compact: boolean
   ftvPerDay: Record<string, string>
   stvPerDay: Record<string, string>
+  wunschfreiSet?: Set<string>
 }) {
   const [collapsed, setCollapsed] = useState(false)
   return (
@@ -311,6 +314,7 @@ function RoleGroup({
           compact={compact}
           ftvPerDay={ftvPerDay}
           stvPerDay={stvPerDay}
+          wunschfreiSet={wunschfreiSet}
         />
       ))}
     </>
@@ -319,7 +323,7 @@ function RoleGroup({
 
 // Employee row
 const EmployeeRow = memo(function EmployeeRow({
-  employee, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, compact, ftvPerDay, stvPerDay
+  employee, days, assignmentMap, shiftTypes, openCell, onCellClick, onCellClose, onCellChange, compact, ftvPerDay, stvPerDay, wunschfreiSet
 }: {
   employee: Employee
   days: DayInfo[]
@@ -332,6 +336,7 @@ const EmployeeRow = memo(function EmployeeRow({
   compact: boolean
   ftvPerDay: Record<string, string>
   stvPerDay: Record<string, string>
+  wunschfreiSet?: Set<string>
 }) {
   const [tooltipDate, setTooltipDate] = useState<string | null>(null)
   const empAssignments = assignmentMap[employee.id] ?? {}
@@ -369,6 +374,7 @@ const EmployeeRow = memo(function EmployeeRow({
         const isTooltipVisible = tooltipDate === day.date && shiftType != null
         const isFTV = ftvPerDay[day.date] === employee.id && assignment?.shiftCode === 'F'
         const isSTV = stvPerDay[day.date] === employee.id && assignment?.shiftCode === 'S'
+        const isWunschfrei = !assignment && wunschfreiSet?.has(`${employee.id}::${day.date}`)
 
         return (
           <div
@@ -419,8 +425,12 @@ const EmployeeRow = memo(function EmployeeRow({
                   </div>
                 )
               })()
+            ) : isWunschfrei ? (
+              /* Wunschfrei: approved free-day request — show bold X */
+              <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', lineHeight: 1, userSelect: 'none' }}>✕</span>
             ) : (
-              <span className="text-slate-200 text-xs select-none">—</span>
+              /* Regular free day (Frei) — grey dot */
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#CBD5E1' }} />
             )}
 
             {isTooltipVisible && (
