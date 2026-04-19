@@ -64,15 +64,28 @@ export async function POST(request: Request) {
     })
 
     if (toExisting) {
-      // True bidirectional swap: exchange the two employees on their respective shifts
+      // Bidirectional swap: delete both, recreate with swapped employees
+      // (avoids SQLite unique-constraint conflicts that occur with UPDATE-based swaps)
       await prisma.$transaction([
-        prisma.assignment.update({
-          where: { id: fromAssignment.id },
-          data: { employeeId: suggestion.toEmployeeId, shiftCode: suggestion.toShiftCode, origin: 'MANUAL' },
+        prisma.assignment.delete({ where: { id: fromAssignment.id } }),
+        prisma.assignment.delete({ where: { id: toExisting.id } }),
+        prisma.assignment.create({
+          data: {
+            scheduleId,
+            employeeId: suggestion.toEmployeeId,
+            date: suggestion.fromDate,
+            shiftCode: suggestion.fromShiftCode,
+            origin: 'MANUAL',
+          },
         }),
-        prisma.assignment.update({
-          where: { id: toExisting.id },
-          data: { employeeId: suggestion.fromEmployeeId, shiftCode: suggestion.fromShiftCode, origin: 'MANUAL' },
+        prisma.assignment.create({
+          data: {
+            scheduleId,
+            employeeId: suggestion.fromEmployeeId,
+            date: suggestion.toDate,
+            shiftCode: suggestion.toShiftCode,
+            origin: 'MANUAL',
+          },
         }),
       ])
     } else {
