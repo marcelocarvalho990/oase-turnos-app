@@ -3,16 +3,87 @@ import type { Employee, AssignmentMap, DayInfo, Role } from '@/types'
 const HF_ROLES: Role[] = ['TEAMLEITUNG']
 const FAGE_ROLES: Role[] = ['FUNKTIONSSTUFE_3', 'FUNKTIONSSTUFE_2']
 const SRK_ROLES: Role[] = ['FUNKTIONSSTUFE_1']
-// Only real work shifts count towards consecutive-day tracking
 const WORK_CODES = new Set(['F', 'F9', 'S', 'M'])
 const MAX_CONSECUTIVE = 5
+
+type Lang = 'pt' | 'de' | 'en' | 'fr' | 'it'
+
+const VM: Record<Lang, {
+  fNoCoverage: string
+  fStaff: (n: number) => string
+  fNoLeader: string
+  sNoCoverage: string
+  sNoFAGE: string
+  sNoSRK: string
+  sLernende: string
+  sfConsec: (names: string) => string
+  consec: (name: string, n: number) => string
+}> = {
+  de: {
+    fNoCoverage: 'F: keine Abdeckung',
+    fStaff: (n) => `F: ${n}/4 Mitarbeiter`,
+    fNoLeader: 'F: kein HF / FAGE',
+    sNoCoverage: 'S: keine Abdeckung',
+    sNoFAGE: 'S: kein FAGE',
+    sNoSRK: 'S: kein SRK',
+    sLernende: 'S: Lernende im S-Dienst',
+    sfConsec: (names) => `S→F: ${names}`,
+    consec: (name, n) => `${name}: ${n} aufeinanderfolgende Tage`,
+  },
+  pt: {
+    fNoCoverage: 'F: sem cobertura',
+    fStaff: (n) => `F: ${n}/4 pessoas`,
+    fNoLeader: 'F: sem HF nem FAGE',
+    sNoCoverage: 'S: sem cobertura',
+    sNoFAGE: 'S: sem FAGE',
+    sNoSRK: 'S: sem SRK',
+    sLernende: 'S: aprendiz no turno S',
+    sfConsec: (names) => `S→F: ${names}`,
+    consec: (name, n) => `${name}: ${n} dias consecutivos`,
+  },
+  en: {
+    fNoCoverage: 'F: no coverage',
+    fStaff: (n) => `F: ${n}/4 staff`,
+    fNoLeader: 'F: no HF or FAGE',
+    sNoCoverage: 'S: no coverage',
+    sNoFAGE: 'S: no FAGE',
+    sNoSRK: 'S: no SRK',
+    sLernende: 'S: trainee on S shift',
+    sfConsec: (names) => `S→F: ${names}`,
+    consec: (name, n) => `${name}: ${n} consecutive days`,
+  },
+  fr: {
+    fNoCoverage: 'F: pas de couverture',
+    fStaff: (n) => `F: ${n}/4 agents`,
+    fNoLeader: 'F: pas de HF ni FAGE',
+    sNoCoverage: 'S: pas de couverture',
+    sNoFAGE: 'S: pas de FAGE',
+    sNoSRK: 'S: pas de SRK',
+    sLernende: 'S: apprenti au poste S',
+    sfConsec: (names) => `S→F: ${names}`,
+    consec: (name, n) => `${name}: ${n} jours consécutifs`,
+  },
+  it: {
+    fNoCoverage: 'F: nessuna copertura',
+    fStaff: (n) => `F: ${n}/4 persone`,
+    fNoLeader: 'F: nessun HF / FAGE',
+    sNoCoverage: 'S: nessuna copertura',
+    sNoFAGE: 'S: nessun FAGE',
+    sNoSRK: 'S: nessun SRK',
+    sLernende: 'S: apprendista nel turno S',
+    sfConsec: (names) => `S→F: ${names}`,
+    consec: (name, n) => `${name}: ${n} giorni consecutivi`,
+  },
+}
 
 export function computeDayViolations(
   day: DayInfo,
   employees: Employee[],
   assignmentMap: AssignmentMap,
   days: DayInfo[],
+  lang: Lang = 'de',
 ): string[] {
+  const m = VM[lang] ?? VM['de']
   const issues: string[] = []
 
   const workersOn = (code: string) =>
@@ -25,10 +96,10 @@ export function computeDayViolations(
   const fTotal = fWorkers.length
 
   if (fTotal === 0) {
-    issues.push('F: sem cobertura')
+    issues.push(m.fNoCoverage)
   } else {
-    if (fTotal < 4) issues.push(`F: ${fTotal}/4 pessoas`)
-    if (fHF === 0 && fFAGE === 0) issues.push('F: sem HF nem FAGE')
+    if (fTotal < 4) issues.push(m.fStaff(fTotal))
+    if (fHF === 0 && fFAGE === 0) issues.push(m.fNoLeader)
   }
 
   // ── S shift ──
@@ -39,11 +110,11 @@ export function computeDayViolations(
   const sTotal    = sWorkers.length
 
   if (sTotal === 0) {
-    issues.push('S: sem cobertura')
+    issues.push(m.sNoCoverage)
   } else {
-    if (sFAGE === 0) issues.push('S: sem FAGE')
-    if (sSRK === 0)  issues.push('S: sem SRK')
-    if (sLERNENDE > 0) issues.push('S: aprendiz no turno S')
+    if (sFAGE === 0) issues.push(m.sNoFAGE)
+    if (sSRK === 0)  issues.push(m.sNoSRK)
+    if (sLERNENDE > 0) issues.push(m.sLernende)
   }
 
   // ── S→F consecutive ──
@@ -58,15 +129,12 @@ export function computeDayViolations(
     const sfNames = fWorkers
       .filter(e => prevSIds.has(e.id))
       .map(e => e.shortName)
-    if (sfNames.length > 0) issues.push(`S→F: ${sfNames.join(', ')}`)
+    if (sfNames.length > 0) issues.push(m.sfConsec(sfNames.join(', ')))
   }
 
   // ── Consecutive working days (> MAX_CONSECUTIVE) ──
-  // Check every employee: count how many consecutive work days end on today
   if (dayIdx >= MAX_CONSECUTIVE) {
     for (const emp of employees) {
-      // Only flag on the exact day where streak crosses the limit
-      // (i.e., today IS a work day and the streak length equals MAX_CONSECUTIVE+1)
       const todayCode = assignmentMap[emp.id]?.[day.date]?.shiftCode
       if (!todayCode || !WORK_CODES.has(todayCode)) continue
 
@@ -77,8 +145,7 @@ export function computeDayViolations(
         else break
       }
       if (streak === MAX_CONSECUTIVE + 1) {
-        // Only flag on the first violation day, not every subsequent day
-        issues.push(`${emp.shortName}: ${streak} dias consecutivos`)
+        issues.push(m.consec(emp.shortName, streak))
       }
     }
   }

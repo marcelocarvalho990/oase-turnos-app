@@ -7,6 +7,15 @@ import { ROLE_ORDER, ROLE_LABELS } from '@/types'
 import ShiftBadge from './ShiftBadge'
 import CellEditor from './CellEditor'
 import { computeDayViolations } from '@/lib/schedule-violations'
+import { useLang } from '@/hooks/useLang'
+
+const GRID_TX = {
+  de: { name: 'Name', coverage: 'Abdeckung', hrs: 'Std', day: 'Tag', problem: 'Problem', problems: 'Probleme' },
+  pt: { name: 'Nome', coverage: 'Cobertura', hrs: 'Hrs', day: 'Dia', problem: 'problema', problems: 'problemas' },
+  en: { name: 'Name', coverage: 'Coverage', hrs: 'Hrs', day: 'Day', problem: 'problem', problems: 'problems' },
+  fr: { name: 'Nom', coverage: 'Couverture', hrs: 'Hrs', day: 'Jour', problem: 'problème', problems: 'problèmes' },
+  it: { name: 'Nome', coverage: 'Copertura', hrs: 'Ore', day: 'Giorno', problem: 'problema', problems: 'problemi' },
+} as const
 
 interface Props {
   employees: Employee[]
@@ -25,6 +34,8 @@ const PCT_COL_WIDTH = 44
 const SUMMARY_COL_WIDTH = 64
 
 export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, coverageRules, days, onCellChange, compact = false, wunschfreiSet }: Props) {
+  const [lang] = useLang()
+  const gtx = GRID_TX[lang] ?? GRID_TX['de']
   const [openCell, setOpenCell] = useState<{ employeeId: string; date: string } | null>(null)
   const [hoveredWarning, setHoveredWarning] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -83,7 +94,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
   // Pre-compute violations for all days (used in both header and footer)
   const violationsPerDay: Record<string, string[]> = {}
   for (const day of days) {
-    violationsPerDay[day.date] = computeDayViolations(day, employees, assignmentMap, days)
+    violationsPerDay[day.date] = computeDayViolations(day, employees, assignmentMap, days, lang)
   }
 
   const gridCols = `${NAME_COL_WIDTH}px ${PCT_COL_WIDTH}px ${days.map(() => `${DAY_COL_WIDTH}px`).join(' ')} ${SUMMARY_COL_WIDTH}px`
@@ -99,7 +110,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
       >
         {/* HEADER ROW */}
         <div className="sticky top-0 z-20 bg-white border-b border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 flex items-end">
-          Nome
+          {gtx.name}
         </div>
         <div className="sticky top-0 z-20 bg-white border-b border-slate-200 px-1 py-2 text-xs font-semibold text-slate-600 flex items-end justify-center">
           %
@@ -130,7 +141,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
           )
         })}
         <div className="sticky top-0 z-20 bg-white border-b border-slate-200 px-2 py-2 text-[10px] font-semibold text-slate-500 flex items-end justify-center">
-          Hrs
+          {gtx.hrs}
         </div>
 
         {/* EMPLOYEE ROWS grouped by role */}
@@ -156,7 +167,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
 
         {/* COVERAGE FOOTER */}
         <div className="sticky bottom-0 left-0 bg-slate-50 border-t-2 border-slate-300 px-3 py-2 text-[10px] font-bold text-slate-700 flex items-center" style={{ zIndex: 20 }}>
-          Cobertura
+          {gtx.coverage}
         </div>
         <div className="sticky bottom-0 bg-slate-50 border-t-2 border-slate-300" style={{ zIndex: 20 }} />
         {days.map(day => {
@@ -222,7 +233,7 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
                     minWidth: 180,
                   }}>
                     <div style={{ fontWeight: 700, marginBottom: 6, color: '#FCA5A5', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 4 }}>
-                      Dia {day.day} — {violations.length} {violations.length === 1 ? 'problema' : 'problemas'}
+                      {gtx.day} {day.day} — {violations.length} {violations.length === 1 ? gtx.problem : gtx.problems}
                     </div>
                     {violations.map((v, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: i < violations.length - 1 ? 3 : 0 }}>

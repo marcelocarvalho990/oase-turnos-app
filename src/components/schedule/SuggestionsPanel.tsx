@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Sparkles, ChevronDown, ChevronUp, Check, X, RefreshCw,
   ArrowRightLeft, PlusCircle, Loader, AlertTriangle, Info, AlertCircle,
-  ClipboardList, Lightbulb, BarChart3,
+  ClipboardList, Lightbulb, BarChart3, MessageSquare, Send, Bot, User,
 } from 'lucide-react'
 import { useLang, type Lang } from '@/hooks/useLang'
 
@@ -55,13 +55,13 @@ interface Props {
   onApplied: () => void
 }
 
-type Tab = 'resumo' | 'problemas' | 'sugestoes'
+type Tab = 'resumo' | 'problemas' | 'sugestoes' | 'chat'
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 
 const TX: Record<Lang, {
   title: string; refresh: string; analysing: string; empty: string
-  tabSummary: string; tabProblems: string; tabSuggestions: string
+  tabSummary: string; tabProblems: string; tabSuggestions: string; tabChat: string
   hoursPerEmployee: string; managerNotes: string
   noProblem: string; noSuggestion: string
   critical: string; important: string; moderate: string
@@ -71,10 +71,11 @@ const TX: Record<Lang, {
   errConnTitle: string; errConnMsg: string
   qualityLabel: Record<string, string>
   locale: string
+  chatPlaceholder: string; chatThinking: string; chatEmpty: string; chatErrConn: string
 }> = {
   de: {
     title: 'KI-Bericht', refresh: 'Vorschläge aktualisieren', analysing: 'Dienstplan wird analysiert…', empty: 'Dienstplan generieren, um den KI-Bericht zu sehen.',
-    tabSummary: 'Zusammenfassung', tabProblems: 'Probleme', tabSuggestions: 'Vorschläge',
+    tabSummary: 'Zusammenfassung', tabProblems: 'Probleme', tabSuggestions: 'Vorschläge', tabChat: 'Chat',
     hoursPerEmployee: 'Stunden pro Mitarbeiter', managerNotes: 'Hinweise für den Manager',
     noProblem: 'Keine Probleme erkannt.', noSuggestion: 'Keine ausstehenden Vorschläge.',
     critical: 'Kritisch', important: 'Wichtig', moderate: 'Moderat',
@@ -84,10 +85,11 @@ const TX: Record<Lang, {
     errConnTitle: 'Verbindungsfehler', errConnMsg: 'Server konnte nicht erreicht werden. Erneut versuchen.',
     qualityLabel: { boa: 'GUT', moderada: 'MODERAT', fraca: 'SCHWACH' },
     locale: 'de-DE',
+    chatPlaceholder: 'Frage stellen… (Enter)', chatThinking: 'Denkt nach…', chatEmpty: 'Stelle eine Frage zum Dienstplan, den Stunden oder den Mitarbeitern.', chatErrConn: 'Verbindungsfehler. Erneut versuchen.',
   },
   pt: {
     title: 'Relatório IA', refresh: 'Atualizar sugestões', analysing: 'A analisar escala…', empty: 'Gera a escala para ver o relatório IA.',
-    tabSummary: 'Resumo', tabProblems: 'Problemas', tabSuggestions: 'Sugestões',
+    tabSummary: 'Resumo', tabProblems: 'Problemas', tabSuggestions: 'Sugestões', tabChat: 'Chat',
     hoursPerEmployee: 'Horas por colaborador', managerNotes: 'Notas para o manager',
     noProblem: 'Nenhum problema detectado.', noSuggestion: 'Nenhuma sugestão pendente.',
     critical: 'Críticos', important: 'Importantes', moderate: 'Moderados',
@@ -97,10 +99,11 @@ const TX: Record<Lang, {
     errConnTitle: 'Erro de ligação', errConnMsg: 'Não foi possível contactar o servidor. Tenta novamente.',
     qualityLabel: { boa: 'BOA', moderada: 'MODERADA', fraca: 'FRACA' },
     locale: 'pt-PT',
+    chatPlaceholder: 'Faz uma pergunta… (Enter)', chatThinking: 'A pensar…', chatEmpty: 'Faz uma pergunta sobre a escala, horas ou colaboradores.', chatErrConn: 'Erro de ligação. Tenta novamente.',
   },
   en: {
     title: 'AI Report', refresh: 'Refresh suggestions', analysing: 'Analysing schedule…', empty: 'Generate the schedule to see the AI report.',
-    tabSummary: 'Summary', tabProblems: 'Problems', tabSuggestions: 'Suggestions',
+    tabSummary: 'Summary', tabProblems: 'Problems', tabSuggestions: 'Suggestions', tabChat: 'Chat',
     hoursPerEmployee: 'Hours per employee', managerNotes: 'Notes for the manager',
     noProblem: 'No problems detected.', noSuggestion: 'No pending suggestions.',
     critical: 'Critical', important: 'Important', moderate: 'Moderate',
@@ -110,10 +113,11 @@ const TX: Record<Lang, {
     errConnTitle: 'Connection error', errConnMsg: 'Could not reach the server. Please try again.',
     qualityLabel: { boa: 'GOOD', moderada: 'MODERATE', fraca: 'POOR' },
     locale: 'en-GB',
+    chatPlaceholder: 'Ask a question… (Enter)', chatThinking: 'Thinking…', chatEmpty: 'Ask anything about the schedule, hours or employees.', chatErrConn: 'Connection error. Please try again.',
   },
   fr: {
     title: 'Rapport IA', refresh: 'Actualiser les suggestions', analysing: 'Analyse du planning…', empty: 'Générez le planning pour voir le rapport IA.',
-    tabSummary: 'Résumé', tabProblems: 'Problèmes', tabSuggestions: 'Suggestions',
+    tabSummary: 'Résumé', tabProblems: 'Problèmes', tabSuggestions: 'Suggestions', tabChat: 'Chat',
     hoursPerEmployee: 'Heures par collaborateur', managerNotes: 'Notes pour le manager',
     noProblem: 'Aucun problème détecté.', noSuggestion: 'Aucune suggestion en attente.',
     critical: 'Critiques', important: 'Importants', moderate: 'Modérés',
@@ -123,10 +127,11 @@ const TX: Record<Lang, {
     errConnTitle: 'Erreur de connexion', errConnMsg: 'Impossible de contacter le serveur. Réessayez.',
     qualityLabel: { boa: 'BON', moderada: 'MOYEN', fraca: 'FAIBLE' },
     locale: 'fr-FR',
+    chatPlaceholder: 'Poser une question… (Entrée)', chatThinking: 'Réflexion…', chatEmpty: 'Posez une question sur le planning, les heures ou les collaborateurs.', chatErrConn: 'Erreur de connexion. Réessayez.',
   },
   it: {
     title: 'Rapporto IA', refresh: 'Aggiorna suggerimenti', analysing: 'Analisi del turno…', empty: 'Genera il turno per vedere il rapporto IA.',
-    tabSummary: 'Riepilogo', tabProblems: 'Problemi', tabSuggestions: 'Suggerimenti',
+    tabSummary: 'Riepilogo', tabProblems: 'Problemi', tabSuggestions: 'Suggerimenti', tabChat: 'Chat',
     hoursPerEmployee: 'Ore per collaboratore', managerNotes: 'Note per il manager',
     noProblem: 'Nessun problema rilevato.', noSuggestion: 'Nessun suggerimento in sospeso.',
     critical: 'Critici', important: 'Importanti', moderate: 'Moderati',
@@ -136,6 +141,7 @@ const TX: Record<Lang, {
     errConnTitle: 'Errore di connessione', errConnMsg: 'Impossibile contattare il server. Riprova.',
     qualityLabel: { boa: 'BUONO', moderada: 'MODERATO', fraca: 'SCARSO' },
     locale: 'it-IT',
+    chatPlaceholder: 'Fai una domanda… (Invio)', chatThinking: 'Sto pensando…', chatEmpty: 'Fai una domanda sul turno, le ore o i collaboratori.', chatErrConn: 'Errore di connessione. Riprova.',
   },
 }
 
@@ -274,8 +280,9 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
   const tabDef: { key: Tab; label: string; icon: React.ReactNode; badge?: number; badgeColour?: string }[] = [
     { key: 'resumo',    label: tx.tabSummary,     icon: <ClipboardList size={13} />, badge: undefined },
-    { key: 'problemas', label: tx.tabProblems,    icon: <AlertTriangle size={13} />, badge: totalProblems,    badgeColour: (activeReport?.problems.critical.length ?? 0) > 0 ? C.red : C.amber },
+    { key: 'problemas', label: tx.tabProblems,    icon: <AlertTriangle size={13} />, badge: totalProblems,      badgeColour: (activeReport?.problems.critical.length ?? 0) > 0 ? C.red : C.amber },
     { key: 'sugestoes', label: tx.tabSuggestions, icon: <Lightbulb size={13} />,     badge: pendingSuggestions, badgeColour: '#5B21B6' },
+    { key: 'chat',      label: tx.tabChat,        icon: <MessageSquare size={13} />, badge: undefined },
   ]
 
   return (
@@ -376,8 +383,10 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
             ))}
           </div>
 
-          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-            {!activeReport ? (
+          <div style={{ maxHeight: tab === 'chat' ? 440 : 400, overflowY: tab === 'chat' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
+            {tab === 'chat' ? (
+              <MiniChatTab scheduleId={scheduleId} year={year} month={month} team={team} lang={lang} tx={tx} />
+            ) : !activeReport ? (
               <div style={{ padding: '24px 16px', textAlign: 'center', color: C.muted, fontSize: '0.82rem' }}>
                 {isRefreshing
                   ? <><div style={{ display: 'inline-block', width: 20, height: 20, border: `2px solid ${C.border}`, borderTopColor: C.primary, borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 8 }} /><br />{tx.analysing}</>
@@ -660,6 +669,136 @@ function SugestoesTab({ suggestions, applying, onAccept, onDismiss, tx }: {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ── Mini Chat Tab ─────────────────────────────────────────────────────────────
+
+interface ChatMessage { role: 'user' | 'assistant'; content: string }
+
+function MiniChatTab({ scheduleId, year, month, team, lang, tx }: {
+  scheduleId: string; year: number; month: number; team: string; lang: string; tx: TxType
+}) {
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
+
+  async function send(text: string) {
+    const trimmed = text.trim()
+    if (!trimmed || loading) return
+    const userMsg: ChatMessage = { role: 'user', content: trimmed }
+    const history = messages
+    setMessages(prev => [...prev, userMsg])
+    setInput('')
+    setLoading(true)
+    try {
+      const now = new Date()
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: trimmed,
+          history,
+          year: year ?? now.getFullYear(),
+          month: month ?? (now.getMonth() + 1),
+          team,
+          lang,
+        }),
+      })
+      const data = await res.json() as { reply?: string; error?: string }
+      const reply = (data.reply ?? tx.chatErrConn)
+        .replace(/\*\*(.+?)\*\*/g, '$1')
+        .replace(/\*(.+?)\*/g, '$1')
+        .replace(/^#{1,6}\s+/gm, '')
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: tx.chatErrConn }])
+    } finally {
+      setLoading(false)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
+  }
+
+  function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 440, fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {messages.length === 0 && !loading && (
+          <div style={{ margin: 'auto', textAlign: 'center', color: C.muted, fontSize: '0.78rem', padding: '0 12px' }}>
+            <Bot size={22} color={C.muted} style={{ marginBottom: 6 }} />
+            <div>{tx.chatEmpty}</div>
+          </div>
+        )}
+        {messages.map((msg, i) => {
+          const isUser = msg.role === 'user'
+          return (
+            <div key={i} style={{ display: 'flex', gap: 7, flexDirection: isUser ? 'row-reverse' : 'row', alignItems: 'flex-start' }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: isUser ? C.primary : '#E8F0F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                {isUser ? <User size={12} color="#fff" /> : <Bot size={12} color={C.primary} />}
+              </div>
+              <div style={{
+                maxWidth: '80%', padding: '7px 10px', borderRadius: isUser ? '10px 3px 10px 10px' : '3px 10px 10px 10px',
+                background: isUser ? C.primary : C.white, color: isUser ? '#fff' : '#001E30',
+                fontSize: '0.78rem', lineHeight: 1.55, whiteSpace: 'pre-wrap',
+                border: isUser ? 'none' : `1px solid ${C.border}`,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}>
+                {msg.content}
+              </div>
+            </div>
+          )
+        })}
+        {loading && (
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#E8F0F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Bot size={12} color={C.primary} />
+            </div>
+            <div style={{ padding: '7px 10px', borderRadius: '3px 10px 10px 10px', background: C.white, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 10, height: 10, border: `2px solid ${C.border}`, borderTopColor: C.primary, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ fontSize: '0.75rem', color: C.muted }}>{tx.chatThinking}</span>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div style={{ borderTop: `1px solid ${C.border}`, padding: '8px 10px', background: C.bg, flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', background: C.white, border: `1.5px solid ${C.border}`, borderRadius: 9, padding: '6px 8px 6px 10px', transition: 'border-color 0.15s' }}
+          onFocusCapture={e => (e.currentTarget.style.borderColor = C.primary)}
+          onBlurCapture={e => (e.currentTarget.style.borderColor = C.border)}
+        >
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder={tx.chatPlaceholder}
+            disabled={loading}
+            rows={1}
+            style={{ flex: 1, resize: 'none', border: 'none', background: 'transparent', outline: 'none', fontFamily: "'IBM Plex Sans', sans-serif", fontSize: '0.8rem', color: '#001E30', lineHeight: 1.45, maxHeight: 80, overflowY: 'auto' }}
+            onInput={e => { const t = e.currentTarget; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 80) + 'px' }}
+          />
+          <button
+            onClick={() => send(input)}
+            disabled={loading || !input.trim()}
+            style={{ width: 28, height: 28, borderRadius: 7, background: loading || !input.trim() ? C.border : C.primary, border: 'none', cursor: loading || !input.trim() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
+          >
+            <Send size={13} color="#fff" />
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
