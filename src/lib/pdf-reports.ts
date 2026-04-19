@@ -1,7 +1,7 @@
 import type { Employee, ShiftType, AssignmentMap, DayInfo } from '@/types'
 import { ROLE_ORDER, ROLE_LABELS } from '@/types'
 
-const BREAK_DEDUCTION_MIN = 36 // F and S shifts have a mandatory 36-min break
+const BREAK_DEDUCTION_MIN = 36
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -9,6 +9,22 @@ function minutesToHours(mins: number) {
   const h = Math.floor(mins / 60)
   const m = mins % 60
   return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
+}
+
+const LOCALES: Record<string, string> = {
+  de: 'de-DE', pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', it: 'it-IT',
+}
+
+const PDF_TX: Record<string, {
+  schedule: string; hours: string
+  employee: string; role: string; shift: string; time: string
+  workdays: string; hoursCol: string; shifts: string; total: string
+}> = {
+  de: { schedule: 'Dienstplan', hours: 'Stundenbericht',    employee: 'Mitarbeiter', role: 'Funktion',      shift: 'Schicht',   time: 'Zeit',      workdays: 'Arbeitstage', hoursCol: 'Stunden', shifts: 'Schichten', total: 'GESAMT'  },
+  pt: { schedule: 'Escala',     hours: 'Relatório de Horas', employee: 'Colaborador', role: 'Função',        shift: 'Turno',     time: 'Horário',   workdays: 'Dias',        hoursCol: 'Horas',   shifts: 'Turnos',   total: 'TOTAL'   },
+  en: { schedule: 'Schedule',   hours: 'Hours Report',       employee: 'Employee',    role: 'Role',          shift: 'Shift',     time: 'Time',      workdays: 'Work days',   hoursCol: 'Hours',   shifts: 'Shifts',   total: 'TOTAL'   },
+  fr: { schedule: 'Planning',   hours: 'Rapport d\'heures',  employee: 'Collaborateur', role: 'Fonction',    shift: 'Poste',     time: 'Horaire',   workdays: 'Jours',       hoursCol: 'Heures',  shifts: 'Postes',   total: 'TOTAL'   },
+  it: { schedule: 'Turni',      hours: 'Report Ore',         employee: 'Collaboratore', role: 'Funzione',    shift: 'Turno',     time: 'Orario',    workdays: 'Giorni',      hoursCol: 'Ore',     shifts: 'Turni',    total: 'TOTALE'  },
 }
 
 function periodLabel(days: DayInfo[], year: number, month: number, locale: string): string {
@@ -46,24 +62,25 @@ export async function downloadSchedulePDF(opts: {
   year: number
   month: number
   team: string
-  lang: 'pt' | 'de'
+  lang: string
   view: 'month' | 'week' | 'day'
 }) {
   const { jsPDF } = await import('jspdf')
   const autoTable = (await import('jspdf-autotable')).default
 
   const { employees, assignmentMap, shiftTypes, days, year, month, team, lang, view } = opts
-  const locale = lang === 'de' ? 'de-DE' : 'pt-PT'
+  const locale = LOCALES[lang] ?? LOCALES['de']
+  const tx = PDF_TX[lang] ?? PDF_TX['de']
   const shiftMap = Object.fromEntries(shiftTypes.map(s => [s.code, s]))
   const period = periodLabel(days, year, month, locale)
-  const title = lang === 'de' ? `Dienstplan – ${period} – ${team}` : `Escala – ${period} – ${team}`
+  const title = `${tx.schedule} – ${period} – ${team}`
 
   const sorted = [...employees].sort((a, b) => {
     const ri = ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role)
     return ri !== 0 ? ri : a.name.localeCompare(b.name)
   })
 
-  // ── DAILY VIEW: portrait card list ────────────────────────────────────────
+  // ── DAILY VIEW ────────────────────────────────────────────────────────────
   if (view === 'day') {
     const day = days[0]
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
@@ -78,10 +95,10 @@ export async function downloadSchedulePDF(opts: {
     doc.text(new Date().toLocaleString(locale), 14, 20)
 
     const head = [[
-      { content: lang === 'de' ? 'Mitarbeiter' : 'Colaborador', styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const } },
-      { content: lang === 'de' ? 'Funktion' : 'Função',         styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const } },
-      { content: lang === 'de' ? 'Schicht' : 'Turno',           styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const } },
-      { content: lang === 'de' ? 'Zeit' : 'Horário',            styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const } },
+      { content: tx.employee, styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const } },
+      { content: tx.role,     styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const } },
+      { content: tx.shift,    styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const } },
+      { content: tx.time,     styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const } },
     ]]
 
     const body: object[][] = []
@@ -119,11 +136,11 @@ export async function downloadSchedulePDF(opts: {
       theme: 'grid',
     })
 
-    doc.save(`escala_${year}_${String(month).padStart(2, '0')}_${team}_dia.pdf`)
+    doc.save(`schedule_${year}_${String(month).padStart(2, '0')}_${team}_day.pdf`)
     return
   }
 
-  // ── MONTHLY / WEEKLY VIEW: landscape grid ─────────────────────────────────
+  // ── MONTHLY / WEEKLY VIEW ─────────────────────────────────────────────────
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
 
@@ -153,13 +170,12 @@ export async function downloadSchedulePDF(opts: {
 
   const tableTop = ly + 5
 
-  // Header row: employee name col + day cols
   const nameColW = view === 'week' ? 44 : 36
   const usableW  = pageW - 14 - 14 - nameColW
   const dayColW  = Math.min(view === 'week' ? 28 : 8, usableW / days.length)
 
   const head = [[
-    { content: lang === 'de' ? 'Mitarbeiter' : 'Colaborador',
+    { content: tx.employee,
       styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const, fontSize: 7 } },
     ...days.map(d => {
       const dt = new Date(d.date + 'T00:00')
@@ -180,12 +196,12 @@ export async function downloadSchedulePDF(opts: {
     }),
   ]]
 
-  // ── TV badge: FTV/STV per day ────────────────────────────────────────────
-  const HF_ROLES  = new Set(['TEAMLEITUNG'])
-  const FAGE_ROLES = new Set(['FUNKTIONSSTUFE_2', 'FUNKTIONSSTUFE_3'])
+  // TV badge per day
+  const HF_ROLES  = new Set(['TEAMLEITUNG', 'FUNKTIONSSTUFE_3'])
+  const FAGE_ROLES = new Set(['FUNKTIONSSTUFE_2'])
 
-  const ftvPerDay = new Map<string, string>() // date → employeeId
-  const stvPerDay = new Map<string, string>() // date → employeeId
+  const ftvPerDay = new Map<string, string>()
+  const stvPerDay = new Map<string, string>()
 
   for (const day of days) {
     for (const emp of sorted) {
@@ -193,13 +209,15 @@ export async function downloadSchedulePDF(opts: {
       if (!ftvPerDay.has(day.date) && a?.shiftCode === 'F' && (HF_ROLES.has(emp.role) || FAGE_ROLES.has(emp.role))) {
         ftvPerDay.set(day.date, emp.id)
       }
-      if (!stvPerDay.has(day.date) && a?.shiftCode === 'S' && FAGE_ROLES.has(emp.role)) {
+      if (!stvPerDay.has(day.date) && a?.shiftCode === 'S' && (HF_ROLES.has(emp.role) || FAGE_ROLES.has(emp.role))) {
         stvPerDay.set(day.date, emp.id)
       }
     }
   }
 
-  // ── Build body with row-to-employee tracking ──────────────────────────────
+  // Track which cells are empty (for dot drawing)
+  const emptyCells = new Set<string>() // "rowIdx:colIdx"
+
   const bodyRowToEmployee = new Map<number, Employee>()
   let bodyRowIdx = 0
   const body: object[][] = []
@@ -213,7 +231,7 @@ export async function downloadSchedulePDF(opts: {
         colSpan: 1 + days.length,
         styles: { fillColor: LIGHT, textColor: NAVY, fontStyle: 'bold' as const, fontSize: 6.5 },
       }])
-      bodyRowIdx++ // role header — not mapped to employee
+      bodyRowIdx++
     }
 
     bodyRowToEmployee.set(bodyRowIdx, emp)
@@ -223,10 +241,12 @@ export async function downloadSchedulePDF(opts: {
       { content: emp.name, styles: { fontStyle: 'bold' as const, fontSize: 7 } },
     ]
 
-    for (const day of days) {
+    for (let di = 0; di < days.length; di++) {
+      const day = days[di]
       const a = empAssign[day.date]
       if (!a) {
-        cells.push({ content: '', styles: { fillColor: [250, 250, 250] as [number, number, number] } })
+        emptyCells.add(`${bodyRowIdx}:${di + 1}`)
+        cells.push({ content: '', styles: { fillColor: [252, 252, 252] as [number, number, number] } })
         continue
       }
       const s = shiftMap[a.shiftCode]
@@ -252,7 +272,6 @@ export async function downloadSchedulePDF(opts: {
     bodyRowIdx++
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   autoTable(doc, {
     head, body,
     startY: tableTop,
@@ -266,12 +285,26 @@ export async function downloadSchedulePDF(opts: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     didDrawCell: (data: any) => {
       if (data.section !== 'body') return
-      if (data.column.index === 0) return // name column
+      if (data.column.index === 0) return
 
-      const cellEmp = bodyRowToEmployee.get(data.row.index)
-      if (!cellEmp) return // role header row
+      const rowIdx = data.row.index
+      const colIdx = data.column.index
+      const { x, y, width, height } = data.cell as { x: number; y: number; width: number; height: number }
 
-      const dayIdx = data.column.index - 1
+      // Draw gray dot for empty cells
+      if (emptyCells.has(`${rowIdx}:${colIdx}`)) {
+        const cx = x + width / 2
+        const cy = y + height / 2
+        doc.setFillColor(200, 210, 218)
+        doc.circle(cx, cy, 0.8, 'F')
+        return
+      }
+
+      // TV badge
+      const cellEmp = bodyRowToEmployee.get(rowIdx)
+      if (!cellEmp) return
+
+      const dayIdx = colIdx - 1
       if (dayIdx < 0 || dayIdx >= days.length) return
 
       const day = days[dayIdx]
@@ -279,7 +312,6 @@ export async function downloadSchedulePDF(opts: {
       const isSTV = stvPerDay.get(day.date) === cellEmp.id
       if (!isFTV && !isSTV) return
 
-      const { x, y, width } = data.cell as { x: number; y: number; width: number }
       const bW = 3.8; const bH = 2.0
       const bx = x + width - bW - 0.3
       const by = y + 0.3
@@ -292,15 +324,14 @@ export async function downloadSchedulePDF(opts: {
       doc.setFont('helvetica', 'bold')
       doc.text('TV', bx + bW / 2, by + bH * 0.72, { align: 'center' as const })
 
-      // Restore defaults for autoTable
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(7)
       doc.setTextColor(0, 0, 0)
     },
   })
 
-  const suffix = view === 'week' ? 'semana' : 'mes'
-  doc.save(`escala_${year}_${String(month).padStart(2, '0')}_${team}_${suffix}.pdf`)
+  const suffix = view === 'week' ? 'week' : 'month'
+  doc.save(`schedule_${year}_${String(month).padStart(2, '0')}_${team}_${suffix}.pdf`)
 }
 
 // ─── Hours Report PDF ─────────────────────────────────────────────────────────
@@ -313,18 +344,17 @@ export async function downloadHoursPDF(opts: {
   year: number
   month: number
   team: string
-  lang: 'pt' | 'de'
+  lang: string
 }) {
   const { jsPDF } = await import('jspdf')
   const autoTable = (await import('jspdf-autotable')).default
 
   const { employees, assignmentMap, shiftTypes, days, year, month, team, lang } = opts
-  const locale = lang === 'de' ? 'de-DE' : 'pt-PT'
+  const locale = LOCALES[lang] ?? LOCALES['de']
+  const tx = PDF_TX[lang] ?? PDF_TX['de']
   const shiftMap = Object.fromEntries(shiftTypes.map(s => [s.code, s]))
   const period = periodLabel(days, year, month, locale)
-  const title = lang === 'de'
-    ? `Stundenbericht – ${period} – ${team}`
-    : `Relatório de Horas – ${period} – ${team}`
+  const title = `${tx.hours} – ${period} – ${team}`
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
@@ -348,12 +378,12 @@ export async function downloadHoursPDF(opts: {
   })
 
   const head = [[
-    colH(lang === 'de' ? 'Mitarbeiter' : 'Colaborador'),
-    colH(lang === 'de' ? 'Funktion' : 'Função'),
-    colH(lang === 'de' ? 'Arbeitstage' : 'Dias', { halign: 'center' }),
-    colH(lang === 'de' ? 'Stunden' : 'Horas', { halign: 'center' }),
+    colH(tx.employee),
+    colH(tx.role),
+    colH(tx.workdays, { halign: 'center' }),
+    colH(tx.hoursCol, { halign: 'center' }),
     colH('%', { halign: 'center' }),
-    colH(lang === 'de' ? 'Schichten' : 'Turnos'),
+    colH(tx.shifts),
   ]]
 
   let totalMins = 0
@@ -399,7 +429,7 @@ export async function downloadHoursPDF(opts: {
   }
 
   body.push([
-    { content: lang === 'de' ? 'GESAMT' : 'TOTAL', colSpan: 3,
+    { content: tx.total, colSpan: 3,
       styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const, halign: 'right' as const, fontSize: 9 } },
     { content: minutesToHours(totalMins),
       styles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold' as const, halign: 'center' as const, fontSize: 9 } },
@@ -415,5 +445,5 @@ export async function downloadHoursPDF(opts: {
     theme: 'grid',
   })
 
-  doc.save(`horas_${year}_${String(month).padStart(2, '0')}_${team}.pdf`)
+  doc.save(`hours_${year}_${String(month).padStart(2, '0')}_${team}.pdf`)
 }

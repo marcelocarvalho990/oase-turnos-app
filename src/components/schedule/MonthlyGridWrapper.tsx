@@ -208,7 +208,7 @@ export default function MonthlyGridWrapper({
     if (isPdfBusy) return
     setIsPdfBusy(true)
     try {
-      await downloadSchedulePDF({ employees, assignmentMap, shiftTypes, days: displayDays, year, month, team, lang: (lang === 'de' ? 'de' : 'pt'), view })
+      await downloadSchedulePDF({ employees, assignmentMap, shiftTypes, days: displayDays, year, month, team, lang, view })
     } finally {
       setIsPdfBusy(false)
     }
@@ -218,7 +218,7 @@ export default function MonthlyGridWrapper({
     if (isPdfBusy) return
     setIsPdfBusy(true)
     try {
-      await downloadHoursPDF({ employees, assignmentMap, shiftTypes, days: displayDays, year, month, team, lang: (lang === 'de' ? 'de' : 'pt') })
+      await downloadHoursPDF({ employees, assignmentMap, shiftTypes, days: displayDays, year, month, team, lang })
     } finally {
       setIsPdfBusy(false)
     }
