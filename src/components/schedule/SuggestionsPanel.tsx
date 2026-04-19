@@ -6,6 +6,7 @@ import {
   ArrowRightLeft, PlusCircle, Loader, AlertTriangle, Info, AlertCircle,
   ClipboardList, Lightbulb, BarChart3,
 } from 'lucide-react'
+import { useLang, type Lang } from '@/hooks/useLang'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -49,12 +50,94 @@ interface Props {
   year: number
   month: number
   team: string
-  report: GenerationReport | null        // from LLM generation (preferred)
-  fetchTrigger: number                   // fallback: increment to fetch from /api/suggestions
+  report: GenerationReport | null
+  fetchTrigger: number
   onApplied: () => void
 }
 
 type Tab = 'resumo' | 'problemas' | 'sugestoes'
+
+// ── i18n ──────────────────────────────────────────────────────────────────────
+
+const TX: Record<Lang, {
+  title: string; refresh: string; analysing: string; empty: string
+  tabSummary: string; tabProblems: string; tabSuggestions: string
+  hoursPerEmployee: string; managerNotes: string
+  noProblem: string; noSuggestion: string
+  critical: string; important: string; moderate: string
+  swap: string; add: string; yields: string
+  accept: string; applying: string; dismiss: string
+  errApplyTitle: string; errApplyDefault: string
+  errConnTitle: string; errConnMsg: string
+  qualityLabel: Record<string, string>
+  locale: string
+}> = {
+  de: {
+    title: 'KI-Bericht', refresh: 'Vorschläge aktualisieren', analysing: 'Dienstplan wird analysiert…', empty: 'Dienstplan generieren, um den KI-Bericht zu sehen.',
+    tabSummary: 'Zusammenfassung', tabProblems: 'Probleme', tabSuggestions: 'Vorschläge',
+    hoursPerEmployee: 'Stunden pro Mitarbeiter', managerNotes: 'Hinweise für den Manager',
+    noProblem: 'Keine Probleme erkannt.', noSuggestion: 'Keine ausstehenden Vorschläge.',
+    critical: 'Kritisch', important: 'Wichtig', moderate: 'Moderat',
+    swap: 'TAUSCH', add: 'HINZUFÜGEN', yields: 'gibt ab',
+    accept: 'Akzeptieren', applying: 'Wird angewendet…', dismiss: 'Ignorieren',
+    errApplyTitle: 'Konnte nicht angewendet werden', errApplyDefault: 'Fehler beim Anwenden des Vorschlags',
+    errConnTitle: 'Verbindungsfehler', errConnMsg: 'Server konnte nicht erreicht werden. Erneut versuchen.',
+    qualityLabel: { boa: 'GUT', moderada: 'MODERAT', fraca: 'SCHWACH' },
+    locale: 'de-DE',
+  },
+  pt: {
+    title: 'Relatório IA', refresh: 'Atualizar sugestões', analysing: 'A analisar escala…', empty: 'Gera a escala para ver o relatório IA.',
+    tabSummary: 'Resumo', tabProblems: 'Problemas', tabSuggestions: 'Sugestões',
+    hoursPerEmployee: 'Horas por colaborador', managerNotes: 'Notas para o manager',
+    noProblem: 'Nenhum problema detectado.', noSuggestion: 'Nenhuma sugestão pendente.',
+    critical: 'Críticos', important: 'Importantes', moderate: 'Moderados',
+    swap: 'TROCA', add: 'ADIÇÃO', yields: 'cede',
+    accept: 'Aceitar', applying: 'A aplicar…', dismiss: 'Ignorar',
+    errApplyTitle: 'Não foi possível aplicar', errApplyDefault: 'Erro ao aplicar sugestão',
+    errConnTitle: 'Erro de ligação', errConnMsg: 'Não foi possível contactar o servidor. Tenta novamente.',
+    qualityLabel: { boa: 'BOA', moderada: 'MODERADA', fraca: 'FRACA' },
+    locale: 'pt-PT',
+  },
+  en: {
+    title: 'AI Report', refresh: 'Refresh suggestions', analysing: 'Analysing schedule…', empty: 'Generate the schedule to see the AI report.',
+    tabSummary: 'Summary', tabProblems: 'Problems', tabSuggestions: 'Suggestions',
+    hoursPerEmployee: 'Hours per employee', managerNotes: 'Notes for the manager',
+    noProblem: 'No problems detected.', noSuggestion: 'No pending suggestions.',
+    critical: 'Critical', important: 'Important', moderate: 'Moderate',
+    swap: 'SWAP', add: 'ADD', yields: 'gives',
+    accept: 'Accept', applying: 'Applying…', dismiss: 'Dismiss',
+    errApplyTitle: 'Could not apply', errApplyDefault: 'Error applying suggestion',
+    errConnTitle: 'Connection error', errConnMsg: 'Could not reach the server. Please try again.',
+    qualityLabel: { boa: 'GOOD', moderada: 'MODERATE', fraca: 'POOR' },
+    locale: 'en-GB',
+  },
+  fr: {
+    title: 'Rapport IA', refresh: 'Actualiser les suggestions', analysing: 'Analyse du planning…', empty: 'Générez le planning pour voir le rapport IA.',
+    tabSummary: 'Résumé', tabProblems: 'Problèmes', tabSuggestions: 'Suggestions',
+    hoursPerEmployee: 'Heures par collaborateur', managerNotes: 'Notes pour le manager',
+    noProblem: 'Aucun problème détecté.', noSuggestion: 'Aucune suggestion en attente.',
+    critical: 'Critiques', important: 'Importants', moderate: 'Modérés',
+    swap: 'ÉCHANGE', add: 'AJOUT', yields: 'cède',
+    accept: 'Accepter', applying: 'Application…', dismiss: 'Ignorer',
+    errApplyTitle: 'Impossible d\'appliquer', errApplyDefault: 'Erreur lors de l\'application',
+    errConnTitle: 'Erreur de connexion', errConnMsg: 'Impossible de contacter le serveur. Réessayez.',
+    qualityLabel: { boa: 'BON', moderada: 'MOYEN', fraca: 'FAIBLE' },
+    locale: 'fr-FR',
+  },
+  it: {
+    title: 'Rapporto IA', refresh: 'Aggiorna suggerimenti', analysing: 'Analisi del turno…', empty: 'Genera il turno per vedere il rapporto IA.',
+    tabSummary: 'Riepilogo', tabProblems: 'Problemi', tabSuggestions: 'Suggerimenti',
+    hoursPerEmployee: 'Ore per collaboratore', managerNotes: 'Note per il manager',
+    noProblem: 'Nessun problema rilevato.', noSuggestion: 'Nessun suggerimento in sospeso.',
+    critical: 'Critici', important: 'Importanti', moderate: 'Moderati',
+    swap: 'SCAMBIO', add: 'AGGIUNTA', yields: 'cede',
+    accept: 'Accetta', applying: 'Applicazione…', dismiss: 'Ignora',
+    errApplyTitle: 'Impossibile applicare', errApplyDefault: 'Errore nell\'applicazione',
+    errConnTitle: 'Errore di connessione', errConnMsg: 'Impossibile contattare il server. Riprova.',
+    qualityLabel: { boa: 'BUONO', moderada: 'MODERATO', fraca: 'SCARSO' },
+    locale: 'it-IT',
+  },
+}
 
 // ── Colours ───────────────────────────────────────────────────────────────────
 
@@ -71,6 +154,9 @@ const C = {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function SuggestionsPanel({ scheduleId, year, month, team, report, fetchTrigger, onApplied }: Props) {
+  const [lang] = useLang()
+  const tx = TX[lang]
+
   const [expanded, setExpanded] = useState(true)
   const [tab, setTab] = useState<Tab>('resumo')
   const [activeReport, setActiveReport] = useState<GenerationReport | null>(report)
@@ -80,7 +166,6 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
   const [hasFetched, setHasFetched] = useState(false)
   const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null)
 
-  // When LLM report arrives directly from generation → use it
   useEffect(() => {
     if (report) {
       setActiveReport(report)
@@ -91,7 +176,6 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
     }
   }, [report])
 
-  // Fallback: when LLM didn't produce a report, fetch suggestions from /api/suggestions
   useEffect(() => {
     if (fetchTrigger > 0 && !report) {
       fetchFallbackSuggestions()
@@ -109,9 +193,8 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       if (!res.ok) return
       const data = await res.json()
       if (data.suggestions?.length > 0) {
-        // Build a minimal report with just suggestions
         setActiveReport({
-          summary: 'Escala gerada. Sugestões de equilíbrio de horas abaixo.',
+          summary: tx.empty,
           quality: 'moderada',
           evaluation: [],
           problems: { critical: [], important: [], moderate: [] },
@@ -128,15 +211,12 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
     }
   }
 
-  // Derived values — safe-guarded for when activeReport is null (loading state)
   const visibleSuggestions = (activeReport?.suggestions ?? []).filter(s => !dismissed.has(s.id))
   const totalProblems = (activeReport?.problems.critical.length ?? 0) + (activeReport?.problems.important.length ?? 0) + (activeReport?.problems.moderate.length ?? 0)
   const pendingSuggestions = visibleSuggestions.length
   const quality = activeReport?.quality ?? 'moderada'
   const qualityColour = quality === 'boa' ? C.green : quality === 'moderada' ? C.amber : C.red
   const qualityBg = quality === 'boa' ? C.greenBg : quality === 'moderada' ? C.amberBg : C.redBg
-
-  // ── Refresh suggestions (manual button) ──────────────────────────────────
 
   const refreshSuggestions = useCallback(async () => {
     setIsRefreshing(true)
@@ -158,8 +238,6 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
     }
   }, [scheduleId, year, month, team])
 
-  // ── Apply suggestion ──────────────────────────────────────────────────────
-
   async function applySuggestion(suggestion: Suggestion) {
     setApplying(suggestion.id)
     try {
@@ -170,24 +248,22 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       })
       if (!res.ok) {
         const data = await res.json()
-        setErrorModal({ title: 'Não foi possível aplicar', message: data.error ?? 'Erro ao aplicar sugestão' })
+        setErrorModal({ title: tx.errApplyTitle, message: data.error ?? tx.errApplyDefault })
         return
       }
       setDismissed(prev => new Set([...prev, suggestion.id]))
       onApplied()
     } catch {
-      setErrorModal({ title: 'Erro de ligação', message: 'Não foi possível contactar o servidor. Tenta novamente.' })
+      setErrorModal({ title: tx.errConnTitle, message: tx.errConnMsg })
     } finally {
       setApplying(null)
     }
   }
 
-  // ── Tab badge counts ──────────────────────────────────────────────────────
-
   const tabDef: { key: Tab; label: string; icon: React.ReactNode; badge?: number; badgeColour?: string }[] = [
-    { key: 'resumo',    label: 'Resumo',    icon: <ClipboardList size={13} />, badge: undefined },
-    { key: 'problemas', label: 'Problemas', icon: <AlertTriangle size={13} />, badge: totalProblems,    badgeColour: (activeReport?.problems.critical.length ?? 0) > 0 ? C.red : C.amber },
-    { key: 'sugestoes', label: 'Sugestões', icon: <Lightbulb size={13} />,     badge: pendingSuggestions, badgeColour: '#5B21B6' },
+    { key: 'resumo',    label: tx.tabSummary,     icon: <ClipboardList size={13} />, badge: undefined },
+    { key: 'problemas', label: tx.tabProblems,    icon: <AlertTriangle size={13} />, badge: totalProblems,    badgeColour: (activeReport?.problems.critical.length ?? 0) > 0 ? C.red : C.amber },
+    { key: 'sugestoes', label: tx.tabSuggestions, icon: <Lightbulb size={13} />,     badge: pendingSuggestions, badgeColour: '#5B21B6' },
   ]
 
   return (
@@ -215,22 +291,20 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
         {expanded ? (
           <>
             <span style={{ fontWeight: 700, fontSize: '0.85rem', color: C.white, flex: 1 }}>
-              Relatório IA
+              {tx.title}
             </span>
 
-            {/* Quality badge */}
             <span style={{
               fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 8,
               background: qualityBg, color: qualityColour,
             }}>
-              {quality.toUpperCase()}
+              {tx.qualityLabel[quality] ?? quality.toUpperCase()}
             </span>
 
-            {/* Refresh suggestions */}
             <button
               onClick={refreshSuggestions}
               disabled={isRefreshing}
-              title="Atualizar sugestões"
+              title={tx.refresh}
               style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', padding: 2 }}
             >
               {isRefreshing
@@ -254,7 +328,6 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
           </>
         )}
 
-        {/* Expand/collapse */}
         <button
           onClick={(e) => { e.stopPropagation(); setExpanded(v => !v) }}
           style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', padding: 2 }}
@@ -267,7 +340,6 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       {expanded && (
         <div style={{ background: C.white, borderRadius: '0 0 12px 12px', border: `1px solid ${C.border}`, borderTop: 'none' }}>
 
-          {/* Tab bar */}
           <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, background: C.bg }}>
             {tabDef.map(t => (
               <button
@@ -292,24 +364,24 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
             ))}
           </div>
 
-          {/* Tab content */}
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {!activeReport ? (
               <div style={{ padding: '24px 16px', textAlign: 'center', color: C.muted, fontSize: '0.82rem' }}>
                 {isRefreshing
-                  ? <><div style={{ display: 'inline-block', width: 20, height: 20, border: `2px solid ${C.border}`, borderTopColor: C.primary, borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 8 }} /><br />A analisar escala...</>
-                  : 'Gera a escala para ver o relatório IA.'}
+                  ? <><div style={{ display: 'inline-block', width: 20, height: 20, border: `2px solid ${C.border}`, borderTopColor: C.primary, borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 8 }} /><br />{tx.analysing}</>
+                  : tx.empty}
               </div>
             ) : (
               <>
-                {tab === 'resumo' && <ResumoTab summary={activeReport.summary} evaluation={activeReport.evaluation} managerNotes={activeReport.managerNotes} />}
-                {tab === 'problemas' && <ProblemasTab problems={activeReport.problems} />}
+                {tab === 'resumo' && <ResumoTab summary={activeReport.summary} evaluation={activeReport.evaluation} managerNotes={activeReport.managerNotes} tx={tx} />}
+                {tab === 'problemas' && <ProblemasTab problems={activeReport.problems} tx={tx} />}
                 {tab === 'sugestoes' && (
                   <SugestoesTab
                     suggestions={visibleSuggestions}
                     applying={applying}
                     onAccept={applySuggestion}
                     onDismiss={id => setDismissed(prev => new Set([...prev, id]))}
+                    tx={tx}
                   />
                 )}
               </>
@@ -320,7 +392,6 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Error modal */}
       {errorModal && (
         <div
           onClick={() => setErrorModal(null)}
@@ -340,7 +411,6 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
             }}
           >
-            {/* Icon */}
             <div style={{
               width: 48, height: 48, borderRadius: '50%',
               background: C.redBg, border: `2px solid ${C.redBorder}`,
@@ -378,21 +448,21 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
 // ── Tab: Resumo ───────────────────────────────────────────────────────────────
 
-function ResumoTab({ summary, evaluation, managerNotes }: { summary: string; evaluation: EvaluationItem[]; managerNotes: string }) {
+type TxType = typeof TX[Lang]
+
+function ResumoTab({ summary, evaluation, managerNotes, tx }: { summary: string; evaluation: EvaluationItem[]; managerNotes: string; tx: TxType }) {
   return (
     <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Summary */}
       {summary && (
         <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.5 }}>
           {summary}
         </div>
       )}
 
-      {/* Per-employee hours */}
       {evaluation.length > 0 && (
         <div>
           <div style={{ fontSize: '0.7rem', fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            <BarChart3 size={11} style={{ display: 'inline', marginRight: 4 }} />Horas por colaborador
+            <BarChart3 size={11} style={{ display: 'inline', marginRight: 4 }} />{tx.hoursPerEmployee}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {evaluation.map(emp => {
@@ -423,11 +493,10 @@ function ResumoTab({ summary, evaluation, managerNotes }: { summary: string; eva
         </div>
       )}
 
-      {/* Manager notes */}
       {managerNotes && (
-        <div style={{ background: '#F0F9FF', border: `1px solid #BAE6FD`, borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#0369A1' }}>
+        <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#0369A1' }}>
           <div style={{ fontWeight: 700, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Info size={12} /> Notas para o manager
+            <Info size={12} /> {tx.managerNotes}
           </div>
           {managerNotes}
         </div>
@@ -438,11 +507,11 @@ function ResumoTab({ summary, evaluation, managerNotes }: { summary: string; eva
 
 // ── Tab: Problemas ────────────────────────────────────────────────────────────
 
-function ProblemasTab({ problems }: { problems: GenerationReport['problems'] }) {
+function ProblemasTab({ problems, tx }: { problems: GenerationReport['problems']; tx: TxType }) {
   const sections: { key: keyof typeof problems; label: string; colour: string; bg: string; border: string; icon: React.ReactNode }[] = [
-    { key: 'critical', label: 'Críticos',   colour: C.red,   bg: C.redBg,   border: C.redBorder,   icon: <AlertCircle size={13} /> },
-    { key: 'important', label: 'Importantes', colour: C.amber, bg: C.amberBg, border: C.amberBorder, icon: <AlertTriangle size={13} /> },
-    { key: 'moderate',  label: 'Moderados',   colour: C.blue,  bg: C.blueBg,  border: C.blueBorder,  icon: <Info size={13} /> },
+    { key: 'critical',  label: tx.critical,  colour: C.red,   bg: C.redBg,   border: C.redBorder,   icon: <AlertCircle size={13} /> },
+    { key: 'important', label: tx.important, colour: C.amber, bg: C.amberBg, border: C.amberBorder, icon: <AlertTriangle size={13} /> },
+    { key: 'moderate',  label: tx.moderate,  colour: C.blue,  bg: C.blueBg,  border: C.blueBorder,  icon: <Info size={13} /> },
   ]
 
   const total = problems.critical.length + problems.important.length + problems.moderate.length
@@ -450,7 +519,7 @@ function ProblemasTab({ problems }: { problems: GenerationReport['problems'] }) 
   if (total === 0) {
     return (
       <div style={{ padding: '24px 16px', textAlign: 'center', color: C.muted, fontSize: '0.82rem' }}>
-        Nenhum problema detectado.
+        {tx.noProblem}
       </div>
     )
   }
@@ -485,21 +554,22 @@ function ProblemasTab({ problems }: { problems: GenerationReport['problems'] }) 
 
 // ── Tab: Sugestões ────────────────────────────────────────────────────────────
 
-function SugestoesTab({ suggestions, applying, onAccept, onDismiss }: {
+function SugestoesTab({ suggestions, applying, onAccept, onDismiss, tx }: {
   suggestions: Suggestion[]
   applying: string | null
   onAccept: (s: Suggestion) => void
   onDismiss: (id: string) => void
+  tx: TxType
 }) {
   if (suggestions.length === 0) {
     return (
       <div style={{ padding: '24px 16px', textAlign: 'center', color: C.muted, fontSize: '0.82rem' }}>
-        Nenhuma sugestão pendente.
+        {tx.noSuggestion}
       </div>
     )
   }
 
-  const dateLabel = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })
+  const dateLabel = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString(tx.locale, { day: 'numeric', month: 'short' })
 
   return (
     <div>
@@ -516,7 +586,7 @@ function SugestoesTab({ suggestions, applying, onAccept, onDismiss }: {
                 border: `1px solid ${isSwap ? C.blueBorder : C.greenBorder}`,
               }}>
                 {isSwap ? <ArrowRightLeft size={10} /> : <PlusCircle size={10} />}
-                {isSwap ? 'TROCA' : 'ADIÇÃO'}
+                {isSwap ? tx.swap : tx.add}
               </span>
               <span style={{ fontSize: '0.81rem', fontWeight: 600, color: C.primary, lineHeight: 1.35 }}>
                 {sug.description}
@@ -527,7 +597,7 @@ function SugestoesTab({ suggestions, applying, onAccept, onDismiss }: {
               {isSwap ? (
                 <>
                   <b style={{ color: '#475569' }}>{(sug as SwapSuggestion).fromEmployeeName}</b>
-                  {' cede '}<b style={{ color: C.primary }}>{(sug as SwapSuggestion).fromShiftCode}</b>
+                  {' '}{tx.yields}{' '}<b style={{ color: C.primary }}>{(sug as SwapSuggestion).fromShiftCode}</b>
                   {' ('}{dateLabel((sug as SwapSuggestion).fromDate)}{') → '}
                   <b style={{ color: '#475569' }}>{(sug as SwapSuggestion).toEmployeeName}</b>
                 </>
@@ -557,8 +627,8 @@ function SugestoesTab({ suggestions, applying, onAccept, onDismiss }: {
                 }}
               >
                 {isApplying
-                  ? <><Loader size={11} style={{ animation: 'spin 0.8s linear infinite' }} /> A aplicar...</>
-                  : <><Check size={12} /> Aceitar</>
+                  ? <><Loader size={11} style={{ animation: 'spin 0.8s linear infinite' }} /> {tx.applying}</>
+                  : <><Check size={12} /> {tx.accept}</>
                 }
               </button>
               <button
@@ -572,7 +642,7 @@ function SugestoesTab({ suggestions, applying, onAccept, onDismiss }: {
                   fontFamily: "'IBM Plex Sans', sans-serif",
                 }}
               >
-                <X size={12} /> Ignorar
+                <X size={12} /> {tx.dismiss}
               </button>
             </div>
           </div>
