@@ -5,8 +5,9 @@ import { ChevronLeft, ChevronRight, CheckCircle2, Clock, AlertTriangle, ChevronD
 import { useLang } from '@/hooks/useLang'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
+import type { Lang } from '@/hooks/useLang'
+
 type ConfType = 'WORKED' | 'EARLY_DEPARTURE' | 'ABSENT'
-type Lang = 'pt' | 'de'
 
 interface ShiftInfo { code: string; startTime1: string; endTime1: string; color: string }
 interface AssignmentRow { date: string; shiftType: ShiftInfo | null }
@@ -21,15 +22,25 @@ interface Confirmation {
   id: string; date: string; shiftCode: string; type: string; actualEnd: string | null; reason: string | null
 }
 
-const WEEKDAYS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-const WEEKDAYS_DE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
-const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
+const WEEKDAYS: Record<Lang, string[]> = {
+  pt: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+  de: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  fr: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
+  it: ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'],
+}
+const MONTHS: Record<Lang, string[]> = {
+  pt: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+  de: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+  en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+  fr: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+  it: ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
+}
 
 const CONF_LABELS: Record<ConfType, Record<Lang, string>> = {
-  WORKED:          { pt: 'Trabalhei',      de: 'Gearbeitet'    },
-  EARLY_DEPARTURE: { pt: 'Saí mais cedo',  de: 'Früh gegangen' },
-  ABSENT:          { pt: 'Faltei',         de: 'Abwesend'      },
+  WORKED:          { pt: 'Trabalhei',      de: 'Gearbeitet',    en: 'Worked',       fr: 'J\'ai travaillé', it: 'Ho lavorato'    },
+  EARLY_DEPARTURE: { pt: 'Saí mais cedo',  de: 'Früh gegangen', en: 'Left early',   fr: 'Parti tôt',       it: 'Partito prima'  },
+  ABSENT:          { pt: 'Faltei',         de: 'Abwesend',      en: 'Was absent',   fr: 'Étais absent',    it: 'Ero assente'    },
 }
 
 const TYPE_STYLE: Record<ConfType, { color: string; bg: string; icon: typeof Clock }> = {
@@ -38,9 +49,23 @@ const TYPE_STYLE: Record<ConfType, { color: string; bg: string; icon: typeof Clo
   ABSENT:          { color: '#DC2626', bg: '#FEE2E2', icon: AlertTriangle },
 }
 
+const REG_TX: Record<Lang, {
+  title: string; loading: string; notPublished: string; notPublishedSub: string; noShifts: string;
+  noRecord: string; future: string; whatHappened: string; leaveTime: string;
+  reason: (required: boolean) => string; reasonPlaceholder: string;
+  cancelBtn: string; saveBtn: string; saving: string;
+  errorLeaveTime: string; errorReason: string;
+}> = {
+  pt: { title: 'Registo de Turnos', loading: 'A carregar...', notPublished: 'Escala não publicada', notPublishedSub: 'O gestor ainda não publicou a escala deste mês.', noShifts: 'Sem turnos registados neste mês.', noRecord: 'Sem registo', future: 'futuro', whatHappened: 'O que aconteceu?', leaveTime: 'Hora de saída', reason: (r) => r ? 'Motivo *' : 'Motivo (opcional)', reasonPlaceholder: 'Descreve brevemente...', cancelBtn: 'Cancelar', saveBtn: 'Guardar', saving: 'A guardar...', errorLeaveTime: 'Indica a hora de saída', errorReason: 'O motivo é obrigatório' },
+  de: { title: 'Schichtprotokoll', loading: 'Lädt...', notPublished: 'Dienstplan nicht veröffentlicht', notPublishedSub: 'Der Manager hat den Dienstplan noch nicht veröffentlicht.', noShifts: 'Keine Schichten in diesem Monat.', noRecord: 'Nicht erfasst', future: 'Zukunft', whatHappened: 'Was ist passiert?', leaveTime: 'Abgangszeit', reason: (r) => r ? 'Grund *' : 'Grund (optional)', reasonPlaceholder: 'Kurze Beschreibung...', cancelBtn: 'Abbrechen', saveBtn: 'Speichern', saving: 'Speichern...', errorLeaveTime: 'Bitte Abgangszeit angeben', errorReason: 'Grund erforderlich' },
+  en: { title: 'Shift Log', loading: 'Loading...', notPublished: 'Schedule not published', notPublishedSub: 'The manager has not yet published the schedule for this month.', noShifts: 'No shifts recorded this month.', noRecord: 'No record', future: 'future', whatHappened: 'What happened?', leaveTime: 'Leave time', reason: (r) => r ? 'Reason *' : 'Reason (optional)', reasonPlaceholder: 'Brief description...', cancelBtn: 'Cancel', saveBtn: 'Save', saving: 'Saving...', errorLeaveTime: 'Please enter leave time', errorReason: 'Reason is required' },
+  fr: { title: 'Registre des postes', loading: 'Chargement...', notPublished: 'Planning non publié', notPublishedSub: 'Le responsable n\'a pas encore publié le planning de ce mois.', noShifts: 'Aucun poste enregistré ce mois.', noRecord: 'Aucun enregistrement', future: 'futur', whatHappened: 'Que s\'est-il passé ?', leaveTime: 'Heure de départ', reason: (r) => r ? 'Motif *' : 'Motif (facultatif)', reasonPlaceholder: 'Description brève...', cancelBtn: 'Annuler', saveBtn: 'Enregistrer', saving: 'Enregistrement...', errorLeaveTime: 'Veuillez indiquer l\'heure de départ', errorReason: 'Le motif est obligatoire' },
+  it: { title: 'Registro Turni', loading: 'Caricamento...', notPublished: 'Turni non pubblicati', notPublishedSub: 'Il responsabile non ha ancora pubblicato i turni di questo mese.', noShifts: 'Nessun turno registrato questo mese.', noRecord: 'Nessun registro', future: 'futuro', whatHappened: 'Cosa è successo?', leaveTime: 'Ora di uscita', reason: (r) => r ? 'Motivo *' : 'Motivo (opzionale)', reasonPlaceholder: 'Breve descrizione...', cancelBtn: 'Annulla', saveBtn: 'Salva', saving: 'Salvataggio...', errorLeaveTime: 'Indicare l\'ora di uscita', errorReason: 'Il motivo è obbligatorio' },
+}
+
 function fmtDate(dateStr: string, lang: Lang): string {
   const d = new Date(dateStr + 'T00:00:00')
-  const wd = lang === 'pt' ? WEEKDAYS_PT[d.getDay()] : WEEKDAYS_DE[d.getDay()]
+  const wd = WEEKDAYS[lang][d.getDay()]
   return `${String(d.getDate()).padStart(2, '0')} ${wd}`
 }
 
@@ -48,7 +73,7 @@ export default function RegistoClient() {
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
-  const [lang, toggleLang] = useLang()
+  const [lang] = useLang()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth() + 1)
   const [calData, setCalData] = useState<CalendarResp | null>(null)
@@ -63,7 +88,6 @@ export default function RegistoClient() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
-  const MONTHS = lang === 'pt' ? MONTHS_PT : MONTHS_DE
   const isMobile = useIsMobile()
 
   useEffect(() => {
@@ -98,11 +122,11 @@ export default function RegistoClient() {
 
   async function saveConf(date: string, shiftCode: string) {
     if (confType === 'EARLY_DEPARTURE' && !confActualEnd) {
-      setSaveError(lang === 'pt' ? 'Indica a hora de saída' : 'Bitte Abgangszeit angeben')
+      setSaveError(REG_TX[lang].errorLeaveTime)
       return
     }
     if (confType === 'ABSENT' && !confReason.trim()) {
-      setSaveError(lang === 'pt' ? 'O motivo é obrigatório' : 'Grund erforderlich')
+      setSaveError(REG_TX[lang].errorReason)
       return
     }
     setSaving(true); setSaveError('')
@@ -151,16 +175,13 @@ export default function RegistoClient() {
       <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
-            {lang === 'pt' ? 'Registo de Turnos' : 'Schichtprotokoll'}
+            {REG_TX[lang].title}
           </h1>
           <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', fontFamily: "'IBM Plex Mono', monospace" }}>
-            {MONTHS[month - 1].toUpperCase()} {year}
+            {MONTHS[lang][month - 1].toUpperCase()} {year}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button onClick={toggleLang} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
-            {lang === 'pt' ? 'DE' : 'PT'}
-          </button>
           <button onClick={prevMonth} style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, cursor: 'pointer', display: 'flex', color: 'white' }}>
             <ChevronLeft size={14} />
           </button>
@@ -173,7 +194,7 @@ export default function RegistoClient() {
       <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
         {loading && (
           <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0', fontFamily: "'IBM Plex Mono', monospace" }}>
-            {lang === 'pt' ? 'A carregar...' : 'Lädt...'}
+            {REG_TX[lang].loading}
           </p>
         )}
 
@@ -182,10 +203,10 @@ export default function RegistoClient() {
             <div style={{ fontSize: '1.1rem' }}>📋</div>
             <div>
               <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#92400E', marginBottom: 2 }}>
-                {lang === 'pt' ? 'Escala não publicada' : 'Dienstplan nicht veröffentlicht'}
+                {REG_TX[lang].notPublished}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#B45309' }}>
-                {lang === 'pt' ? 'O gestor ainda não publicou a escala deste mês.' : 'Der Manager hat den Dienstplan noch nicht veröffentlicht.'}
+                {REG_TX[lang].notPublishedSub}
               </div>
             </div>
           </div>
@@ -193,7 +214,7 @@ export default function RegistoClient() {
 
         {!loading && isPublished && rows.length === 0 && (
           <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0' }}>
-            {lang === 'pt' ? 'Sem turnos registados neste mês.' : 'Keine Schichten in diesem Monat.'}
+            {REG_TX[lang].noShifts}
           </p>
         )}
 
@@ -254,12 +275,12 @@ export default function RegistoClient() {
                     )}
                     {!conf && canRegister && (
                       <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontStyle: 'italic' }}>
-                        {lang === 'pt' ? 'Sem registo' : 'Nicht erfasst'}
+                        {REG_TX[lang].noRecord}
                       </span>
                     )}
                     {!canRegister && !isToday && (
                       <span style={{ fontSize: '0.7rem', color: '#C8D8E0', fontFamily: "'IBM Plex Mono', monospace" }}>
-                        {lang === 'pt' ? 'futuro' : 'Zukunft'}
+                        {REG_TX[lang].future}
                       </span>
                     )}
                     {canRegister && (
@@ -276,7 +297,7 @@ export default function RegistoClient() {
                     <div style={{ paddingTop: 14 }}>
                       {/* Type selector */}
                       <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                        {lang === 'pt' ? 'O que aconteceu?' : 'Was ist passiert?'}
+                        {REG_TX[lang].whatHappened}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
                         {(['WORKED', 'EARLY_DEPARTURE', 'ABSENT'] as ConfType[]).map(t => {
@@ -307,7 +328,7 @@ export default function RegistoClient() {
                       {confType === 'EARLY_DEPARTURE' && (
                         <div style={{ marginBottom: 10 }}>
                           <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 600, color: '#4A6878', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            {lang === 'pt' ? 'Hora de saída' : 'Abgangszeit'}
+                            {REG_TX[lang].leaveTime}
                           </label>
                           <input type="time" value={confActualEnd} onChange={e => setConfActualEnd(e.target.value)}
                             style={{ padding: '7px 10px', border: '1.5px solid #D8E2E8', borderRadius: 6, fontSize: '0.85rem', color: '#001E30', outline: 'none', background: '#F8FAFC', width: 140 }} />
@@ -317,11 +338,11 @@ export default function RegistoClient() {
                       {(confType === 'EARLY_DEPARTURE' || confType === 'ABSENT') && (
                         <div style={{ marginBottom: 10 }}>
                           <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 600, color: '#4A6878', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            {lang === 'pt' ? `Motivo${confType === 'ABSENT' ? ' *' : ' (opcional)'}` : `Grund${confType === 'ABSENT' ? ' *' : ' (optional)'}`}
+                            {REG_TX[lang].reason(confType === 'ABSENT')}
                           </label>
                           <textarea value={confReason} onChange={e => setConfReason(e.target.value)} rows={2}
                             style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', border: '1.5px solid #D8E2E8', borderRadius: 6, fontSize: '0.82rem', color: '#001E30', outline: 'none', resize: 'none', background: '#F8FAFC', fontFamily: "'IBM Plex Sans', sans-serif' " }}
-                            placeholder={lang === 'pt' ? 'Descreve brevemente...' : 'Kurze Beschreibung...'} />
+                            placeholder={REG_TX[lang].reasonPlaceholder} />
                         </div>
                       )}
 
@@ -333,14 +354,14 @@ export default function RegistoClient() {
 
                       <div style={{ display: 'flex', gap: 8, flexDirection: isMobile ? 'column' : 'row' }}>
                         <button onClick={() => setExpanded(null)} style={{ padding: '7px 14px', borderRadius: 6, border: '1px solid #D8E2E8', background: 'transparent', color: '#7A9BAD', fontSize: '0.78rem', cursor: 'pointer', flex: isMobile ? 1 : 'unset' }}>
-                          {lang === 'pt' ? 'Cancelar' : 'Abbrechen'}
+                          {REG_TX[lang].cancelBtn}
                         </button>
                         <button
                           onClick={() => saveConf(row.date, row.shift.code)}
                           disabled={saving}
                           style={{ padding: '7px 16px', background: saving ? '#7AA8C0' : '#003A5D', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, flex: isMobile ? 1 : 'unset' }}
                         >
-                          {saving ? (lang === 'pt' ? 'A guardar...' : 'Speichern...') : (lang === 'pt' ? 'Guardar' : 'Speichern')}
+                          {saving ? REG_TX[lang].saving : REG_TX[lang].saveBtn}
                         </button>
                       </div>
                     </div>

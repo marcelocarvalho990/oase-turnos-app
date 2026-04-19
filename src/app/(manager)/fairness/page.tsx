@@ -23,15 +23,25 @@ function getHealthBg(worked: number, target: number): string {
   return 'bg-red-50 border-l-4 border-red-400'
 }
 
-function getHealthLabel(worked: number, target: number, lang: 'pt' | 'de'): { label: string; cls: string } {
+import type { Lang } from '@/hooks/useLang'
+
+function getHealthLabel(worked: number, target: number, lang: Lang): { label: string; cls: string } {
   if (target === 0) return { label: '—', cls: 'text-slate-400' }
   const pct = worked / target
+  const warn: Record<Lang, string> = { pt: 'Atenção', de: 'Achtung', en: 'Attention', fr: 'Attention', it: 'Attenzione' }
+  const low: Record<Lang, string> = { pt: 'Baixo', de: 'Niedrig', en: 'Low', fr: 'Bas', it: 'Basso' }
   if (pct >= 0.9) return { label: 'OK', cls: 'text-emerald-700 bg-emerald-50 border border-emerald-200' }
-  if (pct >= 0.7) return { label: lang === 'de' ? 'Achtung' : 'Atenção', cls: 'text-amber-700 bg-amber-50 border border-amber-200' }
-  return { label: lang === 'de' ? 'Niedrig' : 'Baixo', cls: 'text-red-700 bg-red-50 border border-red-200' }
+  if (pct >= 0.7) return { label: warn[lang], cls: 'text-amber-700 bg-amber-50 border border-amber-200' }
+  return { label: low[lang], cls: 'text-red-700 bg-red-50 border border-red-200' }
 }
 
-const FX = {
+const FX: Record<Lang, {
+  title: string; team: string; loading: string;
+  totalShifts: string; belowTarget: string; avgWeekends: string;
+  noSchedule: string; noData: string;
+  colEmployee: string; colHours: string; colWeekends: string; colHard: string; colStatus: string;
+  legend90: string; legendNote: string;
+}> = {
   pt: {
     title: 'Equidade e Fairness', team: 'Equipa', loading: 'A carregar dados de equidade…',
     totalShifts: 'Atribuições totais', belowTarget: 'Abaixo do objetivo', avgWeekends: 'Fins de semana (média)',
@@ -51,6 +61,36 @@ const FX = {
     colWeekends: 'WE', colHard: 'Schwere Schichten', colStatus: 'Status',
     legend90: '≥ 90% Ziel',
     legendNote: 'WE = vollständige Wochenenden (Sa oder So) · Schwer = Schichten S und G',
+  },
+  en: {
+    title: 'Fairness & Equity', team: 'Team', loading: 'Loading fairness data…',
+    totalShifts: 'Total assignments', belowTarget: 'Below target', avgWeekends: 'Weekends (avg)',
+    noSchedule: 'No generated schedule for this month yet.',
+    noData: 'No data available for this month.',
+    colEmployee: 'Employee', colHours: 'Worked hours vs. target',
+    colWeekends: 'WE', colHard: 'Hard shifts', colStatus: 'Status',
+    legend90: '≥ 90% target',
+    legendNote: 'WE = full weekends (Sat or Sun) · Hard = shifts S and G',
+  },
+  fr: {
+    title: 'Équité et Fairness', team: 'Équipe', loading: 'Chargement des données d\'équité…',
+    totalShifts: 'Attributions totales', belowTarget: 'En dessous de l\'objectif', avgWeekends: 'Week-ends (moy.)',
+    noSchedule: 'Aucun planning généré pour ce mois.',
+    noData: 'Aucune donnée disponible pour ce mois.',
+    colEmployee: 'Collaborateur', colHours: 'Heures travaillées vs. objectif',
+    colWeekends: 'WE', colHard: 'Postes difficiles', colStatus: 'Statut',
+    legend90: '≥ 90% objectif',
+    legendNote: 'WE = week-ends complets (Sam ou Dim) · Difficiles = postes S et G',
+  },
+  it: {
+    title: 'Equità e Fairness', team: 'Team', loading: 'Caricamento dati equità…',
+    totalShifts: 'Assegnazioni totali', belowTarget: 'Sotto obiettivo', avgWeekends: 'Weekend (media)',
+    noSchedule: 'Nessun piano generato per questo mese.',
+    noData: 'Nessun dato disponibile per questo mese.',
+    colEmployee: 'Collaboratore', colHours: 'Ore lavorate vs. obiettivo',
+    colWeekends: 'WE', colHard: 'Turni difficili', colStatus: 'Stato',
+    legend90: '≥ 90% obiettivo',
+    legendNote: 'WE = weekend completi (Sab o Dom) · Difficili = turni S e G',
   },
 }
 
@@ -73,7 +113,8 @@ export default function FairnessPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const monthLabel = new Date(year, month - 1, 1).toLocaleString(lang === 'de' ? 'de-DE' : 'pt-PT', { month: 'long', year: 'numeric' })
+  const localeMap: Record<Lang, string> = { pt: 'pt-PT', de: 'de-DE', en: 'en-GB', fr: 'fr-FR', it: 'it-IT' }
+  const monthLabel = new Date(year, month - 1, 1).toLocaleString(localeMap[lang], { month: 'long', year: 'numeric' })
 
   useEffect(() => {
     setLoading(true)

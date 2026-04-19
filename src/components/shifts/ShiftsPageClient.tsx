@@ -5,22 +5,49 @@ import { Clock, Plus, Pencil, X, Timer, Trash2 } from 'lucide-react'
 import { ShiftType } from '@/types'
 import { useLang } from '@/hooks/useLang'
 
-const TX = {
+import type { Lang } from '@/hooks/useLang'
+
+const TX: Record<Lang, {
+  title: string; subtitle: (w: number, a: number) => string;
+  newShift: string; workShifts: string; absShifts: string;
+  absLabel: string; editShift: string;
+  name: string; desc: string; start1: string; end1: string; duration: string;
+  cancel: string; saving: string; save: string;
+}> = {
   pt: {
-    title: 'Tipos de Turno', subtitle: (w: number, a: number) => `${w} turnos · ${a} ausências`,
+    title: 'Tipos de Turno', subtitle: (w, a) => `${w} turnos · ${a} ausências`,
     newShift: 'Novo Turno', workShifts: 'Turnos de Trabalho', absShifts: 'Ausências / Eventos',
     absLabel: 'Ausência / Evento', editShift: 'Editar Turno',
     name: 'Nome', desc: 'Descrição (opcional)', start1: 'Início 1', end1: 'Fim 1',
-    duration: 'Duração (minutos)',
-    cancel: 'Cancelar', saving: 'A guardar…', save: 'Guardar',
+    duration: 'Duração (minutos)', cancel: 'Cancelar', saving: 'A guardar…', save: 'Guardar',
   },
   de: {
-    title: 'Schichttypen', subtitle: (w: number, a: number) => `${w} Schichten · ${a} Abwesenheiten`,
+    title: 'Schichttypen', subtitle: (w, a) => `${w} Schichten · ${a} Abwesenheiten`,
     newShift: 'Neue Schicht', workShifts: 'Arbeitsschichten', absShifts: 'Abwesenheiten / Ereignisse',
     absLabel: 'Abwesenheit / Ereignis', editShift: 'Schicht bearbeiten',
     name: 'Name', desc: 'Beschreibung (optional)', start1: 'Beginn 1', end1: 'Ende 1',
-    duration: 'Dauer (Minuten)',
-    cancel: 'Abbrechen', saving: 'Wird gespeichert…', save: 'Speichern',
+    duration: 'Dauer (Minuten)', cancel: 'Abbrechen', saving: 'Wird gespeichert…', save: 'Speichern',
+  },
+  en: {
+    title: 'Shift Types', subtitle: (w, a) => `${w} shifts · ${a} absences`,
+    newShift: 'New Shift', workShifts: 'Work Shifts', absShifts: 'Absences / Events',
+    absLabel: 'Absence / Event', editShift: 'Edit Shift',
+    name: 'Name', desc: 'Description (optional)', start1: 'Start 1', end1: 'End 1',
+    duration: 'Duration (minutes)', cancel: 'Cancel', saving: 'Saving…', save: 'Save',
+  },
+  fr: {
+    title: 'Types de postes', subtitle: (w, a) => `${w} postes · ${a} absences`,
+    newShift: 'Nouveau poste', workShifts: 'Postes de travail', absShifts: 'Absences / Événements',
+    absLabel: 'Absence / Événement', editShift: 'Modifier le poste',
+    name: 'Nom', desc: 'Description (facultatif)', start1: 'Début 1', end1: 'Fin 1',
+    duration: 'Durée (minutes)', cancel: 'Annuler', saving: 'Enregistrement…', save: 'Enregistrer',
+  },
+  it: {
+    title: 'Tipi di turno', subtitle: (w, a) => `${w} turni · ${a} assenze`,
+    newShift: 'Nuovo turno', workShifts: 'Turni di lavoro', absShifts: 'Assenze / Eventi',
+    absLabel: 'Assenza / Evento', editShift: 'Modifica turno',
+    name: 'Nome', desc: 'Descrizione (opzionale)', start1: 'Inizio 1', end1: 'Fine 1',
+    duration: 'Durata (minuti)', cancel: 'Annulla', saving: 'Salvataggio…', save: 'Salva',
   },
 }
 

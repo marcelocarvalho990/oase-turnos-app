@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Sparkles, Loader2, Trash2 } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
-
-type Lang = 'pt' | 'de'
+import type { Lang } from '@/hooks/useLang'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -28,20 +27,44 @@ const SUGGESTIONS: Record<Lang, string[]> = {
     'Wer sind die FAGE-Mitarbeiter im Team?',
     'Was ist der Unterschied zwischen Schicht F und Schicht S?',
   ],
+  en: [
+    'Who worked the most weekends this month?',
+    'Which employees have pending requests?',
+    'Who has the fewest hours worked relative to their target?',
+    'How many hours should someone at 80% work?',
+    'Who are the FAGE employees on the team?',
+    'What is the difference between shift F and shift S?',
+  ],
+  fr: [
+    'Qui a travaillé le plus de week-ends ce mois-ci ?',
+    'Quels collaborateurs ont des demandes en attente ?',
+    'Qui a le moins d\'heures travaillées par rapport à l\'objectif ?',
+    'Combien d\'heures doit travailler quelqu\'un à 80 % ?',
+    'Qui sont les collaborateurs FAGE de l\'équipe ?',
+    'Quelle est la différence entre le poste F et le poste S ?',
+  ],
+  it: [
+    'Chi ha lavorato più weekend questo mese?',
+    'Quali collaboratori hanno richieste in sospeso?',
+    'Chi ha meno ore lavorate rispetto all\'obiettivo?',
+    'Quante ore deve lavorare qualcuno all\'80%?',
+    'Chi sono i collaboratori FAGE del team?',
+    'Qual è la differenza tra il turno F e il turno S?',
+  ],
 }
 
 const T: Record<string, Record<Lang, string>> = {
-  title:        { pt: 'Assistente AI',                                              de: 'KI-Assistent'                                         },
-  subtitle:     { pt: 'Pergunta qualquer coisa sobre a equipa, turnos e escalas',   de: 'Stelle eine Frage zum Team, Schichten und Dienstplänen' },
-  clear:        { pt: 'Limpar',                                                     de: 'Löschen'                                              },
-  clearTitle:   { pt: 'Limpar conversa',                                            de: 'Gespräch löschen'                                     },
-  intro:        { pt: 'Como posso ajudar?',                                         de: 'Wie kann ich helfen?'                                 },
-  introSub:     { pt: 'Tenho acesso a todos os colaboradores, turnos, pedidos de ausência\ne a escala do mês atual.', de: 'Ich habe Zugang zu allen Mitarbeitern, Schichten, Abwesenheitsanträgen\nund dem aktuellen Dienstplan.' },
-  thinking:     { pt: 'A pensar…',                                                  de: 'Denkt nach…'                                          },
-  placeholder:  { pt: 'Escreve a tua pergunta… (Enter para enviar)',                de: 'Frage eingeben… (Enter zum Senden)'                   },
-  shift:        { pt: 'Shift+Enter para nova linha',                                de: 'Shift+Enter für neue Zeile'                           },
-  errContact:   { pt: 'Ocorreu um erro ao contactar o assistente. Tenta novamente.', de: 'Fehler beim Kontaktieren des Assistenten. Erneut versuchen.' },
-  errConnect:   { pt: 'Não foi possível conectar ao assistente.',                   de: 'Verbindung zum Assistenten fehlgeschlagen.'            },
+  title:       { pt: 'Assistente AI',                                             de: 'KI-Assistent',                                          en: 'AI Assistant',                                              fr: 'Assistant IA',                                              it: 'Assistente AI'                                              },
+  subtitle:    { pt: 'Pergunta qualquer coisa sobre a equipa, turnos e escalas',  de: 'Stelle eine Frage zum Team, Schichten und Dienstplänen',  en: 'Ask anything about the team, shifts and schedules',         fr: 'Posez une question sur l\'équipe, les postes et les plannings', it: 'Chiedi qualsiasi cosa sul team, i turni e i turni'          },
+  clear:       { pt: 'Limpar',                                                    de: 'Löschen',                                               en: 'Clear',                                                     fr: 'Effacer',                                                   it: 'Cancella'                                                   },
+  clearTitle:  { pt: 'Limpar conversa',                                           de: 'Gespräch löschen',                                      en: 'Clear conversation',                                        fr: 'Effacer la conversation',                                   it: 'Cancella conversazione'                                     },
+  intro:       { pt: 'Como posso ajudar?',                                        de: 'Wie kann ich helfen?',                                   en: 'How can I help?',                                           fr: 'Comment puis-je aider ?',                                   it: 'Come posso aiutare?'                                        },
+  introSub:    { pt: 'Tenho acesso a todos os colaboradores, turnos, pedidos de ausência\ne a escala do mês atual.', de: 'Ich habe Zugang zu allen Mitarbeitern, Schichten, Abwesenheitsanträgen\nund dem aktuellen Dienstplan.', en: 'I have access to all employees, shifts, absence requests\nand the current month\'s schedule.', fr: 'J\'ai accès à tous les collaborateurs, postes, demandes d\'absence\net le planning du mois en cours.', it: 'Ho accesso a tutti i collaboratori, turni, richieste di assenza\ne al turno del mese corrente.' },
+  thinking:    { pt: 'A pensar…',                                                 de: 'Denkt nach…',                                           en: 'Thinking…',                                                 fr: 'En train de réfléchir…',                                    it: 'Sto pensando…'                                              },
+  placeholder: { pt: 'Escreve a tua pergunta… (Enter para enviar)',               de: 'Frage eingeben… (Enter zum Senden)',                     en: 'Type your question… (Enter to send)',                        fr: 'Écris ta question… (Entrée pour envoyer)',                   it: 'Scrivi la tua domanda… (Invio per inviare)'                 },
+  shift:       { pt: 'Shift+Enter para nova linha',                               de: 'Shift+Enter für neue Zeile',                            en: 'Shift+Enter for new line',                                  fr: 'Shift+Entrée pour nouvelle ligne',                          it: 'Shift+Invio per nuova riga'                                 },
+  errContact:  { pt: 'Ocorreu um erro ao contactar o assistente. Tenta novamente.', de: 'Fehler beim Kontaktieren des Assistenten. Erneut versuchen.', en: 'An error occurred contacting the assistant. Please try again.', fr: 'Une erreur s\'est produite. Réessayez.', it: 'Si è verificato un errore. Riprova.' },
+  errConnect:  { pt: 'Não foi possível conectar ao assistente.',                  de: 'Verbindung zum Assistenten fehlgeschlagen.',             en: 'Could not connect to the assistant.',                        fr: 'Impossible de se connecter à l\'assistant.',                it: 'Impossibile connettersi all\'assistente.'                   },
 }
 
 function MessageBubble({ msg }: { msg: Message }) {
@@ -61,7 +84,7 @@ function MessageBubble({ msg }: { msg: Message }) {
 export default function ChatPage() {
   const STORAGE_KEY = 'manager_chat_history'
 
-  const [lang, toggleLang] = useLang()
+  const [lang] = useLang()
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window === 'undefined') return []
     try {
@@ -147,14 +170,6 @@ export default function ChatPage() {
             {T.subtitle[lang]}
           </div>
         </div>
-
-        {/* Lang toggle */}
-        <button
-          onClick={toggleLang}
-          style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: "'IBM Plex Sans', sans-serif" }}
-        >
-          {lang === 'pt' ? 'DE' : 'PT'}
-        </button>
 
         {messages.length > 0 && (
           <button

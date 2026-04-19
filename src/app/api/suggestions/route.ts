@@ -173,7 +173,77 @@ Array JSON:`
     if (!jsonMatch) return Response.json({ suggestions: [] })
 
     const raw = JSON.parse(jsonMatch[0]) as unknown[]
-    const suggestions = raw.map((s, i) => ({ ...(s as object), id: `sug_${Date.now()}_${i}` }))
+
+    // --- Composition validation ---
+    const employeeMap = new Map(employees.map(e => [e.id, e]))
+
+    // Build per-date/per-shift role composition from actual assignments
+    const compositionMap: Record<string, Record<string, Record<string, number>>> = {}
+    for (const a of workAssignments) {
+      const emp = employeeMap.get(a.employeeId)
+      if (!emp) continue
+      if (!compositionMap[a.date]) compositionMap[a.date] = {}
+      if (!compositionMap[a.date][a.shiftCode]) compositionMap[a.date][a.shiftCode] = {}
+      const comp = compositionMap[a.date][a.shiftCode]
+      comp[emp.role] = (comp[emp.role] ?? 0) + 1
+    }
+
+    const FAGE = new Set(['FUNKTIONSSTUFE_3', 'FUNKTIONSSTUFE_2'])
+    const SRK = new Set(['FUNKTIONSSTUFE_1'])
+
+    function countGroup(comp: Record<string, number>, roles: Set<string>): number {
+      return [...roles].reduce((sum, r) => sum + (comp[r] ?? 0), 0)
+    }
+
+    function isCompositionValid(shiftCode: string, comp: Record<string, number>): boolean {
+      if (shiftCode === 'S') {
+        if ((comp['LERNENDE'] ?? 0) > 0) return false
+        if (countGroup(comp, FAGE) < 1) return false
+        if (countGroup(comp, SRK) < 1) return false
+      }
+      if (shiftCode === 'F9') {
+        if (countGroup(comp, SRK) > 1) return false
+      }
+      return true
+    }
+
+    function validateSuggestion(s: unknown): boolean {
+      const sug = s as Record<string, string>
+      if (sug.type === 'ADD') {
+        const emp = employeeMap.get(sug.employeeId)
+        const st = shiftTypeMap.get(sug.shiftCode)
+        if (!emp || !st) return false
+        // LERNENDE can only do F and F9
+        if (emp.role === 'LERNENDE' && !['F', 'F9'].includes(sug.shiftCode)) return false
+        // Check eligibleRoles
+        if (st.eligibleRoles.length > 0 && !st.eligibleRoles.includes(emp.role)) return false
+        // Simulate adding this employee to the shift
+        const comp = { ...(compositionMap[sug.date]?.[sug.shiftCode] ?? {}) }
+        comp[emp.role] = (comp[emp.role] ?? 0) + 1
+        if (!isCompositionValid(sug.shiftCode, comp)) return false
+        return true
+      }
+      if (sug.type === 'SWAP') {
+        const fromEmp = employeeMap.get(sug.fromEmployeeId)
+        const toEmp = employeeMap.get(sug.toEmployeeId)
+        const st = shiftTypeMap.get(sug.fromShiftCode)
+        if (!fromEmp || !toEmp || !st) return false
+        // LERNENDE can only do F and F9
+        if (toEmp.role === 'LERNENDE' && !['F', 'F9'].includes(sug.fromShiftCode)) return false
+        // Check toEmployee is eligible for the shift
+        if (st.eligibleRoles.length > 0 && !st.eligibleRoles.includes(toEmp.role)) return false
+        // Simulate swap: remove fromEmp's role, add toEmp's role
+        const comp = { ...(compositionMap[sug.fromDate]?.[sug.fromShiftCode] ?? {}) }
+        comp[fromEmp.role] = Math.max(0, (comp[fromEmp.role] ?? 0) - 1)
+        comp[toEmp.role] = (comp[toEmp.role] ?? 0) + 1
+        if (!isCompositionValid(sug.fromShiftCode, comp)) return false
+        return true
+      }
+      return false
+    }
+
+    const valid = raw.filter(validateSuggestion)
+    const suggestions = valid.map((s, i) => ({ ...(s as object), id: `sug_${Date.now()}_${i}` }))
 
     return Response.json({ suggestions })
   } catch (err) {

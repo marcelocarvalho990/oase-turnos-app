@@ -4,9 +4,16 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 type Tab = 'manager' | 'employee'
-type Lang = 'pt' | 'de'
+type Lang = 'pt' | 'de' | 'en' | 'fr' | 'it'
 
-const t = {
+const LANG_ORDER: Lang[] = ['de', 'pt', 'en', 'fr', 'it']
+
+const t: Record<Lang, {
+  system: string; subtitle: string; tabManager: string; tabEmployee: string;
+  password: string; passwordPlaceholder: string; pin: string;
+  selectEmployee: string; enter: string; entering: string;
+  error: string; forgot: string; footer: string;
+}> = {
   pt: {
     system: 'Dienstplan-System',
     subtitle: 'Gestão eficiente de horários e turnos',
@@ -21,7 +28,6 @@ const t = {
     error: 'Credenciais inválidas',
     forgot: 'Esqueceu a palavra-passe?',
     footer: '© 2026 Tertianum AG',
-    lang: 'DE',
   },
   de: {
     system: 'Dienstplan-System',
@@ -37,7 +43,51 @@ const t = {
     error: 'Ungültige Anmeldedaten',
     forgot: 'Passwort vergessen?',
     footer: '© 2026 Tertianum AG',
-    lang: 'PT',
+  },
+  en: {
+    system: 'Dienstplan-System',
+    subtitle: 'Efficient management of schedules and shifts',
+    tabManager: 'Leitung',
+    tabEmployee: 'Mitarbeiter',
+    password: 'Password',
+    passwordPlaceholder: 'Enter password...',
+    pin: '4-digit PIN',
+    selectEmployee: 'Select employee...',
+    enter: 'ANMELDEN',
+    entering: 'Signing in...',
+    error: 'Invalid credentials',
+    forgot: 'Forgot password?',
+    footer: '© 2026 Tertianum AG',
+  },
+  fr: {
+    system: 'Dienstplan-System',
+    subtitle: 'Gestion efficace des horaires et des postes',
+    tabManager: 'Leitung',
+    tabEmployee: 'Mitarbeiter',
+    password: 'Mot de passe',
+    passwordPlaceholder: 'Saisir le mot de passe...',
+    pin: 'Code PIN à 4 chiffres',
+    selectEmployee: 'Sélectionner un collaborateur...',
+    enter: 'ANMELDEN',
+    entering: 'Connexion en cours...',
+    error: 'Identifiants invalides',
+    forgot: 'Mot de passe oublié ?',
+    footer: '© 2026 Tertianum AG',
+  },
+  it: {
+    system: 'Dienstplan-System',
+    subtitle: 'Gestione efficiente degli orari e dei turni',
+    tabManager: 'Leitung',
+    tabEmployee: 'Mitarbeiter',
+    password: 'Password',
+    passwordPlaceholder: 'Inserire la password...',
+    pin: 'PIN a 4 cifre',
+    selectEmployee: 'Seleziona collaboratore...',
+    enter: 'ANMELDEN',
+    entering: 'Accesso in corso...',
+    error: 'Credenziali non valide',
+    forgot: 'Password dimenticata?',
+    footer: '© 2026 Tertianum AG',
   },
 }
 
@@ -47,6 +97,7 @@ interface Employee { id: string; name: string; shortName: string }
 export default function LoginClient() {
   const router = useRouter()
   const [lang, setLang] = useState<Lang>('de')
+  function cycleLang() { setLang(l => { const i = LANG_ORDER.indexOf(l); return LANG_ORDER[(i + 1) % LANG_ORDER.length] }) }
   const [tab, setTab] = useState<Tab>('manager')
   const [password, setPassword] = useState('')
   const [pin, setPin] = useState(['', '', '', ''])
@@ -158,7 +209,7 @@ export default function LoginClient() {
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{tx.footer}</span>
           <button
-            onClick={() => setLang(l => l === 'pt' ? 'de' : 'pt')}
+            onClick={cycleLang}
             style={{
               padding: '5px 12px',
               background: 'rgba(255,255,255,0.12)',
@@ -171,7 +222,7 @@ export default function LoginClient() {
               cursor: 'pointer',
             }}
           >
-            {tx.lang}
+            {lang.toUpperCase()}
           </button>
         </div>
       </div>

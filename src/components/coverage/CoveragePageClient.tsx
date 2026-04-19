@@ -3,18 +3,26 @@
 import { useState, useCallback, useRef } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { CoverageRule, ShiftType, DayType } from '@/types'
-import { useLang } from '@/hooks/useLang'
+import { useLang, type Lang } from '@/hooks/useLang'
 
 interface Props {
   rules: CoverageRule[]
   workShifts: ShiftType[]
 }
 
-const DAY_LABELS: Record<DayType, { pt: string; de: string }> = {
-  WEEKDAY:  { pt: 'Dia de Semana', de: 'Werktag'  },
-  SATURDAY: { pt: 'Sábado',        de: 'Samstag'  },
-  SUNDAY:   { pt: 'Domingo',       de: 'Sonntag'  },
-  HOLIDAY:  { pt: 'Feriado',       de: 'Feiertag' },
+const DAY_LABELS: Record<DayType, Record<Lang, string>> = {
+  WEEKDAY:  { pt: 'Dia de Semana', de: 'Werktag',  en: 'Weekday',  fr: 'Jour de semaine', it: 'Giorno feriale' },
+  SATURDAY: { pt: 'Sábado',        de: 'Samstag',  en: 'Saturday', fr: 'Samedi',          it: 'Sabato'         },
+  SUNDAY:   { pt: 'Domingo',       de: 'Sonntag',  en: 'Sunday',   fr: 'Dimanche',        it: 'Domenica'       },
+  HOLIDAY:  { pt: 'Feriado',       de: 'Feiertag', en: 'Holiday',  fr: 'Jour férié',      it: 'Festivo'        },
+}
+
+const COV_TX: Record<Lang, { title: string; sub: string; minLabel: string; saved: string; shiftCol: string }> = {
+  pt: { title: 'Regras de Cobertura', sub: 'Min. e ideal por turno · Equipa 2.OG', minLabel: 'Min. obrigatório', saved: 'As alterações são guardadas automaticamente.', shiftCol: 'Turno' },
+  de: { title: 'Abdeckungsregeln', sub: 'Min. und Ideal pro Schicht · Team 2.OG', minLabel: 'Min. obligatorisch', saved: 'Änderungen werden automatisch gespeichert.', shiftCol: 'Schicht' },
+  en: { title: 'Coverage Rules', sub: 'Min. and ideal per shift · Team 2.OG', minLabel: 'Min. required', saved: 'Changes are saved automatically.', shiftCol: 'Shift' },
+  fr: { title: 'Règles de couverture', sub: 'Min. et idéal par poste · Équipe 2.OG', minLabel: 'Min. obligatoire', saved: 'Les modifications sont enregistrées automatiquement.', shiftCol: 'Poste' },
+  it: { title: 'Regole di copertura', sub: 'Min. e ideale per turno · Team 2.OG', minLabel: 'Min. obbligatorio', saved: 'Le modifiche vengono salvate automaticamente.', shiftCol: 'Turno' },
 }
 const DAY_TYPE_KEYS: DayType[] = ['WEEKDAY', 'SATURDAY', 'SUNDAY']
 
@@ -133,8 +141,8 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
             <ShieldCheck size={18} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">{lang === 'de' ? 'Abdeckungsregeln' : 'Regras de Cobertura'}</h1>
-            <p className="text-xs text-slate-500 mt-0.5">{lang === 'de' ? 'Min. und Ideal pro Schicht · Team 2.OG' : 'Min. e ideal por turno · Equipa 2.OG'}</p>
+            <h1 className="text-xl font-bold text-slate-900">{COV_TX[lang].title}</h1>
+            <p className="text-xs text-slate-500 mt-0.5">{COV_TX[lang].sub}</p>
           </div>
         </div>
 
@@ -142,13 +150,13 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
         <div className="flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-[#E6EEF3] border border-[#99BFCF] inline-block" />
-            {lang === 'de' ? 'Min. obligatorisch' : 'Min. obrigatório'}
+            {COV_TX[lang].minLabel}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300 inline-block" />
             Ideal
           </span>
-          <span className="text-slate-400">{lang === 'de' ? 'Änderungen werden automatisch gespeichert.' : 'As alterações são guardadas automaticamente.'}</span>
+          <span className="text-slate-400">{COV_TX[lang].saved}</span>
         </div>
 
         {/* Grid card */}
@@ -157,7 +165,7 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500 w-36">
-                  {lang === 'de' ? 'Schicht' : 'Turno'}
+                  {COV_TX[lang].shiftCol}
                 </th>
                 {DAY_TYPES.map(({ key, label }) => (
                   <th key={key} className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500" colSpan={2}>

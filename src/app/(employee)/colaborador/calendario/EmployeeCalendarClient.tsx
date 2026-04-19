@@ -20,26 +20,54 @@ interface CalendarResponse {
 interface Confirmation { date: string; type: string; actualEnd: string | null }
 interface Props { employeeId: string; employeeName: string; shiftTypes: ShiftType[] }
 
-type ViewMode = 'month' | 'week' | 'day'
-type Lang = 'pt' | 'de'
+import type { Lang } from '@/hooks/useLang'
 
-const WEEKDAYS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-const WEEKDAYS_DE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
-const WEEKDAYS_LONG_PT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
-const WEEKDAYS_LONG_DE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
-const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
+type ViewMode = 'month' | 'week' | 'day'
+
+const WEEKDAYS: Record<Lang, string[]> = {
+  pt: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+  de: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  fr: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
+  it: ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'],
+}
+const WEEKDAYS_LONG: Record<Lang, string[]> = {
+  pt: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'],
+  de: ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'],
+  en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  fr: ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+  it: ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'],
+}
+const MONTHS: Record<Lang, string[]> = {
+  pt: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+  de: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+  en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+  fr: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+  it: ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
+}
 
 const VIEW_LABELS: Record<ViewMode, Record<Lang, string>> = {
-  month: { pt: 'Mensal',  de: 'Monatlich'   },
-  week:  { pt: 'Semanal', de: 'Wöchentlich' },
-  day:   { pt: 'Diário',  de: 'Täglich'     },
+  month: { pt: 'Mensal',  de: 'Monatlich',   en: 'Monthly',  fr: 'Mensuel',      it: 'Mensile'    },
+  week:  { pt: 'Semanal', de: 'Wöchentlich', en: 'Weekly',   fr: 'Hebdomadaire', it: 'Settimanale' },
+  day:   { pt: 'Diário',  de: 'Täglich',     en: 'Daily',    fr: 'Quotidien',    it: 'Giornaliero' },
 }
 
 const CONF_LABELS: Record<string, Record<Lang, string>> = {
-  WORKED:          { pt: 'Confirmado',    de: 'Bestätigt'  },
-  EARLY_DEPARTURE: { pt: 'Saída antecip.', de: 'Früh weg' },
-  ABSENT:          { pt: 'Falta',          de: 'Abwesend'  },
+  WORKED:          { pt: 'Confirmado',      de: 'Bestätigt',  en: 'Confirmed',       fr: 'Confirmé',        it: 'Confermato'          },
+  EARLY_DEPARTURE: { pt: 'Saída antecip.', de: 'Früh weg',   en: 'Early departure', fr: 'Départ anticipé', it: 'Partenza anticipata' },
+  ABSENT:          { pt: 'Falta',           de: 'Abwesend',   en: 'Absent',          fr: 'Absent',          it: 'Assente'             },
+}
+
+const CAL_TX: Record<Lang, {
+  title: string; monthYear: string; hoursBank: string; worked: string; target: (p: number) => string;
+  diff: string; shifts: string; vacDays: string; notPublished: string; notPublishedSub: string;
+  vacation: string; today: string; vacDay: string; leftAt: string; freeDay: string; loading: string;
+}> = {
+  pt: { title: 'O Meu Calendário', monthYear: '', hoursBank: 'Banco de Horas', worked: 'Trabalhadas', target: (p) => `Alvo (${p}%)`, diff: 'Diferença', shifts: 'TURNOS', vacDays: 'DIA(S) FÉRIAS', notPublished: 'Escala ainda não publicada', notPublishedSub: 'O gestor ainda não publicou a escala para este mês.', vacation: 'Férias', today: 'HOJE', vacDay: 'Dia de Férias', leftAt: 'saiu às', freeDay: 'Dia livre', loading: 'A carregar...' },
+  de: { title: 'Mein Kalender', monthYear: '', hoursBank: 'Stundenkonto', worked: 'Gearbeitet', target: (p) => `Ziel (${p}%)`, diff: 'Differenz', shifts: 'SCHICHTEN', vacDays: 'URLAUBSTAG(E)', notPublished: 'Dienstplan noch nicht veröffentlicht', notPublishedSub: 'Der Manager hat den Dienstplan noch nicht veröffentlicht.', vacation: 'Urlaub', today: 'HEUTE', vacDay: 'Urlaubstag', leftAt: 'ging um', freeDay: 'Freier Tag', loading: 'Lädt...' },
+  en: { title: 'My Calendar', monthYear: '', hoursBank: 'Hours Bank', worked: 'Worked', target: (p) => `Target (${p}%)`, diff: 'Difference', shifts: 'SHIFTS', vacDays: 'VACATION DAY(S)', notPublished: 'Schedule not yet published', notPublishedSub: 'The manager has not yet published the schedule for this month.', vacation: 'Vacation', today: 'TODAY', vacDay: 'Vacation Day', leftAt: 'left at', freeDay: 'Day off', loading: 'Loading...' },
+  fr: { title: 'Mon Calendrier', monthYear: '', hoursBank: 'Compte d\'heures', worked: 'Travaillées', target: (p) => `Objectif (${p}%)`, diff: 'Différence', shifts: 'POSTES', vacDays: 'JOUR(S) DE CONGÉ', notPublished: 'Planning pas encore publié', notPublishedSub: 'Le responsable n\'a pas encore publié le planning de ce mois.', vacation: 'Congé', today: 'AUJOURD\'HUI', vacDay: 'Jour de congé', leftAt: 'parti à', freeDay: 'Jour libre', loading: 'Chargement...' },
+  it: { title: 'Il Mio Calendario', monthYear: '', hoursBank: 'Banca ore', worked: 'Lavorate', target: (p) => `Obiettivo (${p}%)`, diff: 'Differenza', shifts: 'TURNI', vacDays: 'GIORNO/I DI FERIE', notPublished: 'Turni non ancora pubblicati', notPublishedSub: 'Il responsabile non ha ancora pubblicato i turni per questo mese.', vacation: 'Ferie', today: 'OGGI', vacDay: 'Giorno di ferie', leftAt: 'uscito alle', freeDay: 'Giorno libero', loading: 'Caricamento...' },
 }
 
 function fmtHours(minutes: number): string {
@@ -77,15 +105,15 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
   const [month, setMonth] = useState(today.getMonth() + 1)
   const [data, setData] = useState<CalendarResponse | null>(null)
   const [loading, setLoading] = useState(false)
-  const [lang, toggleLang] = useLang()
+  const [lang] = useLang()
   const [confirmations, setConfirmations] = useState<Confirmation[]>([])
   const [view, setView] = useState<ViewMode>('month')
   const [focusDate, setFocusDate] = useState<Date>(today)
   const isMobile = useIsMobile()
 
-  const WEEKDAYS = lang === 'pt' ? WEEKDAYS_PT : WEEKDAYS_DE
-  const WEEKDAYS_LONG = lang === 'pt' ? WEEKDAYS_LONG_PT : WEEKDAYS_LONG_DE
-  const MONTHS = lang === 'pt' ? MONTHS_PT : MONTHS_DE
+  const weekdays = WEEKDAYS[lang]
+  const weekdaysLong = WEEKDAYS_LONG[lang]
+  const months = MONTHS[lang]
 
   useEffect(() => {
     setLoading(true)
@@ -185,8 +213,9 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
 
   // Header label for week/day views
   const weekDays = getWeekDays(focusDate)
-  const weekLabel = `${weekDays[0].getDate()} – ${weekDays[6].toLocaleString(lang === 'de' ? 'de-DE' : 'pt-PT', { day: 'numeric', month: 'short' })}`
-  const dayLabelLong = `${WEEKDAYS_LONG[focusDate.getDay()]}, ${focusDate.getDate()} ${MONTHS[focusDate.getMonth()]}`
+  const localeMap: Record<Lang, string> = { pt: 'pt-PT', de: 'de-DE', en: 'en-GB', fr: 'fr-FR', it: 'it-IT' }
+  const weekLabel = `${weekDays[0].getDate()} – ${weekDays[6].toLocaleString(localeMap[lang], { day: 'numeric', month: 'short' })}`
+  const dayLabelLong = `${weekdaysLong[focusDate.getDay()]}, ${focusDate.getDate()} ${months[focusDate.getMonth()]}`
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -195,10 +224,10 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
       <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '16px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 8 : 0 }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
-            {lang === 'pt' ? 'O Meu Calendário' : 'Mein Kalender'}
+            {CAL_TX[lang].title}
           </h1>
           <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', fontFamily: "'IBM Plex Mono', monospace" }}>
-            {MONTHS[month - 1].toUpperCase()} {year}
+            {months[month - 1].toUpperCase()} {year}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -222,9 +251,6 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
               </button>
             ))}
           </div>
-          <button onClick={toggleLang} style={{ padding: isMobile ? '6px 10px' : '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', minHeight: isMobile ? 44 : 'auto' }}>
-            {lang === 'pt' ? 'DE' : 'PT'}
-          </button>
           {/* Month / week / day navigation */}
           {view === 'month' ? (
             <>
@@ -252,16 +278,16 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
         {hours && published && (
           <div style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: '16px 20px', marginBottom: 16 }}>
             <div style={{ fontSize: '0.68rem', fontWeight: 600, color: '#7A9BAD', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
-              {lang === 'pt' ? 'Banco de Horas' : 'Stundenkonto'}
+              {CAL_TX[lang].hoursBank}
             </div>
             <div style={{ display: 'flex', gap: 0 }}>
               <div style={{ flex: 1, padding: '0 16px 0 0', borderRight: '1px solid #F0F4F6' }}>
                 <div style={{ fontSize: '1.4rem', fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", color: '#001E30', lineHeight: 1 }}>{fmtHours(hours.workedMinutes)}</div>
-                <div style={{ fontSize: '0.7rem', color: '#7A9BAD', marginTop: 4 }}>{lang === 'pt' ? 'Trabalhadas' : 'Gearbeitet'}</div>
+                <div style={{ fontSize: '0.7rem', color: '#7A9BAD', marginTop: 4 }}>{CAL_TX[lang].worked}</div>
               </div>
               <div style={{ flex: 1, padding: '0 16px', borderRight: '1px solid #F0F4F6' }}>
                 <div style={{ fontSize: '1.4rem', fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", color: '#7A9BAD', lineHeight: 1 }}>{fmtHours(hours.targetMinutes)}</div>
-                <div style={{ fontSize: '0.7rem', color: '#7A9BAD', marginTop: 4 }}>{lang === 'pt' ? `Alvo (${hours.workPercentage}%)` : `Ziel (${hours.workPercentage}%)`}</div>
+                <div style={{ fontSize: '0.7rem', color: '#7A9BAD', marginTop: 4 }}>{CAL_TX[lang].target(hours.workPercentage)}</div>
               </div>
               <div style={{ flex: 1, padding: '0 0 0 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -270,7 +296,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                     {deltaMinutes > 0 ? '+' : ''}{fmtHours(Math.abs(deltaMinutes))}
                   </div>
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#7A9BAD', marginTop: 4 }}>{lang === 'pt' ? 'Diferença' : 'Differenz'}</div>
+                <div style={{ fontSize: '0.7rem', color: '#7A9BAD', marginTop: 4 }}>{CAL_TX[lang].diff}</div>
               </div>
             </div>
             <div style={{ marginTop: 12 }}>
@@ -287,7 +313,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
           <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
             {assignments.length > 0 && (
               <div style={{ padding: '4px 12px', background: '#003A5D', color: 'white', fontSize: '0.72rem', letterSpacing: '0.04em', fontFamily: "'IBM Plex Mono', monospace" }}>
-                {assignments.length} {lang === 'pt' ? 'TURNOS' : 'SCHICHTEN'}
+                {assignments.length} {CAL_TX[lang].shifts}
               </div>
             )}
             {Array.from(shiftCounts.entries()).map(([code, count]) => {
@@ -302,7 +328,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
             })}
             {absences.length > 0 && (
               <div style={{ padding: '4px 12px', background: 'white', border: '2px solid #059669', fontSize: '0.72rem', color: '#059669', fontFamily: "'IBM Plex Mono', monospace", display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Umbrella size={11} /> {absences.length} {lang === 'pt' ? 'DIA(S) FÉRIAS' : 'URLAUBSTAG(E)'}
+                <Umbrella size={11} /> {absences.length} {CAL_TX[lang].vacDays}
               </div>
             )}
           </div>
@@ -314,10 +340,10 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
             <div style={{ fontSize: '1.1rem' }}>📋</div>
             <div>
               <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#92400E', marginBottom: 2 }}>
-                {lang === 'pt' ? 'Escala ainda não publicada' : 'Dienstplan noch nicht veröffentlicht'}
+                {CAL_TX[lang].notPublished}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#B45309' }}>
-                {lang === 'pt' ? 'O gestor ainda não publicou a escala para este mês.' : 'Der Manager hat den Dienstplan noch nicht veröffentlicht.'}
+                {CAL_TX[lang].notPublishedSub}
               </div>
             </div>
           </div>
@@ -327,7 +353,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
         {view === 'month' && (
           <div style={{ background: 'white', border: '1px solid #D8E2E8', overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#001E30' }}>
-              {WEEKDAYS.map(d => (
+              {weekdays.map(d => (
                 <div key={d} style={{ padding: '8px 0', textAlign: 'center', fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>
                   {d}
                 </div>
@@ -411,7 +437,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                     style={{ padding: '10px 8px', textAlign: 'center', cursor: 'pointer', background: isToday ? 'rgba(255,255,255,0.12)' : 'transparent', transition: 'background 0.15s' }}
                   >
                     <div style={{ fontSize: '0.62rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: isWE ? '#7BBFE0' : 'rgba(255,255,255,0.5)', fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>
-                      {WEEKDAYS[d.getDay()]}
+                      {weekdays[d.getDay()]}
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 700, color: isToday ? 'white' : isWE ? '#7BBFE0' : 'rgba(255,255,255,0.85)', fontFamily: "'IBM Plex Mono', monospace", marginTop: 2 }}>
                       {d.getDate()}
@@ -448,7 +474,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
                           <Umbrella size={11} color="#15803D" />
                           <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#15803D' }}>
-                            {lang === 'pt' ? 'Férias' : 'Urlaub'}
+                            {CAL_TX[lang].vacation}
                           </span>
                         </div>
                         <div style={{ fontSize: '0.62rem', color: '#166534' }}>{absenceType}</div>
@@ -510,7 +536,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                 </div>
                 {isToday && (
                   <span style={{ display: 'inline-block', padding: '2px 12px', background: '#003A5D', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.08em' }}>
-                    {lang === 'pt' ? 'HOJE' : 'HEUTE'}
+                    {CAL_TX[lang].today}
                   </span>
                 )}
               </div>
@@ -523,7 +549,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                   </div>
                   <div>
                     <div style={{ fontSize: '1rem', fontWeight: 700, color: '#166534', marginBottom: 4 }}>
-                      {lang === 'pt' ? 'Dia de Férias' : 'Urlaubstag'}
+                      {CAL_TX[lang].vacDay}
                     </div>
                     <div style={{ fontSize: '0.82rem', color: '#4D7C0F' }}>{absenceType}</div>
                   </div>
@@ -553,7 +579,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                       <span style={{ fontSize: '0.8rem', fontWeight: 600, color: conf.type === 'WORKED' ? '#059669' : conf.type === 'ABSENT' ? '#DC2626' : '#D97706' }}>
                         {CONF_LABELS[conf.type]?.[lang]}
                         {conf.actualEnd && conf.type === 'EARLY_DEPARTURE' && (
-                          <span style={{ fontWeight: 400, marginLeft: 6, fontFamily: "'IBM Plex Mono', monospace" }}>({lang === 'pt' ? 'saiu às' : 'ging um'} {conf.actualEnd})</span>
+                          <span style={{ fontWeight: 400, marginLeft: 6, fontFamily: "'IBM Plex Mono', monospace" }}>({CAL_TX[lang].leftAt} {conf.actualEnd})</span>
                         )}
                       </span>
                     </div>
@@ -561,7 +587,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                 </div>
               ) : (
                 <div style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: '32px 28px', textAlign: 'center', color: '#B0C4CE', fontSize: '0.9rem' }}>
-                  {lang === 'pt' ? 'Dia livre' : 'Freier Tag'}
+                  {CAL_TX[lang].freeDay}
                 </div>
               )}
             </div>
@@ -570,7 +596,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
 
         {loading && (
           <div style={{ textAlign: 'center', padding: 16, color: '#7A9BAD', fontSize: '0.75rem', fontFamily: "'IBM Plex Mono', monospace" }}>
-            {lang === 'pt' ? 'A carregar...' : 'Lädt...'}
+            {CAL_TX[lang].loading}
           </div>
         )}
       </div>

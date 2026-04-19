@@ -3,17 +3,28 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { House, Calendar, FileText, ClipboardCheck, User } from 'lucide-react'
+import { useLang } from '@/hooks/useLang'
+import type { Lang } from '@/hooks/useLang'
+
+const TAB_LABELS: Record<string, Record<Lang, string>> = {
+  '/colaborador':            { pt: 'Home',      de: 'Start',    en: 'Home',     fr: 'Accueil',  it: 'Home'    },
+  '/colaborador/calendario': { pt: 'Calendário',de: 'Kalender', en: 'Calendar', fr: 'Calendrier', it: 'Calendario' },
+  '/colaborador/pedidos':    { pt: 'Pedidos',   de: 'Anträge',  en: 'Requests', fr: 'Demandes', it: 'Richieste' },
+  '/colaborador/registo':    { pt: 'Registo',   de: 'Protokoll',en: 'Log',      fr: 'Registre', it: 'Registro' },
+  '/colaborador/perfil':     { pt: 'Perfil',    de: 'Profil',   en: 'Profile',  fr: 'Profil',   it: 'Profilo' },
+}
 
 const TABS = [
-  { href: '/colaborador',           label: 'Home',      icon: House          },
-  { href: '/colaborador/calendario', label: 'Calendário', icon: Calendar       },
-  { href: '/colaborador/pedidos',    label: 'Pedidos',   icon: FileText       },
-  { href: '/colaborador/registo',    label: 'Registo',   icon: ClipboardCheck },
-  { href: '/colaborador/perfil',     label: 'Perfil',    icon: User           },
+  { href: '/colaborador',            icon: House          },
+  { href: '/colaborador/calendario', icon: Calendar       },
+  { href: '/colaborador/pedidos',    icon: FileText       },
+  { href: '/colaborador/registo',    icon: ClipboardCheck },
+  { href: '/colaborador/perfil',     icon: User           },
 ]
 
 export default function EmployeeMobileNav() {
   const pathname = usePathname()
+  const [lang] = useLang()
 
   return (
     <nav
@@ -31,7 +42,7 @@ export default function EmployeeMobileNav() {
         fontFamily: "'IBM Plex Sans', sans-serif",
       }}
     >
-      {TABS.map(({ href, label, icon: Icon }) => {
+      {TABS.map(({ href, icon: Icon }) => {
         const isActive = href === '/colaborador'
           ? pathname === href || pathname === '/colaborador/'
           : pathname.startsWith(href)
@@ -53,7 +64,7 @@ export default function EmployeeMobileNav() {
           >
             <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
             <span style={{ fontSize: 9, fontWeight: isActive ? 600 : 400, letterSpacing: '0.02em' }}>
-              {label}
+              {TAB_LABELS[href][lang]}
             </span>
           </Link>
         )

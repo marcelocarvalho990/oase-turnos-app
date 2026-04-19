@@ -31,10 +31,25 @@ interface Props {
 
 type ViewMode = 'month' | 'week' | 'day'
 
-const VIEW_LABELS: Record<ViewMode, { pt: string; de: string }> = {
-  month: { pt: 'Mensal',  de: 'Monatlich'   },
-  week:  { pt: 'Semanal', de: 'Wöchentlich' },
-  day:   { pt: 'Diário',  de: 'Täglich'     },
+import type { Lang } from '@/hooks/useLang'
+
+const GRID_TX: Record<Lang, {
+  compact: string; comfortable: string; exportPdf: string;
+  scheduleLabels: Record<ViewMode, string>; scheduleSub: string;
+  hoursReport: string; hoursSub: string;
+  persShort: string;
+}> = {
+  pt: { compact: 'Compacto', comfortable: 'Confortável', exportPdf: 'Exportar PDF', scheduleLabels: { month: 'Escala Mensal', week: 'Escala Semanal', day: 'Escala Diária' }, scheduleSub: 'Exportar calendário como PDF', hoursReport: 'Relatório de Horas', hoursSub: 'Exportar horas por colaborador', persShort: 'pess.' },
+  de: { compact: 'Kompakt', comfortable: 'Komfortabel', exportPdf: 'PDF herunterladen', scheduleLabels: { month: 'Dienstplan', week: 'Wochenplan', day: 'Tagesplan' }, scheduleSub: 'Dienstplan als PDF exportieren', hoursReport: 'Stundenbericht', hoursSub: 'Stunden pro Mitarbeiter exportieren', persShort: 'Pers.' },
+  en: { compact: 'Compact', comfortable: 'Comfortable', exportPdf: 'Export PDF', scheduleLabels: { month: 'Monthly Schedule', week: 'Weekly Schedule', day: 'Daily Schedule' }, scheduleSub: 'Export schedule as PDF', hoursReport: 'Hours Report', hoursSub: 'Export hours per employee', persShort: 'pers.' },
+  fr: { compact: 'Compact', comfortable: 'Confortable', exportPdf: 'Exporter PDF', scheduleLabels: { month: 'Planning mensuel', week: 'Planning hebdomadaire', day: 'Planning journalier' }, scheduleSub: 'Exporter le planning en PDF', hoursReport: 'Rapport d\'heures', hoursSub: 'Exporter les heures par collaborateur', persShort: 'pers.' },
+  it: { compact: 'Compatto', comfortable: 'Comodo', exportPdf: 'Esporta PDF', scheduleLabels: { month: 'Turni mensili', week: 'Turni settimanali', day: 'Turni giornalieri' }, scheduleSub: 'Esporta turni come PDF', hoursReport: 'Rapporto ore', hoursSub: 'Esporta ore per collaboratore', persShort: 'pers.' },
+}
+
+const VIEW_LABELS: Record<ViewMode, Record<Lang, string>> = {
+  month: { pt: 'Mensal',  de: 'Monatlich',   en: 'Monthly',  fr: 'Mensuel',      it: 'Mensile'     },
+  week:  { pt: 'Semanal', de: 'Wöchentlich', en: 'Weekly',   fr: 'Hebdomadaire', it: 'Settimanale' },
+  day:   { pt: 'Diário',  de: 'Täglich',     en: 'Daily',    fr: 'Quotidien',    it: 'Giornaliero' },
 }
 
 function weekStartOf(date: Date): Date {
@@ -121,7 +136,8 @@ export default function MonthlyGridWrapper({
   }, [view, focusDate, days])
 
   // Nav labels
-  const locale = lang === 'de' ? 'de-DE' : 'pt-PT'
+  const localeMap: Record<Lang, string> = { pt: 'pt-PT', de: 'de-DE', en: 'en-GB', fr: 'fr-FR', it: 'it-IT' }
+  const locale = localeMap[lang] ?? 'de-DE'
   const weekLabel = useMemo(() => {
     const ws = weekStartOf(focusDate)
     const we = new Date(ws); we.setDate(ws.getDate() + 6)
@@ -192,7 +208,7 @@ export default function MonthlyGridWrapper({
     if (isPdfBusy) return
     setIsPdfBusy(true)
     try {
-      await downloadSchedulePDF({ employees, assignmentMap, shiftTypes, days: displayDays, year, month, team, lang: lang as 'pt' | 'de', view })
+      await downloadSchedulePDF({ employees, assignmentMap, shiftTypes, days: displayDays, year, month, team, lang: (lang === 'de' ? 'de' : 'pt'), view })
     } finally {
       setIsPdfBusy(false)
     }
@@ -202,7 +218,7 @@ export default function MonthlyGridWrapper({
     if (isPdfBusy) return
     setIsPdfBusy(true)
     try {
-      await downloadHoursPDF({ employees, assignmentMap, shiftTypes, days: displayDays, year, month, team, lang: lang as 'pt' | 'de' })
+      await downloadHoursPDF({ employees, assignmentMap, shiftTypes, days: displayDays, year, month, team, lang: (lang === 'de' ? 'de' : 'pt') })
     } finally {
       setIsPdfBusy(false)
     }
@@ -272,7 +288,7 @@ export default function MonthlyGridWrapper({
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button onClick={() => handleMonthChange(prevM.year, prevM.month)} style={NAV_BTN}><ChevronLeft size={13} /></button>
               <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#001E30', minWidth: 110, textAlign: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                {formatMonthYear(year, month, lang === 'de' ? 'de-DE' : 'pt-PT')}
+                {formatMonthYear(year, month, locale)}
               </span>
               <button onClick={() => handleMonthChange(nextM.year, nextM.month)} style={NAV_BTN}><ChevronRight size={13} /></button>
             </div>
@@ -304,7 +320,7 @@ export default function MonthlyGridWrapper({
         <div style={{ display: 'flex', background: '#F0F4F7', borderRadius: 6, padding: 2, gap: 1 }}>
           <button
             onClick={() => setCompact(true)}
-            title={lang === 'de' ? 'Kompakt' : 'Compacto'}
+            title={GRID_TX[lang].compact}
             style={{
               padding: '4px 8px', borderRadius: 4, border: 'none',
               background: compact ? 'white' : 'transparent',
@@ -318,7 +334,7 @@ export default function MonthlyGridWrapper({
           </button>
           <button
             onClick={() => setCompact(false)}
-            title={lang === 'de' ? 'Komfortabel' : 'Confortável'}
+            title={GRID_TX[lang].comfortable}
             style={{
               padding: '4px 8px', borderRadius: 4, border: 'none',
               background: !compact ? 'white' : 'transparent',
@@ -338,7 +354,7 @@ export default function MonthlyGridWrapper({
         <div ref={pdfMenuRef} style={{ position: 'relative' }}>
           <button
             onClick={() => !isPdfBusy && setShowPdfMenu(v => !v)}
-            title={lang === 'de' ? 'PDF herunterladen' : 'Exportar PDF'}
+            title={GRID_TX[lang].exportPdf}
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               padding: '5px 10px', borderRadius: 6,
@@ -374,12 +390,8 @@ export default function MonthlyGridWrapper({
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <div>
-                  <div style={{ fontWeight: 600 }}>
-                    {lang === 'de'
-                      ? ({ month: 'Dienstplan', week: 'Wochenplan', day: 'Tagesplan' } as Record<ViewMode, string>)[view]
-                      : ({ month: 'Escala Mensal', week: 'Escala Semanal', day: 'Escala Diária' } as Record<ViewMode, string>)[view]}
-                  </div>
-                  <div style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{lang === 'de' ? 'Dienstplan als PDF exportieren' : 'Exportar calendário como PDF'}</div>
+                  <div style={{ fontWeight: 600 }}>{GRID_TX[lang].scheduleLabels[view]}</div>
+                  <div style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{GRID_TX[lang].scheduleSub}</div>
                 </div>
               </button>
               <div style={{ height: 1, background: '#EEF2F5', margin: '0 10px' }} />
@@ -395,8 +407,8 @@ export default function MonthlyGridWrapper({
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <div>
-                  <div style={{ fontWeight: 600 }}>{lang === 'de' ? 'Stundenbericht' : 'Relatório de Horas'}</div>
-                  <div style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{lang === 'de' ? 'Stunden pro Mitarbeiter exportieren' : 'Exportar horas por colaborador'}</div>
+                  <div style={{ fontWeight: 600 }}>{GRID_TX[lang].hoursReport}</div>
+                  <div style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{GRID_TX[lang].hoursSub}</div>
                 </div>
               </button>
             </div>
@@ -665,7 +677,7 @@ function DayView({ employees, assignmentMap, shiftTypes, day, onCellChange, lang
   shiftTypes: ShiftType[]
   day: DayInfo
   onCellChange: (employeeId: string, date: string, shiftCode: string | null) => void
-  lang: 'pt' | 'de'
+  lang: Lang
 }) {
   const grouped = ROLE_ORDER
     .map(role => ({ role, label: ROLE_LABELS[role], employees: employees.filter(e => e.role === role) }))
@@ -692,7 +704,7 @@ function DayView({ employees, assignmentMap, shiftTypes, day, onCellChange, lang
               if (count === 0) return null
               return (
                 <div key={s.code} style={{ padding: '4px 12px', background: s.bgColor, color: s.textColor, borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, fontFamily: "'IBM Plex Mono', monospace", display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {s.code} <span style={{ opacity: 0.6 }}>·</span> {count} {lang === 'de' ? 'Pers.' : 'pess.'}
+                  {s.code} <span style={{ opacity: 0.6 }}>·</span> {count} {GRID_TX[lang].persShort}
                 </div>
               )
             })}

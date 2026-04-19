@@ -5,7 +5,7 @@ import { Check, X, Trash2, AlertTriangle } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
-type Lang = 'pt' | 'de'
+import type { Lang } from '@/hooks/useLang'
 type ReqStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
 type TabType = 'vacation' | 'swap' | 'saldos' | 'wunschfrei'
 
@@ -30,14 +30,23 @@ interface WunschfreiRequest {
   employee: { name: string; shortName: string };
 }
 
-const STATUS_COLORS: Record<ReqStatus, { bg: string; color: string; label: { pt: string; de: string } }> = {
-  PENDING:   { bg: '#FEF3C7', color: '#D97706', label: { pt: 'Pendente', de: 'Ausstehend' } },
-  APPROVED:  { bg: '#D1FAE5', color: '#059669', label: { pt: 'Aprovado', de: 'Genehmigt' } },
-  REJECTED:  { bg: '#FEE2E2', color: '#DC2626', label: { pt: 'Rejeitado', de: 'Abgelehnt' } },
-  CANCELLED: { bg: '#F3F4F6', color: '#6B7280', label: { pt: 'Cancelado', de: 'Abgebrochen' } },
+const STATUS_COLORS: Record<ReqStatus, { bg: string; color: string; label: Record<Lang, string> }> = {
+  PENDING:   { bg: '#FEF3C7', color: '#D97706', label: { pt: 'Pendente',  de: 'Ausstehend', en: 'Pending',   fr: 'En attente', it: 'In attesa'  } },
+  APPROVED:  { bg: '#D1FAE5', color: '#059669', label: { pt: 'Aprovado',  de: 'Genehmigt',  en: 'Approved',  fr: 'Approuvé',   it: 'Approvato'  } },
+  REJECTED:  { bg: '#FEE2E2', color: '#DC2626', label: { pt: 'Rejeitado', de: 'Abgelehnt',  en: 'Rejected',  fr: 'Refusé',     it: 'Rifiutato'  } },
+  CANCELLED: { bg: '#F3F4F6', color: '#6B7280', label: { pt: 'Cancelado', de: 'Abgebrochen',en: 'Cancelled', fr: 'Annulé',     it: 'Annullato'  } },
 }
 
-const t = {
+const t: Record<Lang, {
+  title: string; subtitle: string; vacation: string; swap: string; saldos: string; wunschfrei: string;
+  approve: string; reject: string; noteLabel: string; noteBtn: string;
+  empty: string; allEmpty: string; from: string; to: string; for: string;
+  managerNote: string; filterAll: string; filterPending: string;
+  entitlement: string; approved: string; pending: string; remaining: string; days: string;
+  wunschfreiDate: string; wunschfreiRequested: string;
+  message: string; deleteReq: string; deleteBtn: string; cancel: string;
+  deleteConfirm: string; deleteConfirmSub: string; vacationPfx: string; colEmployee: string;
+}> = {
   pt: {
     title: 'Aprovações', subtitle: 'Pedidos de férias, trocas de turno e Wunschfrei',
     vacation: 'Férias', swap: 'Trocas', saldos: 'Saldos', wunschfrei: 'Wunschfrei',
@@ -45,28 +54,78 @@ const t = {
     noteLabel: 'Nota (opcional)', noteBtn: 'Adicionar nota',
     empty: 'Sem pedidos pendentes.', allEmpty: 'Sem pedidos.',
     from: 'de', to: 'a', for: 'para',
-    managerNote: 'Nota do gestor', lang: 'DE',
+    managerNote: 'Nota do gestor',
     filterAll: 'Todos', filterPending: 'Pendentes',
     entitlement: 'Direito', approved: 'Gozadas', pending: 'Pendentes', remaining: 'Restantes', days: 'dias',
     wunschfreiDate: 'Data', wunschfreiRequested: 'Pedido em',
+    message: 'Mensagem', deleteReq: 'Apagar pedido', deleteBtn: 'Apagar', cancel: 'Cancelar',
+    deleteConfirm: 'Apagar pedido de férias?', deleteConfirmSub: 'Esta ação não pode ser desfeita.',
+    vacationPfx: 'Dias úteis (seg–sáb). Direito: 25 dias × % contrato.', colEmployee: 'Colaborador',
   },
   de: {
     title: 'Genehmigungen', subtitle: 'Urlaubs-, Schichttausch- und Wunschfreitag-Anfragen',
-    vacation: 'Urlaub', swap: 'Schichttausch',
+    vacation: 'Urlaub', swap: 'Schichttausch', saldos: 'Salden', wunschfrei: 'Wunschfrei',
     approve: 'Genehmigen', reject: 'Ablehnen',
     noteLabel: 'Notiz (optional)', noteBtn: 'Notiz hinzufügen',
     empty: 'Keine ausstehenden Anfragen.', allEmpty: 'Keine Anfragen.',
     from: 'von', to: 'bis', for: 'für',
-    managerNote: 'Manager-Notiz', lang: 'PT',
+    managerNote: 'Manager-Notiz',
     filterAll: 'Alle', filterPending: 'Ausstehend',
-    saldos: 'Salden', wunschfrei: 'Wunschfrei',
     entitlement: 'Anspruch', approved: 'Genommen', pending: 'Ausstehend', remaining: 'Verbleibend', days: 'Tage',
     wunschfreiDate: 'Datum', wunschfreiRequested: 'Beantragt am',
+    message: 'Nachricht', deleteReq: 'Antrag löschen', deleteBtn: 'Löschen', cancel: 'Abbrechen',
+    deleteConfirm: 'Urlaubsantrag löschen?', deleteConfirmSub: 'Diese Aktion kann nicht rückgängig gemacht werden.',
+    vacationPfx: 'Werktage (Mo–Sa). Anspruch: 25 Tage × Vertragsprozent.', colEmployee: 'Mitarbeiter',
+  },
+  en: {
+    title: 'Approvals', subtitle: 'Vacation, shift swap and Wunschfrei requests',
+    vacation: 'Vacation', swap: 'Swaps', saldos: 'Balances', wunschfrei: 'Wunschfrei',
+    approve: 'Approve', reject: 'Reject',
+    noteLabel: 'Note (optional)', noteBtn: 'Add note',
+    empty: 'No pending requests.', allEmpty: 'No requests.',
+    from: 'from', to: 'to', for: 'for',
+    managerNote: 'Manager note',
+    filterAll: 'All', filterPending: 'Pending',
+    entitlement: 'Entitlement', approved: 'Used', pending: 'Pending', remaining: 'Remaining', days: 'days',
+    wunschfreiDate: 'Date', wunschfreiRequested: 'Requested on',
+    message: 'Message', deleteReq: 'Delete request', deleteBtn: 'Delete', cancel: 'Cancel',
+    deleteConfirm: 'Delete vacation request?', deleteConfirmSub: 'This action cannot be undone.',
+    vacationPfx: 'Working days (Mon–Sat). Entitlement: 25 days × contract %.', colEmployee: 'Employee',
+  },
+  fr: {
+    title: 'Approbations', subtitle: 'Demandes de congés, échanges de postes et Wunschfrei',
+    vacation: 'Congés', swap: 'Échanges', saldos: 'Soldes', wunschfrei: 'Wunschfrei',
+    approve: 'Approuver', reject: 'Refuser',
+    noteLabel: 'Note (facultatif)', noteBtn: 'Ajouter une note',
+    empty: 'Aucune demande en attente.', allEmpty: 'Aucune demande.',
+    from: 'du', to: 'au', for: 'pour',
+    managerNote: 'Note du responsable',
+    filterAll: 'Toutes', filterPending: 'En attente',
+    entitlement: 'Droit', approved: 'Pris', pending: 'En attente', remaining: 'Restants', days: 'jours',
+    wunschfreiDate: 'Date', wunschfreiRequested: 'Demandé le',
+    message: 'Message', deleteReq: 'Supprimer la demande', deleteBtn: 'Supprimer', cancel: 'Annuler',
+    deleteConfirm: 'Supprimer la demande de congé ?', deleteConfirmSub: 'Cette action est irréversible.',
+    vacationPfx: 'Jours ouvrables (lun–sam). Droit : 25 jours × % contrat.', colEmployee: 'Collaborateur',
+  },
+  it: {
+    title: 'Approvazioni', subtitle: 'Richieste di ferie, scambi di turno e Wunschfrei',
+    vacation: 'Ferie', swap: 'Scambi', saldos: 'Saldi', wunschfrei: 'Wunschfrei',
+    approve: 'Approva', reject: 'Rifiuta',
+    noteLabel: 'Nota (opzionale)', noteBtn: 'Aggiungi nota',
+    empty: 'Nessuna richiesta in attesa.', allEmpty: 'Nessuna richiesta.',
+    from: 'dal', to: 'al', for: 'per',
+    managerNote: 'Nota del responsabile',
+    filterAll: 'Tutte', filterPending: 'In attesa',
+    entitlement: 'Diritto', approved: 'Usate', pending: 'In attesa', remaining: 'Rimanenti', days: 'giorni',
+    wunschfreiDate: 'Data', wunschfreiRequested: 'Richiesto il',
+    message: 'Messaggio', deleteReq: 'Elimina richiesta', deleteBtn: 'Elimina', cancel: 'Annulla',
+    deleteConfirm: 'Eliminare la richiesta di ferie?', deleteConfirmSub: 'Questa azione non può essere annullata.',
+    vacationPfx: 'Giorni lavorativi (lun–sab). Diritto: 25 giorni × % contratto.', colEmployee: 'Collaboratore',
   },
 }
 
 export default function ManagerPedidosClient() {
-  const [lang, toggleLang] = useLang()
+  const [lang] = useLang()
   const [tab, setTab] = useState<TabType>('vacation')
   const [filter, setFilter] = useState<'all' | 'pending'>('pending')
   const [vacations, setVacations] = useState<VacationRequest[]>([])
@@ -174,9 +233,6 @@ export default function ManagerPedidosClient() {
             <option value="pending" style={{ background: '#003A5D' }}>{tx.filterPending}</option>
             <option value="all" style={{ background: '#003A5D' }}>{tx.filterAll}</option>
           </select>
-          <button onClick={toggleLang} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
-            {tx.lang}
-          </button>
         </div>
       </div>
       <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
@@ -235,7 +291,7 @@ export default function ManagerPedidosClient() {
                     </div>
                     {v.notes && (
                       <div style={{ margin: '8px 0 0', padding: '8px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: '3px solid #94A3B8', borderRadius: 6, fontSize: '0.78rem', color: '#3A4A5C', lineHeight: 1.5 }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 3 }}>{lang === 'pt' ? 'Mensagem' : 'Nachricht'}</span>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 3 }}>{tx.message}</span>
                         {v.notes}
                       </div>
                     )}
@@ -277,10 +333,10 @@ export default function ManagerPedidosClient() {
                     <button
                       onClick={() => openDeleteConfirm(v.id, `${v.employee.name} · ${v.startDate} → ${v.endDate}`)}
                       disabled={deleteLoading === v.id}
-                      title={lang === 'pt' ? 'Apagar pedido' : 'Antrag löschen'}
+                      title={tx.deleteReq}
                       style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'transparent', border: '1px solid #F87171', borderRadius: 6, color: '#DC2626', fontSize: '0.72rem', cursor: 'pointer', opacity: deleteLoading === v.id ? 0.5 : 1 }}
                     >
-                      <Trash2 size={12} /> {lang === 'pt' ? 'Apagar' : 'Löschen'}
+                      <Trash2 size={12} /> {tx.deleteBtn}
                     </button>
                   </div>
                 </div>
@@ -318,7 +374,7 @@ export default function ManagerPedidosClient() {
                     </div>
                     {sw.requesterMessage && (
                       <div style={{ margin: '8px 0 0', padding: '8px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: '3px solid #94A3B8', borderRadius: 6, fontSize: '0.78rem', color: '#3A4A5C', lineHeight: 1.5 }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 3 }}>{lang === 'pt' ? 'Mensagem' : 'Nachricht'}</span>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 3 }}>{tx.message}</span>
                         {sw.requesterMessage}
                       </div>
                     )}
@@ -386,7 +442,7 @@ export default function ManagerPedidosClient() {
                       {wf.date}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: '#7A9BAD', marginTop: 2 }}>
-                      {tx.wunschfreiRequested} {new Date(wf.createdAt).toLocaleDateString(lang === 'de' ? 'de-DE' : 'pt-PT')}
+                      {tx.wunschfreiRequested} {new Date(wf.createdAt).toLocaleDateString({ pt: 'pt-PT', de: 'de-DE', en: 'en-GB', fr: 'fr-FR', it: 'it-IT' }[lang])}
                     </div>
                     {wf.managerNote && !isPending && (
                       <div style={{ margin: '6px 0 0', padding: '6px 10px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 6, fontSize: '0.75rem', color: '#0369A1' }}>
@@ -433,7 +489,7 @@ export default function ManagerPedidosClient() {
       {tab === 'saldos' && (
         <div key="saldos" className="tab-content">
           <div style={{ marginBottom: 12, fontSize: '0.72rem', color: '#7A9BAD', letterSpacing: '0.06em' }}>
-            {currentYear} · {lang === 'pt' ? 'Dias úteis (seg–sáb). Direito: 25 dias × % contrato.' : 'Werktage (Mo–Sa). Anspruch: 25 Tage × Vertragsprozent.'}
+            {currentYear} · {tx.vacationPfx}
           </div>
 
           {isMobile ? (
@@ -479,8 +535,8 @@ export default function ManagerPedidosClient() {
             <>
               {/* Desktop: Column headers */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 70px 70px 70px 80px', gap: 0, padding: '6px 14px', borderBottom: '1px solid #D8E2E8', marginBottom: 4 }}>
-                {[lang === 'de' ? 'Mitarbeiter' : 'Colaborador', tx.entitlement, tx.approved, tx.pending, tx.remaining, '%'].map(h => (
-                  <div key={h} style={{ fontSize: '0.65rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: (h === 'Colaborador' || h === 'Mitarbeiter') ? 'left' : 'center' }}>{h}</div>
+                {[tx.colEmployee, tx.entitlement, tx.approved, tx.pending, tx.remaining, '%'].map(h => (
+                  <div key={h} style={{ fontSize: '0.65rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'left' }}>{h}</div>
                 ))}
               </div>
 
@@ -546,13 +602,13 @@ export default function ManagerPedidosClient() {
               </div>
               <div style={{ textAlign: 'center' }}>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#001E30' }}>
-                  {lang === 'pt' ? 'Apagar pedido de férias?' : 'Urlaubsantrag löschen?'}
+                  {tx.deleteConfirm}
                 </h3>
                 <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: '#7A9BAD', lineHeight: 1.5 }}>
                   {confirmDeleteLabel}
                 </p>
                 <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
-                  {lang === 'pt' ? 'Esta ação não pode ser desfeita.' : 'Diese Aktion kann nicht rückgängig gemacht werden.'}
+                  {tx.deleteConfirmSub}
                 </p>
               </div>
             </div>
@@ -561,13 +617,13 @@ export default function ManagerPedidosClient() {
                 onClick={() => setConfirmDeleteId(null)}
                 style={{ flex: 1, padding: '10px 0', background: '#F4F6F8', border: '1px solid #D8E2E8', borderRadius: 8, color: '#4A6878', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }}
               >
-                {lang === 'pt' ? 'Cancelar' : 'Abbrechen'}
+                {tx.cancel}
               </button>
               <button
                 onClick={confirmDelete}
                 style={{ flex: 1, padding: '10px 0', background: '#DC2626', border: 'none', borderRadius: 8, color: 'white', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
               >
-                {lang === 'pt' ? 'Apagar' : 'Löschen'}
+                {tx.deleteBtn}
               </button>
             </div>
           </div>

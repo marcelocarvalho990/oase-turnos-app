@@ -6,9 +6,21 @@ import { Users, Plus, Pencil, Trash2, X, Check, KeyRound } from 'lucide-react'
 import { Employee, Role, ROLE_LABELS, ROLE_ORDER } from '@/types'
 import { useLang } from '@/hooks/useLang'
 
-const TX = {
+import type { Lang } from '@/hooks/useLang'
+
+const TX: Record<Lang, {
+  title: string; activeOf: (a: number, t: number) => string;
+  showActive: string; showAll: string; newEmp: string;
+  colName: string; colShort: string; colPct: string; colTeam: string; colRole: string;
+  colMulti: string; colStatus: string; colActions: string; empty: string;
+  active: string; inactive: string; editTitle: string; newTitle: string;
+  fullName: string; shortName: string; pct: string; team: string; role: string;
+  multiTeam: string; activeLabel: string; cancel: string; saving: string; save: string; create: string;
+  pinGenerated: string; pinShare: (name: string) => string; close: string;
+  tooltipPin: string; tooltipEdit: string; tooltipDel: string;
+}> = {
   pt: {
-    title: 'Colaboradores', activeOf: (a: number, t: number) => `${a} ativos · ${t} total`,
+    title: 'Colaboradores', activeOf: (a, t) => `${a} ativos · ${t} total`,
     showActive: 'Mostrar apenas ativos', showAll: 'Mostrar todos', newEmp: 'Novo Colaborador',
     colName: 'Nome', colShort: 'Abrev.', colPct: '%', colTeam: 'Equipa', colRole: 'Função',
     colMulti: 'Multi-Equipa', colStatus: 'Estado', colActions: 'Ações',
@@ -19,13 +31,11 @@ const TX = {
     team: 'Equipa', role: 'Função',
     multiTeam: 'Pode cobrir outras equipas', activeLabel: 'Ativo',
     cancel: 'Cancelar', saving: 'A guardar…', save: 'Guardar alterações', create: 'Criar colaborador',
-    pinGenerated: 'PIN gerado',
-    pinShare: (name: string) => `Partilha este PIN com ${name}. Só é mostrado uma vez.`,
-    close: 'Fechar',
-    tooltipPin: 'Gerar PIN', tooltipEdit: 'Editar', tooltipDel: 'Eliminar',
+    pinGenerated: 'PIN gerado', pinShare: (name) => `Partilha este PIN com ${name}. Só é mostrado uma vez.`,
+    close: 'Fechar', tooltipPin: 'Gerar PIN', tooltipEdit: 'Editar', tooltipDel: 'Eliminar',
   },
   de: {
-    title: 'Mitarbeiter', activeOf: (a: number, t: number) => `${a} aktiv · ${t} gesamt`,
+    title: 'Mitarbeiter', activeOf: (a, t) => `${a} aktiv · ${t} gesamt`,
     showActive: 'Nur aktive anzeigen', showAll: 'Alle anzeigen', newEmp: 'Neuer Mitarbeiter',
     colName: 'Name', colShort: 'Abkürz.', colPct: '%', colTeam: 'Team', colRole: 'Funktion',
     colMulti: 'Multi-Team', colStatus: 'Status', colActions: 'Aktionen',
@@ -36,10 +46,53 @@ const TX = {
     team: 'Team', role: 'Funktion',
     multiTeam: 'Kann andere Teams abdecken', activeLabel: 'Aktiv',
     cancel: 'Abbrechen', saving: 'Wird gespeichert…', save: 'Änderungen speichern', create: 'Mitarbeiter erstellen',
-    pinGenerated: 'PIN generiert',
-    pinShare: (name: string) => `Teile diesen PIN mit ${name}. Wird nur einmal angezeigt.`,
-    close: 'Schließen',
-    tooltipPin: 'PIN generieren', tooltipEdit: 'Bearbeiten', tooltipDel: 'Löschen',
+    pinGenerated: 'PIN generiert', pinShare: (name) => `Teile diesen PIN mit ${name}. Wird nur einmal angezeigt.`,
+    close: 'Schließen', tooltipPin: 'PIN generieren', tooltipEdit: 'Bearbeiten', tooltipDel: 'Löschen',
+  },
+  en: {
+    title: 'Staff', activeOf: (a, t) => `${a} active · ${t} total`,
+    showActive: 'Show active only', showAll: 'Show all', newEmp: 'New Employee',
+    colName: 'Name', colShort: 'Short', colPct: '%', colTeam: 'Team', colRole: 'Role',
+    colMulti: 'Multi-Team', colStatus: 'Status', colActions: 'Actions',
+    empty: 'No employees found.',
+    active: 'Active', inactive: 'Inactive',
+    editTitle: 'Edit Employee', newTitle: 'New Employee',
+    fullName: 'Full name', shortName: 'Abbreviation', pct: 'Percentage',
+    team: 'Team', role: 'Role',
+    multiTeam: 'Can cover other teams', activeLabel: 'Active',
+    cancel: 'Cancel', saving: 'Saving…', save: 'Save changes', create: 'Create employee',
+    pinGenerated: 'PIN generated', pinShare: (name) => `Share this PIN with ${name}. Only shown once.`,
+    close: 'Close', tooltipPin: 'Generate PIN', tooltipEdit: 'Edit', tooltipDel: 'Delete',
+  },
+  fr: {
+    title: 'Collaborateurs', activeOf: (a, t) => `${a} actifs · ${t} total`,
+    showActive: 'Afficher les actifs seulement', showAll: 'Afficher tous', newEmp: 'Nouveau collaborateur',
+    colName: 'Nom', colShort: 'Abrév.', colPct: '%', colTeam: 'Équipe', colRole: 'Rôle',
+    colMulti: 'Multi-équipe', colStatus: 'Statut', colActions: 'Actions',
+    empty: 'Aucun collaborateur trouvé.',
+    active: 'Actif', inactive: 'Inactif',
+    editTitle: 'Modifier le collaborateur', newTitle: 'Nouveau collaborateur',
+    fullName: 'Nom complet', shortName: 'Abréviation', pct: 'Pourcentage',
+    team: 'Équipe', role: 'Rôle',
+    multiTeam: 'Peut couvrir d\'autres équipes', activeLabel: 'Actif',
+    cancel: 'Annuler', saving: 'Enregistrement…', save: 'Enregistrer les modifications', create: 'Créer le collaborateur',
+    pinGenerated: 'NIP généré', pinShare: (name) => `Partage ce NIP avec ${name}. Affiché une seule fois.`,
+    close: 'Fermer', tooltipPin: 'Générer NIP', tooltipEdit: 'Modifier', tooltipDel: 'Supprimer',
+  },
+  it: {
+    title: 'Collaboratori', activeOf: (a, t) => `${a} attivi · ${t} totale`,
+    showActive: 'Mostra solo attivi', showAll: 'Mostra tutti', newEmp: 'Nuovo collaboratore',
+    colName: 'Nome', colShort: 'Abbrev.', colPct: '%', colTeam: 'Team', colRole: 'Ruolo',
+    colMulti: 'Multi-team', colStatus: 'Stato', colActions: 'Azioni',
+    empty: 'Nessun collaboratore trovato.',
+    active: 'Attivo', inactive: 'Inattivo',
+    editTitle: 'Modifica collaboratore', newTitle: 'Nuovo collaboratore',
+    fullName: 'Nome completo', shortName: 'Abbreviazione', pct: 'Percentuale',
+    team: 'Team', role: 'Ruolo',
+    multiTeam: 'Può coprire altri team', activeLabel: 'Attivo',
+    cancel: 'Annulla', saving: 'Salvataggio…', save: 'Salva modifiche', create: 'Crea collaboratore',
+    pinGenerated: 'PIN generato', pinShare: (name) => `Condividi questo PIN con ${name}. Mostrato solo una volta.`,
+    close: 'Chiudi', tooltipPin: 'Genera PIN', tooltipEdit: 'Modifica', tooltipDel: 'Elimina',
   },
 }
 

@@ -3,6 +3,24 @@
 import { useState } from 'react'
 import { User, Lock, Building2, CheckCircle, AlertCircle } from 'lucide-react'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useLang } from '@/hooks/useLang'
+import type { Lang } from '@/hooks/useLang'
+
+const PROF_TX: Record<Lang, {
+  title: string; infoTab: string; pinTab: string;
+  role: string; workPct: string; team: string;
+  floorsTitle: string; main: string; onlyMain: string; contactManager: string;
+  changePinTitle: string; changePinSub: string;
+  currentPin: string; newPin: string; confirmPin: string;
+  pinOk: string; loading: string; confirm: string;
+  errMismatch: string; errFormat: string; errNetwork: string;
+}> = {
+  pt: { title: 'O Meu Perfil', infoTab: 'Informações', pinTab: 'Alterar PIN', role: 'Função', workPct: 'Percentagem contratual', team: 'Equipa / Andar base', floorsTitle: 'Andares / Cobertura', main: 'principal', onlyMain: 'Apenas equipa principal', contactManager: 'Para alterar os andares de cobertura, contacte o seu responsável.', changePinTitle: 'Alterar PIN de acesso', changePinSub: 'Mínimo 4 dígitos numéricos', currentPin: 'PIN atual', newPin: 'Novo PIN', confirmPin: 'Confirmar novo PIN', pinOk: 'PIN alterado com sucesso!', loading: 'A guardar...', confirm: 'Confirmar alteração', errMismatch: 'Os PINs não coincidem', errFormat: 'O PIN deve ter 4 a 6 dígitos numéricos', errNetwork: 'Erro de rede. Tente novamente.' },
+  de: { title: 'Mein Profil', infoTab: 'Informationen', pinTab: 'PIN ändern', role: 'Funktion', workPct: 'Vertragsanteil', team: 'Team / Hauptetage', floorsTitle: 'Etagen / Abdeckung', main: 'Haupt', onlyMain: 'Nur Hauptteam', contactManager: 'Um die Abdeckungsetagen zu ändern, wenden Sie sich an Ihren Vorgesetzten.', changePinTitle: 'Zugangs-PIN ändern', changePinSub: 'Mindestens 4 numerische Stellen', currentPin: 'Aktueller PIN', newPin: 'Neuer PIN', confirmPin: 'Neuen PIN bestätigen', pinOk: 'PIN erfolgreich geändert!', loading: 'Wird gespeichert...', confirm: 'Änderung bestätigen', errMismatch: 'PINs stimmen nicht überein', errFormat: 'PIN muss 4–6 Ziffern haben', errNetwork: 'Netzwerkfehler. Erneut versuchen.' },
+  en: { title: 'My Profile', infoTab: 'Information', pinTab: 'Change PIN', role: 'Role', workPct: 'Contract percentage', team: 'Team / Home floor', floorsTitle: 'Floors / Coverage', main: 'main', onlyMain: 'Home team only', contactManager: 'To change coverage floors, contact your manager.', changePinTitle: 'Change access PIN', changePinSub: 'Minimum 4 numeric digits', currentPin: 'Current PIN', newPin: 'New PIN', confirmPin: 'Confirm new PIN', pinOk: 'PIN changed successfully!', loading: 'Saving...', confirm: 'Confirm change', errMismatch: 'PINs do not match', errFormat: 'PIN must be 4–6 digits', errNetwork: 'Network error. Please try again.' },
+  fr: { title: 'Mon profil', infoTab: 'Informations', pinTab: 'Changer le PIN', role: 'Fonction', workPct: 'Pourcentage contractuel', team: 'Équipe / Étage principal', floorsTitle: 'Étages / Couverture', main: 'principal', onlyMain: 'Équipe principale uniquement', contactManager: 'Pour modifier les étages de couverture, contactez votre responsable.', changePinTitle: 'Modifier le PIN d\'accès', changePinSub: 'Minimum 4 chiffres numériques', currentPin: 'PIN actuel', newPin: 'Nouveau PIN', confirmPin: 'Confirmer le nouveau PIN', pinOk: 'PIN modifié avec succès !', loading: 'Enregistrement...', confirm: 'Confirmer la modification', errMismatch: 'Les PINs ne correspondent pas', errFormat: 'Le PIN doit comporter 4 à 6 chiffres', errNetwork: 'Erreur réseau. Réessayez.' },
+  it: { title: 'Il mio profilo', infoTab: 'Informazioni', pinTab: 'Cambia PIN', role: 'Funzione', workPct: 'Percentuale contrattuale', team: 'Team / Piano principale', floorsTitle: 'Piani / Copertura', main: 'principale', onlyMain: 'Solo team principale', contactManager: 'Per modificare i piani di copertura, contattare il responsabile.', changePinTitle: 'Modifica PIN di accesso', changePinSub: 'Minimo 4 cifre numeriche', currentPin: 'PIN attuale', newPin: 'Nuovo PIN', confirmPin: 'Conferma nuovo PIN', pinOk: 'PIN modificato con successo!', loading: 'Salvataggio...', confirm: 'Conferma modifica', errMismatch: 'I PIN non coincidono', errFormat: 'Il PIN deve avere 4–6 cifre', errNetwork: 'Errore di rete. Riprova.' },
+}
 
 interface Employee {
   id: string
@@ -31,6 +49,8 @@ const TIER_BADGE: Record<string, { label: string; bg: string; color: string }> =
 export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
   const [tab, setTab] = useState<'info' | 'pin'>('info')
   const isMobile = useIsMobile()
+  const [lang] = useLang()
+  const tx = PROF_TX[lang]
   const [currentPin, setCurrentPin] = useState('')
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
@@ -45,11 +65,11 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
     setPinError('')
 
     if (newPin !== confirmPin) {
-      setPinError('Os PINs não coincidem')
+      setPinError(tx.errMismatch)
       return
     }
     if (!/^\d{4,6}$/.test(newPin)) {
-      setPinError('O PIN deve ter 4 a 6 dígitos numéricos')
+      setPinError(tx.errFormat)
       return
     }
 
@@ -72,7 +92,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
         setConfirmPin('')
       }
     } catch {
-      setPinError('Erro de rede. Tente novamente.')
+      setPinError(tx.errNetwork)
       setPinStatus('error')
     }
   }
@@ -82,7 +102,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
       {/* Page header */}
       <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px' }}>
         <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
-          O Meu Perfil
+          {tx.title}
         </h1>
         <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em', fontFamily: "'IBM Plex Mono', monospace" }}>
           {employee.name.toUpperCase()}
@@ -94,8 +114,8 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #003A5D' }}>
         {([
-          { key: 'info', label: 'Informações', icon: User },
-          { key: 'pin',  label: 'Alterar PIN', icon: Lock },
+          { key: 'info', label: tx.infoTab, icon: User },
+          { key: 'pin',  label: tx.pinTab,  icon: Lock },
         ] as const).map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -187,9 +207,9 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
             }}
           >
             {[
-              { label: 'Função', value: employee.roleLabel },
-              { label: 'Percentagem contratual', value: `${employee.workPercentage}%` },
-              { label: 'Equipa / Andar base', value: employee.team },
+              { label: tx.role, value: employee.roleLabel },
+              { label: tx.workPct, value: `${employee.workPercentage}%` },
+              { label: tx.team, value: employee.team },
             ].map(({ label, value }, i, arr) => (
               <div
                 key={label}
@@ -225,7 +245,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
               }}
             >
               <Building2 size={15} color="#003A5D" />
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#001E30' }}>Andares / Cobertura</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#001E30' }}>{tx.floorsTitle}</span>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -241,7 +261,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   border: '1px solid #BFDBFE',
                 }}
               >
-                {employee.team} · principal
+                {employee.team} · {tx.main}
               </span>
 
               {/* Other teams if canCoverOtherTeams */}
@@ -264,13 +284,13 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
 
               {!employee.canCoverOtherTeams && (
                 <span style={{ fontSize: '0.75rem', color: '#7A9BAD' }}>
-                  Apenas equipa principal
+                  {tx.onlyMain}
                 </span>
               )}
             </div>
 
             <p style={{ margin: '12px 0 0', fontSize: '0.72rem', color: '#7A9BAD' }}>
-              Para alterar os andares de cobertura, contacte o seu responsável.
+              {tx.contactManager}
             </p>
           </div>
         </div>
@@ -302,16 +322,16 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 <Lock size={16} color="#003A5D" />
               </div>
               <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>Alterar PIN de acesso</div>
-                <div style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>Mínimo 4 dígitos numéricos</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{tx.changePinTitle}</div>
+                <div style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>{tx.changePinSub}</div>
               </div>
             </div>
 
             <form onSubmit={handlePinChange} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
-                { id: 'cur', label: 'PIN atual', value: currentPin, setter: setCurrentPin },
-                { id: 'new', label: 'Novo PIN', value: newPin, setter: setNewPin },
-                { id: 'conf', label: 'Confirmar novo PIN', value: confirmPin, setter: setConfirmPin },
+                { id: 'cur', label: tx.currentPin, value: currentPin, setter: setCurrentPin },
+                { id: 'new', label: tx.newPin, value: newPin, setter: setNewPin },
+                { id: 'conf', label: tx.confirmPin, value: confirmPin, setter: setConfirmPin },
               ].map(({ id, label, value, setter }) => (
                 <div key={id}>
                   <label
@@ -377,7 +397,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   }}
                 >
                   <CheckCircle size={14} />
-                  PIN alterado com sucesso!
+                  {tx.pinOk}
                 </div>
               )}
 
@@ -399,7 +419,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   marginTop: 4,
                 }}
               >
-                {pinStatus === 'loading' ? 'A guardar...' : 'Confirmar alteração'}
+                {pinStatus === 'loading' ? tx.loading : tx.confirm}
               </button>
             </form>
           </div>

@@ -5,7 +5,7 @@ import { Plus, X } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
-type Lang = 'pt' | 'de'
+import type { Lang } from '@/hooks/useLang'
 type ReqStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
 
 interface Colleague { id: string; name: string; shortName: string }
@@ -25,63 +25,120 @@ interface WunschfreiRequest {
   managerNote: string | null; createdAt: string;
 }
 
-const STATUS_COLORS: Record<ReqStatus, { bg: string; color: string; label: { pt: string; de: string } }> = {
-  PENDING:   { bg: '#FEF3C7', color: '#D97706', label: { pt: 'Pendente', de: 'Ausstehend' } },
-  APPROVED:  { bg: '#D1FAE5', color: '#059669', label: { pt: 'Aprovado', de: 'Genehmigt' } },
-  REJECTED:  { bg: '#FEE2E2', color: '#DC2626', label: { pt: 'Rejeitado', de: 'Abgelehnt' } },
-  CANCELLED: { bg: '#F3F4F6', color: '#6B7280', label: { pt: 'Cancelado', de: 'Abgebrochen' } },
+const STATUS_COLORS: Record<ReqStatus, { bg: string; color: string; label: Record<Lang, string> }> = {
+  PENDING:   { bg: '#FEF3C7', color: '#D97706', label: { pt: 'Pendente',  de: 'Ausstehend', en: 'Pending',   fr: 'En attente', it: 'In attesa'  } },
+  APPROVED:  { bg: '#D1FAE5', color: '#059669', label: { pt: 'Aprovado',  de: 'Genehmigt',  en: 'Approved',  fr: 'Approuvé',   it: 'Approvato'  } },
+  REJECTED:  { bg: '#FEE2E2', color: '#DC2626', label: { pt: 'Rejeitado', de: 'Abgelehnt',  en: 'Rejected',  fr: 'Refusé',     it: 'Rifiutato'  } },
+  CANCELLED: { bg: '#F3F4F6', color: '#6B7280', label: { pt: 'Cancelado', de: 'Abgebrochen',en: 'Cancelled', fr: 'Annulé',     it: 'Annullato'  } },
 }
 
-const t = {
+const t: Record<Lang, {
+  title: string; subtitle: string; vacationBalance: string;
+  entitlement: string; approved: string; pending: string; remaining: string; days: string;
+  vacation: string; swap: string; wunschfrei: string;
+  newVacation: string; newSwap: string; startDate: string; endDate: string;
+  message: string; submit: string; submitting: string; cancel: string; cancelRequest: string;
+  targetEmployee: string; myDate: string; theirDate: string; managerNote: string; empty: string;
+  from: string; to: string; you: string; them: string; confirmCancel: string;
+  wunschfreiLabel: string; wunschfreiCounter: (n: number) => string;
+  wunschfreiAddDate: string; wunschfreiAdd: string; wunschfreiEmpty: string;
+  wunschfreiMaxError: string; wunschfreiPickDate: string;
+  askedAt: string; askedFrom: string;
+}> = {
   pt: {
-    title: 'Os Meus Pedidos',
-    subtitle: 'Férias, trocas de turno e Wunschfrei',
+    title: 'Os Meus Pedidos', subtitle: 'Férias, trocas de turno e Wunschfrei',
     vacationBalance: 'Saldo de Férias',
-    entitlement: 'Direito', approved: 'Gozadas', pending: 'Pendentes', remaining: 'Restantes',
-    days: 'dias',
+    entitlement: 'Direito', approved: 'Gozadas', pending: 'Pendentes', remaining: 'Restantes', days: 'dias',
     vacation: 'Férias', swap: 'Troca de Turno', wunschfrei: 'Wunschfrei',
     newVacation: 'Pedir Férias', newSwap: 'Pedir Troca',
     startDate: 'Data de início', endDate: 'Data de fim',
-    message: 'Mensagem (opcional)', submit: 'Submeter',
-    submitting: 'A submeter...', cancel: 'Cancelar',
+    message: 'Mensagem (opcional)', submit: 'Submeter', submitting: 'A submeter...', cancel: 'Cancelar',
     cancelRequest: 'Cancelar pedido',
     targetEmployee: 'Colaborador', myDate: 'O meu turno (data)', theirDate: 'Turno deles (data)',
     managerNote: 'Nota do gestor', empty: 'Sem pedidos para mostrar.',
-    from: 'de', to: 'a', lang: 'DE',
-    you: '(tu)', them: 'deles',
-    confirmCancel: 'Cancelar este pedido?',
-    wunschfreiLabel: 'Dias Livres (Wunschfrei)',
-    wunschfreiCounter: (n: number) => `${n} / 4 dias selecionados este mês`,
-    wunschfreiAddDate: 'Adicionar data',
-    wunschfreiAdd: 'Adicionar',
+    from: 'de', to: 'a', you: '(tu)', them: 'deles', confirmCancel: 'Cancelar este pedido?',
+    wunschfreiLabel: 'Dias Livres (Wunschfrei)', wunschfreiCounter: (n) => `${n} / 4 dias selecionados este mês`,
+    wunschfreiAddDate: 'Adicionar data', wunschfreiAdd: 'Adicionar',
     wunschfreiEmpty: 'Nenhum dia Wunschfrei pedido este mês.',
     wunschfreiMaxError: 'Limite de 4 dias Wunschfrei por mês atingido.',
     wunschfreiPickDate: 'Escolhe uma data',
+    askedAt: 'Pediste a', askedFrom: 'Pedido de',
   },
   de: {
-    title: 'Meine Anfragen',
-    subtitle: 'Urlaub, Schichttausch und Wunschfrei',
+    title: 'Meine Anfragen', subtitle: 'Urlaub, Schichttausch und Wunschfrei',
     vacationBalance: 'Urlaubskonto',
-    entitlement: 'Anspruch', approved: 'Genommen', pending: 'Ausstehend', remaining: 'Verbleibend',
-    days: 'Tage',
+    entitlement: 'Anspruch', approved: 'Genommen', pending: 'Ausstehend', remaining: 'Verbleibend', days: 'Tage',
     vacation: 'Urlaub', swap: 'Schichttausch', wunschfrei: 'Wunschfrei',
     newVacation: 'Urlaub beantragen', newSwap: 'Tausch beantragen',
     startDate: 'Startdatum', endDate: 'Enddatum',
-    message: 'Nachricht (optional)', submit: 'Einreichen',
-    submitting: 'Wird eingereicht...', cancel: 'Abbrechen',
+    message: 'Nachricht (optional)', submit: 'Einreichen', submitting: 'Wird eingereicht...', cancel: 'Abbrechen',
     cancelRequest: 'Anfrage abbrechen',
     targetEmployee: 'Mitarbeiter', myDate: 'Meine Schicht (Datum)', theirDate: 'Ihre Schicht (Datum)',
     managerNote: 'Manager-Notiz', empty: 'Keine Anfragen vorhanden.',
-    from: 'von', to: 'bis', lang: 'PT',
-    you: '(du)', them: 'von ihnen',
-    confirmCancel: 'Diese Anfrage abbrechen?',
-    wunschfreiLabel: 'Wunschtage',
-    wunschfreiCounter: (n: number) => `${n} / 4 Tage diesen Monat ausgewählt`,
-    wunschfreiAddDate: 'Datum hinzufügen',
-    wunschfreiAdd: 'Hinzufügen',
+    from: 'von', to: 'bis', you: '(du)', them: 'von ihnen', confirmCancel: 'Diese Anfrage abbrechen?',
+    wunschfreiLabel: 'Wunschtage', wunschfreiCounter: (n) => `${n} / 4 Tage diesen Monat ausgewählt`,
+    wunschfreiAddDate: 'Datum hinzufügen', wunschfreiAdd: 'Hinzufügen',
     wunschfreiEmpty: 'Keine Wunschtage diesen Monat beantragt.',
     wunschfreiMaxError: 'Limit von 4 Wunschtagen pro Monat erreicht.',
     wunschfreiPickDate: 'Datum wählen',
+    askedAt: 'Angefragt bei', askedFrom: 'Anfrage von',
+  },
+  en: {
+    title: 'My Requests', subtitle: 'Vacation, shift swaps and Wunschfrei',
+    vacationBalance: 'Vacation Balance',
+    entitlement: 'Entitlement', approved: 'Used', pending: 'Pending', remaining: 'Remaining', days: 'days',
+    vacation: 'Vacation', swap: 'Shift Swap', wunschfrei: 'Wunschfrei',
+    newVacation: 'Request Vacation', newSwap: 'Request Swap',
+    startDate: 'Start date', endDate: 'End date',
+    message: 'Message (optional)', submit: 'Submit', submitting: 'Submitting...', cancel: 'Cancel',
+    cancelRequest: 'Cancel request',
+    targetEmployee: 'Employee', myDate: 'My shift (date)', theirDate: 'Their shift (date)',
+    managerNote: 'Manager note', empty: 'No requests to show.',
+    from: 'from', to: 'to', you: '(you)', them: 'theirs', confirmCancel: 'Cancel this request?',
+    wunschfreiLabel: 'Free Days (Wunschfrei)', wunschfreiCounter: (n) => `${n} / 4 days selected this month`,
+    wunschfreiAddDate: 'Add date', wunschfreiAdd: 'Add',
+    wunschfreiEmpty: 'No Wunschfrei days requested this month.',
+    wunschfreiMaxError: 'Limit of 4 Wunschfrei days per month reached.',
+    wunschfreiPickDate: 'Pick a date',
+    askedAt: 'Asked', askedFrom: 'Request from',
+  },
+  fr: {
+    title: 'Mes Demandes', subtitle: 'Congés, échanges de postes et Wunschfrei',
+    vacationBalance: 'Solde de congés',
+    entitlement: 'Droit', approved: 'Pris', pending: 'En attente', remaining: 'Restants', days: 'jours',
+    vacation: 'Congés', swap: 'Échange de poste', wunschfrei: 'Wunschfrei',
+    newVacation: 'Demander des congés', newSwap: 'Demander un échange',
+    startDate: 'Date de début', endDate: 'Date de fin',
+    message: 'Message (facultatif)', submit: 'Soumettre', submitting: 'Envoi en cours...', cancel: 'Annuler',
+    cancelRequest: 'Annuler la demande',
+    targetEmployee: 'Collaborateur', myDate: 'Mon poste (date)', theirDate: 'Leur poste (date)',
+    managerNote: 'Note du responsable', empty: 'Aucune demande à afficher.',
+    from: 'du', to: 'au', you: '(vous)', them: 'les leurs', confirmCancel: 'Annuler cette demande ?',
+    wunschfreiLabel: 'Jours libres (Wunschfrei)', wunschfreiCounter: (n) => `${n} / 4 jours sélectionnés ce mois`,
+    wunschfreiAddDate: 'Ajouter une date', wunschfreiAdd: 'Ajouter',
+    wunschfreiEmpty: 'Aucun jour Wunschfrei demandé ce mois.',
+    wunschfreiMaxError: 'Limite de 4 jours Wunschfrei par mois atteinte.',
+    wunschfreiPickDate: 'Choisir une date',
+    askedAt: 'Demandé à', askedFrom: 'Demande de',
+  },
+  it: {
+    title: 'Le Mie Richieste', subtitle: 'Ferie, scambi di turno e Wunschfrei',
+    vacationBalance: 'Saldo ferie',
+    entitlement: 'Diritto', approved: 'Usate', pending: 'In attesa', remaining: 'Rimanenti', days: 'giorni',
+    vacation: 'Ferie', swap: 'Scambio turno', wunschfrei: 'Wunschfrei',
+    newVacation: 'Richiedi ferie', newSwap: 'Richiedi scambio',
+    startDate: 'Data di inizio', endDate: 'Data di fine',
+    message: 'Messaggio (opzionale)', submit: 'Invia', submitting: 'Invio in corso...', cancel: 'Annulla',
+    cancelRequest: 'Annulla richiesta',
+    targetEmployee: 'Collaboratore', myDate: 'Il mio turno (data)', theirDate: 'Il loro turno (data)',
+    managerNote: 'Nota del responsabile', empty: 'Nessuna richiesta da mostrare.',
+    from: 'dal', to: 'al', you: '(tu)', them: 'loro', confirmCancel: 'Annullare questa richiesta?',
+    wunschfreiLabel: 'Giorni liberi (Wunschfrei)', wunschfreiCounter: (n) => `${n} / 4 giorni selezionati questo mese`,
+    wunschfreiAddDate: 'Aggiungi data', wunschfreiAdd: 'Aggiungi',
+    wunschfreiEmpty: 'Nessun giorno Wunschfrei richiesto questo mese.',
+    wunschfreiMaxError: 'Limite di 4 giorni Wunschfrei al mese raggiunto.',
+    wunschfreiPickDate: 'Scegli una data',
+    askedAt: 'Richiesto a', askedFrom: 'Richiesta di',
   },
 }
 
@@ -91,7 +148,7 @@ type FormMode = null | 'vacation' | 'swap'
 interface Props { employeeId: string; colleagues: Colleague[] }
 
 export default function EmployeePedidosClient({ employeeId, colleagues }: Props) {
-  const [lang, toggleLang] = useLang()
+  const [lang] = useLang()
   const isMobile = useIsMobile()
   const [tab, setTab] = useState<ActiveTab>('vacation')
   const [form, setForm] = useState<FormMode>(null)
@@ -240,9 +297,6 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
           </h1>
           <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em' }}>{tx.subtitle}</p>
         </div>
-        <button onClick={toggleLang} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
-          {tx.lang}
-        </button>
       </div>
 
       <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
@@ -444,14 +498,14 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
                       {s.label[lang]}
                     </span>
                     {iAmRequester
-                      ? <span style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>{lang === 'pt' ? 'Pediste a' : 'Angefragt bei'} {sw.targetEmployee.name}</span>
-                      : <span style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>{lang === 'pt' ? 'Pedido de' : 'Anfrage von'} {sw.requester.name}</span>
+                      ? <span style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>{tx.askedAt} {sw.targetEmployee.name}</span>
+                      : <span style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>{tx.askedFrom} {sw.requester.name}</span>
                     }
                   </div>
                   <div style={{ fontSize: '0.78rem', color: '#3A3530' }}>
                     {iAmRequester
-                      ? <>{lang === 'pt' ? 'O teu turno' : 'Deine Schicht'}: <strong>{sw.requesterDate}</strong> ↔ {lang === 'pt' ? 'Turno deles' : 'Ihre Schicht'}: <strong>{sw.targetDate}</strong></>
-                      : <>{lang === 'pt' ? 'Turno deles' : 'Ihre Schicht'}: <strong>{sw.requesterDate}</strong> ↔ {lang === 'pt' ? 'O teu turno' : 'Deine Schicht'}: <strong>{sw.targetDate}</strong></>
+                      ? <>{tx.myDate}: <strong>{sw.requesterDate}</strong> ↔ {tx.theirDate}: <strong>{sw.targetDate}</strong></>
+                      : <>{tx.theirDate}: <strong>{sw.requesterDate}</strong> ↔ {tx.myDate}: <strong>{sw.targetDate}</strong></>
                     }
                   </div>
                   {sw.requesterMessage && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#4A6878' }}>{sw.requesterMessage}</p>}
