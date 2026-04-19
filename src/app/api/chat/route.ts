@@ -186,9 +186,14 @@ ${absenceByStatus.REJECTED.length > 0 ? absenceByStatus.REJECTED.map(fmtAbsence)
       ? `\n=== ESCALAS (últimos 3 meses + atual) ===\n${scheduleContextParts.join('\n\n')}`
       : ''
 
-    const langInstruction = lang === 'de'
-      ? 'Du antwortest IMMER auf Deutsch (Schweizer Deutsch ist auch akzeptiert). Verwende keine andere Sprache, egal in welcher Sprache die Frage gestellt wird.'
-      : 'Respondes SEMPRE em português europeu. Não uses outra língua, independentemente do idioma em que a pergunta for feita.'
+    const langInstructions: Record<string, string> = {
+      de: 'Du antwortest IMMER auf Deutsch (Schweizer Deutsch ist auch akzeptiert). Verwende keine andere Sprache, egal in welcher Sprache die Frage gestellt wird.',
+      pt: 'Respondes SEMPRE em português europeu. Não uses outra língua, independentemente do idioma em que a pergunta for feita.',
+      en: 'You ALWAYS respond in English. Do not use any other language, regardless of the language the question is asked in.',
+      fr: 'Tu réponds TOUJOURS en français. N\'utilise aucune autre langue, quelle que soit la langue dans laquelle la question est posée.',
+      it: 'Rispondi SEMPRE in italiano. Non usare nessun\'altra lingua, indipendentemente dalla lingua in cui viene posta la domanda.',
+    }
+    const langInstruction = langInstructions[lang] ?? langInstructions['de']
 
     const systemPrompt = `És um assistente inteligente para o gestor de turnos da Tertianum, empresa de cuidados residenciais na Suíça.
 Tens acesso COMPLETO a todos os dados: colaboradores, turnos, ausências (históricas e pendentes), escalas de múltiplos meses e detalhe diário da escala atual.
