@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Check, X, Trash2, AlertTriangle } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 type Lang = 'pt' | 'de'
 type ReqStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
@@ -80,6 +81,7 @@ export default function ManagerPedidosClient() {
   const currentYear = new Date().getFullYear()
 
   const tx = t[lang]
+  const isMobile = useIsMobile()
 
   useEffect(() => { load(); loadSummaries(); loadWunschfrei() }, [])
 
@@ -160,7 +162,7 @@ export default function ManagerPedidosClient() {
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Page header */}
-      <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {tx.title}
@@ -177,21 +179,22 @@ export default function ManagerPedidosClient() {
           </button>
         </div>
       </div>
-      <div style={{ padding: '20px 28px' }}>
+      <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #D8E2E8', marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #D8E2E8', marginBottom: 24, overflowX: isMobile ? 'auto' : 'visible', scrollbarWidth: 'none' }}>
         {(['vacation', 'swap', 'wunschfrei', 'saldos'] as TabType[]).map(tabKey => (
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
             style={{
-              padding: '10px 20px', background: 'transparent', border: 'none',
+              padding: isMobile ? '10px 12px' : '10px 20px', background: 'transparent', border: 'none',
               borderBottom: tab === tabKey ? '2px solid #003A5D' : '2px solid transparent',
               color: tab === tabKey ? '#001E30' : '#7A9BAD',
               fontSize: '0.82rem', fontWeight: tab === tabKey ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
               display: 'flex', alignItems: 'center', gap: 6,
+              flexShrink: 0, whiteSpace: 'nowrap',
             }}
           >
             {tabKey === 'vacation' ? tx.vacation : tabKey === 'swap' ? tx.swap : tabKey === 'wunschfrei' ? tx.wunschfrei : tx.saldos}
@@ -267,7 +270,7 @@ export default function ManagerPedidosClient() {
                           placeholder={tx.noteLabel}
                           value={notes[v.id] ?? ''}
                           onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))}
-                          style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
+                          style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
                         />
                       </>
                     )}
@@ -349,7 +352,7 @@ export default function ManagerPedidosClient() {
                         placeholder={tx.noteLabel}
                         value={notes[sw.id] ?? ''}
                         onChange={e => setNotes(n => ({ ...n, [sw.id]: e.target.value }))}
-                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
+                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
                       />
                     </div>
                   )}
@@ -415,7 +418,7 @@ export default function ManagerPedidosClient() {
                         placeholder={tx.noteLabel}
                         value={notes[wf.id] ?? ''}
                         onChange={e => setNotes(n => ({ ...n, [wf.id]: e.target.value }))}
-                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: 200, background: 'white' }}
+                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
                       />
                     </div>
                   )}
@@ -433,59 +436,102 @@ export default function ManagerPedidosClient() {
             {currentYear} · {lang === 'pt' ? 'Dias úteis (seg–sáb). Direito: 25 dias × % contrato.' : 'Werktage (Mo–Sa). Anspruch: 25 Tage × Vertragsprozent.'}
           </div>
 
-          {/* Column headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 70px 70px 70px 80px', gap: 0, padding: '6px 14px', borderBottom: '1px solid #D8E2E8', marginBottom: 4 }}>
-            {[lang === 'de' ? 'Mitarbeiter' : 'Colaborador', tx.entitlement, tx.approved, tx.pending, tx.remaining, '%'].map(h => (
-              <div key={h} style={{ fontSize: '0.65rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: (h === 'Colaborador' || h === 'Mitarbeiter') ? 'left' : 'center' }}>{h}</div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {empSummaries.map(emp => {
-              const pct = emp.entitlement > 0 ? Math.round((emp.approved / emp.entitlement) * 100) : 0
-              const low = emp.remaining <= 2
-              return (
-                <div
-                  key={emp.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 60px 70px 70px 70px 80px',
-                    gap: 0,
-                    padding: '10px 14px',
-                    background: 'white',
-                    border: '1px solid #D8E2E8',
-                    borderRadius: 8,
-                    alignItems: 'center',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#001E30' }}>{emp.name}</div>
-                    <div style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{emp.workPercentage}%</div>
-                  </div>
-                  <div style={{ textAlign: 'center', fontSize: '0.82rem', color: '#4A6878' }}>{emp.entitlement}</div>
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ padding: '2px 8px', borderRadius: 12, background: '#D1FAE5', color: '#059669', fontSize: '0.78rem', fontWeight: 500 }}>{emp.approved}</span>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    {emp.pending > 0
-                      ? <span style={{ padding: '2px 8px', borderRadius: 12, background: '#FEF3C7', color: '#D97706', fontSize: '0.78rem', fontWeight: 500 }}>{emp.pending}</span>
-                      : <span style={{ color: '#C8C0B4', fontSize: '0.78rem' }}>—</span>
-                    }
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ padding: '2px 8px', borderRadius: 12, background: low ? '#FEE2E2' : '#F4F6F8', color: low ? '#DC2626' : '#4A6878', fontSize: '0.78rem', fontWeight: 500 }}>{emp.remaining}</span>
-                  </div>
-                  {/* Progress bar */}
-                  <div style={{ paddingLeft: 8 }}>
+          {isMobile ? (
+            /* Mobile: stacked employee cards */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {empSummaries.map(emp => {
+                const pct = emp.entitlement > 0 ? Math.round((emp.approved / emp.entitlement) * 100) : 0
+                const low = emp.remaining <= 2
+                return (
+                  <div key={emp.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#7A9BAD' }}>{emp.workPercentage}%</div>
+                      </div>
+                      <span style={{ padding: '2px 8px', borderRadius: 12, background: low ? '#FEE2E2' : '#F4F6F8', color: low ? '#DC2626' : '#4A6878', fontSize: '0.78rem', fontWeight: 600 }}>
+                        {emp.remaining} {tx.days}
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10 }}>
+                      <div style={{ textAlign: 'center', padding: '6px 4px', background: '#F4F6F8', borderRadius: 6 }}>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#4A6878', lineHeight: 1 }}>{emp.entitlement}</div>
+                        <div style={{ fontSize: '0.6rem', color: '#7A9BAD', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx.entitlement}</div>
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '6px 4px', background: '#D1FAE5', borderRadius: 6 }}>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#059669', lineHeight: 1 }}>{emp.approved}</div>
+                        <div style={{ fontSize: '0.6rem', color: '#059669', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx.approved}</div>
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '6px 4px', background: emp.pending > 0 ? '#FEF3C7' : '#F4F6F8', borderRadius: 6 }}>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: emp.pending > 0 ? '#D97706' : '#C8C0B4', lineHeight: 1 }}>{emp.pending}</div>
+                        <div style={{ fontSize: '0.6rem', color: emp.pending > 0 ? '#D97706' : '#7A9BAD', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx.pending}</div>
+                      </div>
+                    </div>
                     <div style={{ height: 6, background: '#F0EBE3', borderRadius: 4, overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#059669', borderRadius: 4, transition: 'width 0.3s' }} />
                     </div>
                     <div style={{ fontSize: '0.6rem', color: '#7A9BAD', marginTop: 2, textAlign: 'right' }}>{pct}%</div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          ) : (
+            <>
+              {/* Desktop: Column headers */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 70px 70px 70px 80px', gap: 0, padding: '6px 14px', borderBottom: '1px solid #D8E2E8', marginBottom: 4 }}>
+                {[lang === 'de' ? 'Mitarbeiter' : 'Colaborador', tx.entitlement, tx.approved, tx.pending, tx.remaining, '%'].map(h => (
+                  <div key={h} style={{ fontSize: '0.65rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: (h === 'Colaborador' || h === 'Mitarbeiter') ? 'left' : 'center' }}>{h}</div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {empSummaries.map(emp => {
+                  const pct = emp.entitlement > 0 ? Math.round((emp.approved / emp.entitlement) * 100) : 0
+                  const low = emp.remaining <= 2
+                  return (
+                    <div
+                      key={emp.id}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 60px 70px 70px 70px 80px',
+                        gap: 0,
+                        padding: '10px 14px',
+                        background: 'white',
+                        border: '1px solid #D8E2E8',
+                        borderRadius: 8,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#001E30' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{emp.workPercentage}%</div>
+                      </div>
+                      <div style={{ textAlign: 'center', fontSize: '0.82rem', color: '#4A6878' }}>{emp.entitlement}</div>
+                      <div style={{ textAlign: 'center' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: 12, background: '#D1FAE5', color: '#059669', fontSize: '0.78rem', fontWeight: 500 }}>{emp.approved}</span>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        {emp.pending > 0
+                          ? <span style={{ padding: '2px 8px', borderRadius: 12, background: '#FEF3C7', color: '#D97706', fontSize: '0.78rem', fontWeight: 500 }}>{emp.pending}</span>
+                          : <span style={{ color: '#C8C0B4', fontSize: '0.78rem' }}>—</span>
+                        }
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: 12, background: low ? '#FEE2E2' : '#F4F6F8', color: low ? '#DC2626' : '#4A6878', fontSize: '0.78rem', fontWeight: 500 }}>{emp.remaining}</span>
+                      </div>
+                      {/* Progress bar */}
+                      <div style={{ paddingLeft: 8 }}>
+                        <div style={{ height: 6, background: '#F0EBE3', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#059669', borderRadius: 4, transition: 'width 0.3s' }} />
+                        </div>
+                        <div style={{ fontSize: '0.6rem', color: '#7A9BAD', marginTop: 2, textAlign: 'right' }}>{pct}%</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
       </div>{/* /padding wrapper */}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, X } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 type Lang = 'pt' | 'de'
 type ReqStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
@@ -91,6 +92,7 @@ interface Props { employeeId: string; colleagues: Colleague[] }
 
 export default function EmployeePedidosClient({ employeeId, colleagues }: Props) {
   const [lang, toggleLang] = useLang()
+  const isMobile = useIsMobile()
   const [tab, setTab] = useState<ActiveTab>('vacation')
   const [form, setForm] = useState<FormMode>(null)
   const [vacations, setVacations] = useState<VacationRequest[]>([])
@@ -231,7 +233,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Page header */}
-      <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {tx.title}
@@ -243,7 +245,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
         </button>
       </div>
 
-      <div style={{ padding: '20px 28px' }}>
+      <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
 
       {/* Vacation balance card */}
       {summary && (
@@ -251,7 +253,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
           <div style={{ fontSize: '0.68rem', color: '#7A9BAD', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
             {tx.vacationBalance} · {currentYear}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 8 }}>
             {([
               { label: tx.entitlement, value: summary.entitlement, color: '#4A6878', bg: '#F4F6F8' },
               { label: tx.approved,    value: summary.approved,    color: '#059669', bg: '#D1FAE5' },
@@ -273,17 +275,18 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #D8E2E8', marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #D8E2E8', marginBottom: 24, overflowX: isMobile ? 'auto' : 'visible', scrollbarWidth: 'none' }}>
         {(['vacation', 'swap', 'wunschfrei'] as ActiveTab[]).map(tabKey => (
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
             style={{
-              padding: '10px 20px', background: 'transparent', border: 'none',
+              padding: isMobile ? '10px 14px' : '10px 20px', background: 'transparent', border: 'none',
               borderBottom: tab === tabKey ? '2px solid #003A5D' : '2px solid transparent',
               color: tab === tabKey ? '#001E30' : '#7A9BAD',
               fontSize: '0.82rem', fontWeight: tab === tabKey ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
+              flexShrink: 0, whiteSpace: 'nowrap',
             }}
           >
             {tabKey === 'vacation' ? tx.vacation : tabKey === 'swap' ? tx.swap : tx.wunschfrei}

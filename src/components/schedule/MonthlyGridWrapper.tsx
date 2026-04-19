@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useTransition, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Download, AlignJustify, List } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Download, AlignJustify, List, Monitor } from 'lucide-react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { downloadSchedulePDF, downloadHoursPDF } from '@/lib/pdf-reports'
 import { countTotalViolations } from '@/lib/schedule-violations'
 // gridRef no longer needed for PDF — kept for potential future use
@@ -74,6 +75,7 @@ export default function MonthlyGridWrapper({
     const t = new Date()
     return (t.getFullYear() === year && t.getMonth() + 1 === month) ? t : new Date(year, month - 1, 1)
   })
+  const isMobile = useIsMobile()
 
   useEffect(() => { setAssignmentMap(initialMap) }, [initialMap])
 
@@ -206,6 +208,24 @@ export default function MonthlyGridWrapper({
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (isMobile) {
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', background: '#F4F6F8', textAlign: 'center', gap: 20 }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#E8EFF3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Monitor size={32} color="#003A5D" />
+        </div>
+        <div>
+          <h2 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.05rem', fontWeight: 700, color: '#001E30', margin: '0 0 10px' }}>
+            Escala completa
+          </h2>
+          <p style={{ fontSize: '0.88rem', color: '#4A6878', lineHeight: 1.6, margin: 0, maxWidth: 280 }}>
+            Para ver e editar a escala completa, acede num computador.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

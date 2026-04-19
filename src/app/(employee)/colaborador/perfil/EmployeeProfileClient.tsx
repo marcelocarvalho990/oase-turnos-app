@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { User, Lock, Building2, CheckCircle, AlertCircle } from 'lucide-react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface Employee {
   id: string
@@ -29,6 +30,7 @@ const TIER_BADGE: Record<string, { label: string; bg: string; color: string }> =
 
 export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
   const [tab, setTab] = useState<'info' | 'pin'>('info')
+  const isMobile = useIsMobile()
   const [currentPin, setCurrentPin] = useState('')
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
@@ -78,7 +80,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Page header */}
-      <div style={{ background: '#003A5D', padding: '20px 28px' }}>
+      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px' }}>
         <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
           O Meu Perfil
         </h1>
@@ -87,7 +89,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
         </p>
       </div>
 
-      <div style={{ padding: '20px 28px' }}>
+      <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #003A5D' }}>
@@ -276,7 +278,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
 
       {/* Tab: PIN */}
       {tab === 'pin' && (
-        <div style={{ maxWidth: 400 }}>
+        <div style={{ maxWidth: isMobile ? '100%' : 400, width: '100%' }}>
           <div
             style={{
               background: 'white',

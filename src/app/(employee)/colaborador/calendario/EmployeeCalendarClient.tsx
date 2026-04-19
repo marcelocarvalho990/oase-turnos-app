@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Umbrella, TrendingUp, TrendingDown, Minus, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface ShiftType {
   id: string; name: string; code: string; color: string; startTime1: string; endTime1: string
@@ -80,6 +81,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
   const [confirmations, setConfirmations] = useState<Confirmation[]>([])
   const [view, setView] = useState<ViewMode>('month')
   const [focusDate, setFocusDate] = useState<Date>(today)
+  const isMobile = useIsMobile()
 
   const WEEKDAYS = lang === 'pt' ? WEEKDAYS_PT : WEEKDAYS_DE
   const WEEKDAYS_LONG = lang === 'pt' ? WEEKDAYS_LONG_PT : WEEKDAYS_LONG_DE
@@ -190,7 +192,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
 
       {/* Header */}
-      <div style={{ background: '#003A5D', padding: '16px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '16px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 8 : 0 }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {lang === 'pt' ? 'O Meu Calendário' : 'Mein Kalender'}
@@ -199,51 +201,52 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
             {MONTHS[month - 1].toUpperCase()} {year}
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* View toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {/* View toggle — on mobile show only Month and Day */}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.12)', borderRadius: 5, padding: 2, gap: 1 }}>
-            {(['month', 'week', 'day'] as ViewMode[]).map(v => (
+            {(isMobile ? ['month', 'day'] as ViewMode[] : ['month', 'week', 'day'] as ViewMode[]).map(v => (
               <button
                 key={v}
                 onClick={() => setView(v)}
                 style={{
-                  padding: '3px 10px', borderRadius: 3, border: 'none',
+                  padding: isMobile ? '4px 8px' : '3px 10px', borderRadius: 3, border: 'none',
                   background: view === v ? 'rgba(255,255,255,0.9)' : 'transparent',
                   color: view === v ? '#003A5D' : 'rgba(255,255,255,0.65)',
                   fontSize: '0.68rem', fontWeight: view === v ? 700 : 400,
                   cursor: 'pointer', transition: 'all 0.15s',
                   fontFamily: "'IBM Plex Sans', sans-serif",
+                  minHeight: isMobile ? 44 : 'auto',
                 }}
               >
                 {VIEW_LABELS[v][lang]}
               </button>
             ))}
           </div>
-          <button onClick={toggleLang} style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={toggleLang} style={{ padding: isMobile ? '6px 10px' : '4px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', minHeight: isMobile ? 44 : 'auto' }}>
             {lang === 'pt' ? 'DE' : 'PT'}
           </button>
           {/* Month / week / day navigation */}
           {view === 'month' ? (
             <>
-              <button onClick={prevMonth} style={NAV_BTN}><ChevronLeft size={14} /></button>
-              <button onClick={nextMonth} style={NAV_BTN}><ChevronRight size={14} /></button>
+              <button onClick={prevMonth} style={{ ...NAV_BTN, minHeight: isMobile ? 44 : 'auto', minWidth: isMobile ? 44 : 'auto', justifyContent: 'center' }}><ChevronLeft size={14} /></button>
+              <button onClick={nextMonth} style={{ ...NAV_BTN, minHeight: isMobile ? 44 : 'auto', minWidth: isMobile ? 44 : 'auto', justifyContent: 'center' }}><ChevronRight size={14} /></button>
             </>
           ) : view === 'week' ? (
             <>
-              <button onClick={prevWeek} style={NAV_BTN}><ChevronLeft size={14} /></button>
+              <button onClick={prevWeek} style={{ ...NAV_BTN, minHeight: isMobile ? 44 : 'auto', minWidth: isMobile ? 44 : 'auto', justifyContent: 'center' }}><ChevronLeft size={14} /></button>
               <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.8)', minWidth: 100, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace" }}>{weekLabel}</span>
-              <button onClick={nextWeek} style={NAV_BTN}><ChevronRight size={14} /></button>
+              <button onClick={nextWeek} style={{ ...NAV_BTN, minHeight: isMobile ? 44 : 'auto', minWidth: isMobile ? 44 : 'auto', justifyContent: 'center' }}><ChevronRight size={14} /></button>
             </>
           ) : (
             <>
-              <button onClick={prevDay} style={NAV_BTN}><ChevronLeft size={14} /></button>
-              <button onClick={nextDay} style={NAV_BTN}><ChevronRight size={14} /></button>
+              <button onClick={prevDay} style={{ ...NAV_BTN, minHeight: isMobile ? 44 : 'auto', minWidth: isMobile ? 44 : 'auto', justifyContent: 'center' }}><ChevronLeft size={14} /></button>
+              <button onClick={nextDay} style={{ ...NAV_BTN, minHeight: isMobile ? 44 : 'auto', minWidth: isMobile ? 44 : 'auto', justifyContent: 'center' }}><ChevronRight size={14} /></button>
             </>
           )}
         </div>
       </div>
 
-      <div style={{ padding: '20px 28px' }}>
+      <div style={{ padding: isMobile ? '12px 12px' : '20px 28px' }}>
 
         {/* Banco de horas */}
         {hours && published && (
@@ -332,7 +335,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={`e-${idx}`} style={{ minHeight: 82, borderRight: '1px solid #F0F4F6', borderBottom: '1px solid #F0F4F6', background: '#FAFBFC' }} />
+                if (!day) return <div key={`e-${idx}`} style={{ minHeight: isMobile ? 54 : 82, borderRight: '1px solid #F0F4F6', borderBottom: '1px solid #F0F4F6', background: '#FAFBFC' }} />
                 const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                 const assignment = assignmentMap.get(dateStr)
                 const absenceType = absenceMap.get(dateStr)
@@ -340,24 +343,36 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                 const isToday = dateStr === todayStr
                 const isWE = new Date(year, month - 1, day).getDay() === 0 || new Date(year, month - 1, day).getDay() === 6
                 return (
-                  <div key={day} style={{ minHeight: 82, padding: '7px', borderRight: '1px solid #F0F4F6', borderBottom: '1px solid #F0F4F6', background: absenceType ? '#F0FDF4' : isToday ? '#E8EFF3' : isWE && !assignment ? '#F8FAFB' : 'white' }}>
-                    <div style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: isToday ? 700 : 400, fontFamily: "'IBM Plex Mono', monospace", color: isToday ? 'white' : isWE ? '#7A9BAD' : '#001E30', background: isToday ? '#003A5D' : 'transparent', marginBottom: 4 }}>
+                  <div key={day} style={{ minHeight: isMobile ? 54 : 82, padding: isMobile ? '4px 3px' : '7px', borderRight: '1px solid #F0F4F6', borderBottom: '1px solid #F0F4F6', background: absenceType ? '#F0FDF4' : isToday ? '#E8EFF3' : isWE && !assignment ? '#F8FAFB' : 'white' }}>
+                    <div style={{ width: isMobile ? 18 : 22, height: isMobile ? 18 : 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '0.6rem' : '0.7rem', fontWeight: isToday ? 700 : 400, fontFamily: "'IBM Plex Mono', monospace", color: isToday ? 'white' : isWE ? '#7A9BAD' : '#001E30', background: isToday ? '#003A5D' : 'transparent', marginBottom: isMobile ? 2 : 4 }}>
                       {day}
                     </div>
-                    {absenceType && (
+                    {absenceType && !isMobile && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 5px', background: '#DCFCE7', borderLeft: '3px solid #16A34A', fontSize: '0.6rem', color: '#15803D', fontWeight: 600 }}>
                         <Umbrella size={8} />
                         {absenceType.slice(0, 7)}
                       </div>
                     )}
-                    {assignment?.shiftType && !absenceType && (
+                    {absenceType && isMobile && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Umbrella size={10} color="#16A34A" />
+                      </div>
+                    )}
+                    {assignment?.shiftType && !absenceType && !isMobile && (
                       <div style={{ padding: '3px 6px', background: assignment.shiftType.color + '18', borderLeft: `3px solid ${assignment.shiftType.color}`, marginBottom: 3 }}>
                         <div style={{ fontSize: '0.68rem', color: '#001E30', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{assignment.shiftType.code}</div>
                         <div style={{ fontSize: '0.6rem', color: '#4A6878', fontWeight: 500, lineHeight: 1.2 }}>{assignment.shiftType.name}</div>
                         <div style={{ fontSize: '0.55rem', color: '#7A9BAD', fontFamily: "'IBM Plex Mono', monospace" }}>{assignment.shiftType.startTime1}–{assignment.shiftType.endTime1}</div>
                       </div>
                     )}
-                    {conf && (
+                    {assignment?.shiftType && !absenceType && isMobile && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 14, background: assignment.shiftType.color + '25', borderRadius: 2, fontSize: '0.58rem', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: '#001E30' }}>
+                          {assignment.shiftType.code}
+                        </span>
+                      </div>
+                    )}
+                    {conf && !isMobile && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginTop: 2 }}>
                         {conf.type === 'WORKED'          && <CheckCircle2  size={9} color="#059669" />}
                         {conf.type === 'EARLY_DEPARTURE' && <Clock          size={9} color="#D97706" />}
@@ -365,6 +380,13 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                         <span style={{ fontSize: '0.54rem', color: conf.type === 'WORKED' ? '#059669' : conf.type === 'ABSENT' ? '#DC2626' : '#D97706', fontWeight: 600 }}>
                           {CONF_LABELS[conf.type]?.[lang]}
                         </span>
+                      </div>
+                    )}
+                    {conf && isMobile && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                        {conf.type === 'WORKED'          && <CheckCircle2  size={8} color="#059669" />}
+                        {conf.type === 'EARLY_DEPARTURE' && <Clock          size={8} color="#D97706" />}
+                        {conf.type === 'ABSENT'          && <AlertTriangle  size={8} color="#DC2626" />}
                       </div>
                     )}
                   </div>

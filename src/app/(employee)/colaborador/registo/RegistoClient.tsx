@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, CheckCircle2, Clock, AlertTriangle, ChevronDown, ChevronUp, Umbrella } from 'lucide-react'
 import { useLang } from '@/hooks/useLang'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 type ConfType = 'WORKED' | 'EARLY_DEPARTURE' | 'ABSENT'
 type Lang = 'pt' | 'de'
@@ -63,6 +64,7 @@ export default function RegistoClient() {
   const [saveError, setSaveError] = useState('')
 
   const MONTHS = lang === 'pt' ? MONTHS_PT : MONTHS_DE
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     setLoading(true)
@@ -146,7 +148,7 @@ export default function RegistoClient() {
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Header */}
-      <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {lang === 'pt' ? 'Registo de Turnos' : 'Schichtprotokoll'}
@@ -168,7 +170,7 @@ export default function RegistoClient() {
         </div>
       </div>
 
-      <div style={{ padding: '20px 28px' }}>
+      <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
         {loading && (
           <p style={{ color: '#7A9BAD', fontSize: '0.82rem', padding: '20px 0', fontFamily: "'IBM Plex Mono', monospace" }}>
             {lang === 'pt' ? 'A carregar...' : 'Lädt...'}
@@ -227,7 +229,7 @@ export default function RegistoClient() {
               <div key={row.date} style={{ background: 'white', border: `1px solid ${isOpen ? '#003A5D' : '#D8E2E8'}`, borderRadius: 8, overflow: 'hidden', transition: 'border-color 0.15s' }}>
                 {/* Main row */}
                 <div
-                  style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: canRegister ? 'pointer' : 'default' }}
+                  style={{ padding: '12px 16px', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, cursor: canRegister ? 'pointer' : 'default', flexWrap: isMobile ? 'wrap' : 'nowrap' }}
                   onClick={() => canRegister ? openRow(row.date, conf) : undefined}
                 >
                   {/* Date */}
@@ -236,13 +238,13 @@ export default function RegistoClient() {
                   </div>
 
                   {/* Shift badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 8px', background: row.shift.color + '18', borderLeft: `3px solid ${row.shift.color}`, borderRadius: '0 4px 4px 0', minWidth: 80 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 8px', background: row.shift.color + '18', borderLeft: `3px solid ${row.shift.color}`, borderRadius: '0 4px 4px 0', minWidth: isMobile ? 0 : 80 }}>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.78rem', fontWeight: 700, color: '#001E30' }}>{row.shift.code}</span>
                     <span style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{row.shift.startTime1}–{row.shift.endTime1}</span>
                   </div>
 
                   {/* Confirmation status or action */}
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, minWidth: isMobile ? '100%' : 'auto' }}>
                     {conf && typeStyle && TypeIcon && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', background: typeStyle.bg, borderRadius: 20, fontSize: '0.72rem', fontWeight: 500, color: typeStyle.color }}>
                         <TypeIcon size={12} />
@@ -329,14 +331,14 @@ export default function RegistoClient() {
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => setExpanded(null)} style={{ padding: '7px 14px', borderRadius: 6, border: '1px solid #D8E2E8', background: 'transparent', color: '#7A9BAD', fontSize: '0.78rem', cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', gap: 8, flexDirection: isMobile ? 'column' : 'row' }}>
+                        <button onClick={() => setExpanded(null)} style={{ padding: '7px 14px', borderRadius: 6, border: '1px solid #D8E2E8', background: 'transparent', color: '#7A9BAD', fontSize: '0.78rem', cursor: 'pointer', flex: isMobile ? 1 : 'unset' }}>
                           {lang === 'pt' ? 'Cancelar' : 'Abbrechen'}
                         </button>
                         <button
                           onClick={() => saveConf(row.date, row.shift.code)}
                           disabled={saving}
-                          style={{ padding: '7px 16px', background: saving ? '#7AA8C0' : '#003A5D', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
+                          style={{ padding: '7px 16px', background: saving ? '#7AA8C0' : '#003A5D', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, flex: isMobile ? 1 : 'unset' }}
                         >
                           {saving ? (lang === 'pt' ? 'A guardar...' : 'Speichern...') : (lang === 'pt' ? 'Guardar' : 'Speichern')}
                         </button>

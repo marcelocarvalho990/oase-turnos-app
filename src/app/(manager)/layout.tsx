@@ -1,19 +1,18 @@
 import { requireAuth } from '@/lib/auth'
-import ManagerSidebar from '@/components/layout/ManagerSidebar'
-import PageTransitionWrapper from '@/components/layout/PageTransitionWrapper'
+import ManagerLayoutClient from '@/components/layout/ManagerLayoutClient'
 import ToastProvider from '@/components/ui/ToastProvider'
+import PageTransitionWrapper from '@/components/layout/PageTransitionWrapper'
 
 export default async function ManagerLayout({ children }: { children: React.ReactNode }) {
-  const session = await requireAuth('MANAGER')
+  await requireAuth('MANAGER')
 
   return (
-    <div className="flex h-full">
-      <ManagerSidebar />
+    <ManagerLayoutClient>
       <ToastProvider>
         <PageTransitionWrapper>
           {children}
         </PageTransitionWrapper>
       </ToastProvider>
-    </div>
+    </ManagerLayoutClient>
   )
 }
