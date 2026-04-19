@@ -78,6 +78,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
   const [applying, setApplying] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [hasFetched, setHasFetched] = useState(false)
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null)
 
   // When LLM report arrives directly from generation → use it
   useEffect(() => {
@@ -169,13 +170,13 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       })
       if (!res.ok) {
         const data = await res.json()
-        alert(data.error ?? 'Erro ao aplicar sugestão')
+        setErrorModal({ title: 'Não foi possível aplicar', message: data.error ?? 'Erro ao aplicar sugestão' })
         return
       }
       setDismissed(prev => new Set([...prev, suggestion.id]))
       onApplied()
     } catch {
-      alert('Erro de ligação')
+      setErrorModal({ title: 'Erro de ligação', message: 'Não foi possível contactar o servidor. Tenta novamente.' })
     } finally {
       setApplying(null)
     }
@@ -290,6 +291,59 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* Error modal */}
+      {errorModal && (
+        <div
+          onClick={() => setErrorModal(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 500,
+            background: 'rgba(0,0,0,0.45)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'IBM Plex Sans', sans-serif",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: C.white, borderRadius: 16, padding: '28px 28px 24px',
+              width: 340, boxShadow: '0 20px 60px rgba(0,58,93,0.22)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+            }}
+          >
+            {/* Icon */}
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              background: C.redBg, border: `2px solid ${C.redBorder}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <AlertCircle size={24} color={C.red} />
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontWeight: 700, fontSize: '1rem', color: C.primary, marginBottom: 6 }}>
+                {errorModal.title}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: C.slate, lineHeight: 1.5 }}>
+                {errorModal.message}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setErrorModal(null)}
+              style={{
+                marginTop: 4, padding: '9px 32px', borderRadius: 9,
+                border: 'none', background: C.primary, color: C.white,
+                fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                fontFamily: "'IBM Plex Sans', sans-serif",
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

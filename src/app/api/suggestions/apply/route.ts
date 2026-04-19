@@ -62,22 +62,34 @@ export async function POST(request: Request) {
     const toExisting = await prisma.assignment.findFirst({
       where: { scheduleId, employeeId: suggestion.toEmployeeId, date: suggestion.toDate },
     })
-    if (toExisting) {
-      return Response.json({ error: 'Destinatário já tem turno nesse dia' }, { status: 409 })
-    }
 
-    await prisma.$transaction([
-      prisma.assignment.delete({ where: { id: fromAssignment.id } }),
-      prisma.assignment.create({
-        data: {
-          scheduleId,
-          employeeId: suggestion.toEmployeeId,
-          date: suggestion.toDate,
-          shiftCode: suggestion.toShiftCode,
-          origin: 'MANUAL',
-        },
-      }),
-    ])
+    if (toExisting) {
+      // True bidirectional swap: exchange the two employees on their respective shifts
+      await prisma.$transaction([
+        prisma.assignment.update({
+          where: { id: fromAssignment.id },
+          data: { employeeId: suggestion.toEmployeeId, shiftCode: suggestion.toShiftCode, origin: 'MANUAL' },
+        }),
+        prisma.assignment.update({
+          where: { id: toExisting.id },
+          data: { employeeId: suggestion.fromEmployeeId, shiftCode: suggestion.fromShiftCode, origin: 'MANUAL' },
+        }),
+      ])
+    } else {
+      // Simple reassignment: remove from A, give to B
+      await prisma.$transaction([
+        prisma.assignment.delete({ where: { id: fromAssignment.id } }),
+        prisma.assignment.create({
+          data: {
+            scheduleId,
+            employeeId: suggestion.toEmployeeId,
+            date: suggestion.toDate,
+            shiftCode: suggestion.toShiftCode,
+            origin: 'MANUAL',
+          },
+        }),
+      ])
+    }
     return Response.json({ ok: true })
   }
 
