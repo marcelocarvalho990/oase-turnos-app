@@ -53,6 +53,7 @@ interface Props {
   report: GenerationReport | null
   fetchTrigger: number
   onApplied: () => void
+  onReportChange?: (report: GenerationReport) => void
 }
 
 type Tab = 'resumo' | 'problemas' | 'sugestoes' | 'chat'
@@ -69,6 +70,7 @@ const TX: Record<Lang, {
   accept: string; applying: string; dismiss: string
   errApplyTitle: string; errApplyDefault: string
   errConnTitle: string; errConnMsg: string
+  refreshErrTitle: string; refreshErrMsg: string; refreshBalanced: string
   qualityLabel: Record<string, string>
   locale: string
   chatPlaceholder: string; chatThinking: string; chatEmpty: string; chatErrConn: string
@@ -83,6 +85,7 @@ const TX: Record<Lang, {
     accept: 'Akzeptieren', applying: 'Wird angewendet…', dismiss: 'Ignorieren',
     errApplyTitle: 'Konnte nicht angewendet werden', errApplyDefault: 'Fehler beim Anwenden des Vorschlags',
     errConnTitle: 'Verbindungsfehler', errConnMsg: 'Server konnte nicht erreicht werden. Erneut versuchen.',
+    refreshErrTitle: 'Aktualisierung fehlgeschlagen', refreshErrMsg: 'KI-Service nicht erreichbar. Erneut versuchen.', refreshBalanced: 'Alle Mitarbeiter sind ausgeglichen – keine neuen Vorschläge.',
     qualityLabel: { boa: 'GUT', moderada: 'MODERAT', fraca: 'SCHWACH' },
     locale: 'de-DE',
     chatPlaceholder: 'Frage stellen… (Enter)', chatThinking: 'Denkt nach…', chatEmpty: 'Stelle eine Frage zum Dienstplan, den Stunden oder den Mitarbeitern.', chatErrConn: 'Verbindungsfehler. Erneut versuchen.',
@@ -97,6 +100,7 @@ const TX: Record<Lang, {
     accept: 'Aceitar', applying: 'A aplicar…', dismiss: 'Ignorar',
     errApplyTitle: 'Não foi possível aplicar', errApplyDefault: 'Erro ao aplicar sugestão',
     errConnTitle: 'Erro de ligação', errConnMsg: 'Não foi possível contactar o servidor. Tenta novamente.',
+    refreshErrTitle: 'Falha ao atualizar', refreshErrMsg: 'Serviço IA indisponível. Tenta novamente.', refreshBalanced: 'Todos os colaboradores estão equilibrados – sem novas sugestões.',
     qualityLabel: { boa: 'BOA', moderada: 'MODERADA', fraca: 'FRACA' },
     locale: 'pt-PT',
     chatPlaceholder: 'Faz uma pergunta… (Enter)', chatThinking: 'A pensar…', chatEmpty: 'Faz uma pergunta sobre a escala, horas ou colaboradores.', chatErrConn: 'Erro de ligação. Tenta novamente.',
@@ -111,6 +115,7 @@ const TX: Record<Lang, {
     accept: 'Accept', applying: 'Applying…', dismiss: 'Dismiss',
     errApplyTitle: 'Could not apply', errApplyDefault: 'Error applying suggestion',
     errConnTitle: 'Connection error', errConnMsg: 'Could not reach the server. Please try again.',
+    refreshErrTitle: 'Refresh failed', refreshErrMsg: 'AI service unavailable. Please try again.', refreshBalanced: 'All employees are balanced – no new suggestions.',
     qualityLabel: { boa: 'GOOD', moderada: 'MODERATE', fraca: 'POOR' },
     locale: 'en-GB',
     chatPlaceholder: 'Ask a question… (Enter)', chatThinking: 'Thinking…', chatEmpty: 'Ask anything about the schedule, hours or employees.', chatErrConn: 'Connection error. Please try again.',
@@ -125,6 +130,7 @@ const TX: Record<Lang, {
     accept: 'Accepter', applying: 'Application…', dismiss: 'Ignorer',
     errApplyTitle: 'Impossible d\'appliquer', errApplyDefault: 'Erreur lors de l\'application',
     errConnTitle: 'Erreur de connexion', errConnMsg: 'Impossible de contacter le serveur. Réessayez.',
+    refreshErrTitle: 'Actualisation échouée', refreshErrMsg: 'Service IA indisponible. Réessayez.', refreshBalanced: 'Tous les collaborateurs sont équilibrés – aucune nouvelle suggestion.',
     qualityLabel: { boa: 'BON', moderada: 'MOYEN', fraca: 'FAIBLE' },
     locale: 'fr-FR',
     chatPlaceholder: 'Poser une question… (Entrée)', chatThinking: 'Réflexion…', chatEmpty: 'Posez une question sur le planning, les heures ou les collaborateurs.', chatErrConn: 'Erreur de connexion. Réessayez.',
@@ -139,6 +145,7 @@ const TX: Record<Lang, {
     accept: 'Accetta', applying: 'Applicazione…', dismiss: 'Ignora',
     errApplyTitle: 'Impossibile applicare', errApplyDefault: 'Errore nell\'applicazione',
     errConnTitle: 'Errore di connessione', errConnMsg: 'Impossibile contattare il server. Riprova.',
+    refreshErrTitle: 'Aggiornamento fallito', refreshErrMsg: 'Servizio IA non disponibile. Riprova.', refreshBalanced: 'Tutti i collaboratori sono equilibrati – nessun nuovo suggerimento.',
     qualityLabel: { boa: 'BUONO', moderada: 'MODERATO', fraca: 'SCARSO' },
     locale: 'it-IT',
     chatPlaceholder: 'Fai una domanda… (Invio)', chatThinking: 'Sto pensando…', chatEmpty: 'Fai una domanda sul turno, le ore o i collaboratori.', chatErrConn: 'Errore di connessione. Riprova.',
@@ -159,7 +166,7 @@ const C = {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function SuggestionsPanel({ scheduleId, year, month, team, report, fetchTrigger, onApplied }: Props) {
+export default function SuggestionsPanel({ scheduleId, year, month, team, report, fetchTrigger, onApplied, onReportChange }: Props) {
   const [lang] = useLang()
   const tx = TX[lang]
 
@@ -244,17 +251,30 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scheduleId, year, month, team, lang }),
       })
-      if (!res.ok) return
-      const data = await res.json()
-      if (data.suggestions) {
-        setActiveReport(prev => prev ? { ...prev, suggestions: data.suggestions } : prev)
-        setDismissed(new Set())
-        setTab('sugestoes')
+      if (!res.ok) {
+        setErrorModal({ title: tx.refreshErrTitle, message: tx.refreshErrMsg })
+        return
       }
+      const data = await res.json() as { suggestions?: Suggestion[] }
+      if (!Array.isArray(data.suggestions)) return
+      if (data.suggestions.length === 0) {
+        // Nothing to swap/add — inform user but keep existing suggestions visible
+        setErrorModal({ title: tx.refresh, message: tx.refreshBalanced })
+        return
+      }
+      setActiveReport(prev => {
+        const updated = prev
+          ? { ...prev, suggestions: data.suggestions! }
+          : { summary: '', quality: 'moderada' as const, evaluation: [], problems: { critical: [], important: [], moderate: [] }, suggestions: data.suggestions!, managerNotes: '' }
+        onReportChange?.(updated)
+        return updated
+      })
+      setDismissed(new Set())
+      setTab('sugestoes')
     } finally {
       setIsRefreshing(false)
     }
-  }, [scheduleId, year, month, team, lang])
+  }, [scheduleId, year, month, team, lang, tx, onReportChange])
 
   async function applySuggestion(suggestion: Suggestion) {
     setApplying(suggestion.id)

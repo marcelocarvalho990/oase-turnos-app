@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
     return `${st.code} "${st.name}" (${effH}h efectivas)`
   })
 
-  const underTarget = employeeStats.filter(e => e.delta < -4).sort((a, b) => a.delta - b.delta)
-  const overTarget = employeeStats.filter(e => e.delta > 4).sort((a, b) => b.delta - a.delta)
+  const underTarget = employeeStats.filter(e => e.delta < -1).sort((a, b) => a.delta - b.delta)
+  const overTarget = employeeStats.filter(e => e.delta > 1).sort((a, b) => b.delta - a.delta)
 
   if (underTarget.length === 0) {
     return Response.json({ suggestions: [] })

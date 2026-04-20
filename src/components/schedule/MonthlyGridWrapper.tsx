@@ -512,6 +512,7 @@ export default function MonthlyGridWrapper({
         report={generationReport}
         fetchTrigger={suggestionsTrigger}
         onApplied={() => startTransition(() => router.refresh())}
+        onReportChange={setGenerationReport}
       />
     </div>
   )
