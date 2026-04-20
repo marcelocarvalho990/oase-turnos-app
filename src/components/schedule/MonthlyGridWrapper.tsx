@@ -79,8 +79,29 @@ export default function MonthlyGridWrapper({
   const [assignmentMap, setAssignmentMap] = useState<AssignmentMap>(initialMap)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateResult, setGenerateResult] = useState<{ status: string; count?: number; mode?: string } | null>(null)
-  const [generationReport, setGenerationReport] = useState<GenerationReport | null>(null)
-  const [suggestionsTrigger, setSuggestionsTrigger] = useState(1) // 1 = fetch on mount
+
+  // ── sessionStorage helpers (safe for SSR) ─────────────────────────────────
+  const MONTH_KEY = 'dienstplan_last_month'
+  const reportKey = (y: number, m: number) => `dienstplan_report_${y}_${m}`
+
+  function ssGet<T>(key: string): T | null {
+    if (typeof window === 'undefined') return null
+    try { const v = sessionStorage.getItem(key); return v ? JSON.parse(v) as T : null } catch { return null }
+  }
+  function ssSet(key: string, value: unknown) {
+    if (typeof window === 'undefined') return
+    try { value == null ? sessionStorage.removeItem(key) : sessionStorage.setItem(key, JSON.stringify(value)) } catch {}
+  }
+
+  // Initialise report from cache (works on client-side navigation; falls back to null on SSR)
+  const [generationReport, setGenerationReport] = useState<GenerationReport | null>(
+    () => ssGet<GenerationReport>(reportKey(year, month))
+  )
+  // Only auto-fetch suggestions when there is no cached report for this month
+  const [suggestionsTrigger, setSuggestionsTrigger] = useState(
+    () => ssGet<GenerationReport>(reportKey(year, month)) ? 0 : 1
+  )
+
   const [view, setView] = useState<ViewMode>('month')
   const [compact, setCompact] = useState(true)
   const [showPdfMenu, setShowPdfMenu] = useState(false)
@@ -95,19 +116,48 @@ export default function MonthlyGridWrapper({
 
   useEffect(() => { setAssignmentMap(initialMap) }, [initialMap])
 
-  // Keep focusDate in sync when month changes via TopBar navigation
+  // ── sessionStorage: restore last month on mount (redirect if URL has no params) ──
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (!params.has('year') && !params.has('month')) {
+      const saved = ssGet<{ year: number; month: number }>(MONTH_KEY)
+      if (saved && (saved.year !== year || saved.month !== month)) {
+        router.replace(`/schedule?year=${saved.year}&month=${saved.month}&team=${team}`)
+        return
+      }
+    }
+    ssSet(MONTH_KEY, { year, month })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── sessionStorage: persist report whenever it changes ────────────────────
+  useEffect(() => {
+    ssSet(reportKey(year, month), generationReport)
+  }, [generationReport, year, month]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep focusDate in sync when month changes via TopBar navigation
+  // Also restore cached report and reset suggestion trigger for the new month
+  const prevMonthRef = useRef({ year, month })
+  useEffect(() => {
+    const prev = prevMonthRef.current
+    if (prev.year === year && prev.month === month) return
+    prevMonthRef.current = { year, month }
     setFocusDate(d => {
       if (d.getFullYear() === year && d.getMonth() + 1 === month) return d
       return new Date(year, month - 1, 1)
     })
-  }, [year, month])
+    // Load cached report for new month (or clear if none)
+    const cached = ssGet<GenerationReport>(reportKey(year, month))
+    setGenerationReport(cached)
+    setSuggestionsTrigger(cached ? 0 : t => t + 1)
+    ssSet(MONTH_KEY, { year, month })
+  }, [year, month]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleMonthChange = useCallback((newYear: number, newMonth: number) => {
+    ssSet(MONTH_KEY, { year: newYear, month: newMonth })
     router.push(`/schedule?year=${newYear}&month=${newMonth}&team=${team}`)
-  }, [team, router])
+  }, [team, router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Navigate to a date, crossing month boundaries when needed
   function navigateTo(newDate: Date) {
