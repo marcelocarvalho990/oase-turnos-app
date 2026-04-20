@@ -170,7 +170,7 @@ function buildUserMessage(params: {
 
   // Shift descriptions with effective hours
   const shiftDesc = workShifts.map(s => {
-    const brk = (s.code === 'F' || s.code === 'S') ? BREAK_MIN : 0
+    const brk = BREAK_MIN
     const effH = ((s.durationMinutes - brk) / 60).toFixed(1)
     const roles = s.eligibleRoles.length > 0 ? ` [elegível: ${s.eligibleRoles.join(', ')}]` : ' [todos]'
     return `  ${s.code} "${s.name}": ${s.durationMinutes}min total, ${effH}h efectivas (pausa ${brk}min)${roles}`

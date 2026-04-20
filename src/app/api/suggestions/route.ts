@@ -68,8 +68,7 @@ export async function POST(request: NextRequest) {
     for (const a of empAssignments) {
       const st = shiftTypeMap.get(a.shiftCode)
       if (!st) continue
-      const brk = (a.shiftCode === 'F' || a.shiftCode === 'S') ? BREAK_MIN : 0
-      workedMinutes += st.durationMinutes - brk
+      workedMinutes += st.durationMinutes - BREAK_MIN
     }
     const targetHours = Math.round((emp.workPercentage / 100) * TARGET_HOURS_100PCT * 10) / 10
     const workedHours = Math.round(workedMinutes / 60 * 10) / 10
@@ -94,8 +93,7 @@ export async function POST(request: NextRequest) {
 
   const workShiftTypes = shiftTypes.filter(st => !st.isAbsence)
   const shiftInfo = workShiftTypes.map(st => {
-    const brk = (st.code === 'F' || st.code === 'S') ? BREAK_MIN : 0
-    const effH = Math.round((st.durationMinutes - brk) / 60 * 10) / 10
+    const effH = Math.round((st.durationMinutes - BREAK_MIN) / 60 * 10) / 10
     return `${st.code} "${st.name}" (${effH}h efectivas)`
   })
 

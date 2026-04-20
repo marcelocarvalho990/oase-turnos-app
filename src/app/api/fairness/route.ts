@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
 
         if (shiftType) {
           // F and S shifts have a mandatory 36-min break not counted as work time
-          const breakDeduction = (assignment.shiftCode === 'F' || assignment.shiftCode === 'S') ? 36 : 0
+          const breakDeduction = 36
           workedMinutes += shiftType.durationMinutes - breakDeduction
         }
 

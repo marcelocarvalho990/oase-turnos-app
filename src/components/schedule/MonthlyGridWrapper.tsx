@@ -610,7 +610,7 @@ function WeeklyView({ employees, assignmentMap, shiftTypes, coverageRules, days,
                 const a = empAssignments[day.date]
                 const st = shiftTypes.find(s => s.code === a?.shiftCode)
                 if (st && !st.isAbsence && st.durationMinutes) {
-                  const breakMin = (a?.shiftCode === 'F' || a?.shiftCode === 'S') ? 36 : 0
+                  const breakMin = 36
                   hoursWorked += (st.durationMinutes - breakMin) / 60
                 }
               }

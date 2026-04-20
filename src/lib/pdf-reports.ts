@@ -410,7 +410,7 @@ export async function downloadHoursPDF(opts: {
       const s = shiftMap[a.shiftCode]
       if (!s?.isWorkTime) continue
       workDays++
-      const breakMin = (a.shiftCode === 'F' || a.shiftCode === 'S') ? BREAK_DEDUCTION_MIN : 0
+      const breakMin = BREAK_DEDUCTION_MIN
       workMins += s.durationMinutes - breakMin
       codeCounts[a.shiftCode] = (codeCounts[a.shiftCode] ?? 0) + 1
     }
