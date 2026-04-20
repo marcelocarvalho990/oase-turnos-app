@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
 import { type NextRequest } from 'next/server'
 
 const DEFAULT_TEAM = '2.OG'
 
 export async function GET(request: NextRequest) {
+  await requireAuth('MANAGER')
   try {
     const { searchParams } = request.nextUrl
     const team = searchParams.get('team') ?? DEFAULT_TEAM
@@ -18,12 +20,13 @@ export async function GET(request: NextRequest) {
 
     return Response.json(settings)
   } catch (error) {
-    console.error('[GET /api/manager/settings]', error)
+    console.error('[GET /api/manager/settings]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to fetch settings' }, { status: 500 })
   }
 }
 
 export async function PATCH(request: NextRequest) {
+  await requireAuth('MANAGER')
   try {
     const { searchParams } = request.nextUrl
     const team = searchParams.get('team') ?? DEFAULT_TEAM
@@ -44,7 +47,7 @@ export async function PATCH(request: NextRequest) {
 
     return Response.json(settings)
   } catch (error) {
-    console.error('[PATCH /api/manager/settings]', error)
+    console.error('[PATCH /api/manager/settings]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to update settings' }, { status: 500 })
   }
 }

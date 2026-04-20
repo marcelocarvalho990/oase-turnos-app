@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
 import { type NextRequest } from 'next/server'
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
@@ -28,7 +29,11 @@ function monthLabel(year: number, month: number): string {
   return `${names[month - 1]}/${year}`
 }
 
+const MAX_HISTORY = 20
+const MAX_MESSAGE_LEN = 2000
+
 export async function POST(request: NextRequest) {
+  await requireAuth('MANAGER')
   try {
     const body = await request.json() as {
       message: string
@@ -44,6 +49,15 @@ export async function POST(request: NextRequest) {
     if (!message?.trim()) {
       return Response.json({ error: 'message is required' }, { status: 400 })
     }
+
+    if (message.length > MAX_MESSAGE_LEN) {
+      return Response.json({ error: 'message too long' }, { status: 400 })
+    }
+
+    // Limit history to last N messages to prevent abuse
+    const trimmedHistory = Array.isArray(history)
+      ? history.slice(-MAX_HISTORY)
+      : []
 
     // --- Build context from DB ---
     const [employees, shiftTypes, allAbsences, teamSettings] = await Promise.all([
@@ -227,7 +241,7 @@ Se precisares de dados não disponíveis aqui (como escalas de outros anos ou ou
         max_tokens: 2048,
         messages: [
           { role: 'system', content: systemPrompt },
-          ...history.map(m => ({ role: m.role, content: m.content })),
+          ...trimmedHistory.map(m => ({ role: m.role, content: m.content })),
           { role: 'user', content: message },
         ],
       }),

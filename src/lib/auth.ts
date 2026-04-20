@@ -1,4 +1,4 @@
-import { createHash } from 'crypto'
+import { createHash, randomInt, timingSafeEqual } from 'crypto'
 import { prisma } from './prisma'
 import { getSession } from './session'
 import { redirect } from 'next/navigation'
@@ -8,25 +8,36 @@ export function hashPin(value: string): string {
 }
 
 export function generatePin(): string {
-  return String(Math.floor(1000 + Math.random() * 9000))
+  return String(randomInt(1000, 10000))
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const ba = Buffer.from(a)
+  const bb = Buffer.from(b)
+  if (ba.length !== bb.length) {
+    // Still do the comparison to avoid timing leak on length
+    timingSafeEqual(ba, Buffer.alloc(ba.length))
+    return false
+  }
+  return timingSafeEqual(ba, bb)
 }
 
 export async function verifyManagerPassword(password: string): Promise<boolean> {
   const hash = hashPin(password)
   const managerPin = await prisma.userPin.findFirst({ where: { employeeId: null } })
   if (!managerPin) {
-    // Auto-create manager pin from env on first check
-    const envPassword = process.env.MANAGER_PASSWORD ?? 'admin123'
+    const envPassword = process.env.MANAGER_PASSWORD
+    if (!envPassword) return false
     await prisma.userPin.create({ data: { employeeId: null, pin: hashPin(envPassword) } })
-    return hashPin(password) === hashPin(envPassword)
+    return safeEqual(hash, hashPin(envPassword))
   }
-  return hash === managerPin.pin
+  return safeEqual(hash, managerPin.pin)
 }
 
 export async function verifyEmployeePin(employeeId: string, pin: string): Promise<boolean> {
   const record = await prisma.userPin.findUnique({ where: { employeeId } })
   if (!record) return false
-  return hashPin(pin) === record.pin
+  return safeEqual(hashPin(pin), record.pin)
 }
 
 export async function getCurrentUser() {

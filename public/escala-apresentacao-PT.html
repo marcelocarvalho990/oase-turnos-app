@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><meta charset="UTF-8"><title>Tertianum App Schedule</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Source+Sans+3:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Source+Sans+3:wght@600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+@page{size:A4 portrait;margin:0}
+body{font-family:'Source Sans 3','Helvetica Neue',Arial,sans-serif;color:#0D1F2D;background:#fff;
+     -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;overflow:hidden;page-break-after:always;display:flex;flex-direction:column}
+.page:last-child{page-break-after:avoid}
+
+.ral{font-family:'Raleway',sans-serif}
+.label{font-family:'Source Sans 3',sans-serif;font-size:7.5px;font-weight:700;
+       letter-spacing:2.5px;text-transform:uppercase}
+.cover-rule{height:3px;background:#B8892A;flex-shrink:0}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin-top:auto}
+.stat{border-top:2px solid #002D4A;padding-top:3.5mm}
+.stat .n{font-family:'Raleway',sans-serif;font-size:26px;font-weight:800;
+          color:#002D4A;line-height:1;letter-spacing:-1px}
+.stat .u{font-size:14px;font-weight:400}
+.stat .d{font-size:8px;color:#5A7080;line-height:1.45;margin-top:2px;font-weight:400}
+.pg-hd{background:#002D4A;padding:6.5mm 13mm;display:flex;align-items:center;
+       justify-content:space-between;flex-shrink:0}
+.pg-num{font-family:'Raleway',sans-serif;font-size:12px;font-weight:800;
+        color:rgba(255,255,255,.25);letter-spacing:1px}
+.p2-intro{padding:7mm 13mm 5mm;flex-shrink:0;border-bottom:1px solid #E2DDD6;background:#F6F2EB}
+.p2-cols{flex:1;display:grid;grid-template-columns:47% 53%;overflow:hidden}
+.p2-col{padding:7mm 10mm 6mm;display:flex;flex-direction:column;gap:3.5mm;overflow:hidden}
+.p2-col.lft{background:#fff}
+.p2-col.rgt{background:#F6F2EB}
+.col-hd{margin-bottom:4mm;padding-bottom:3mm;border-bottom:1px solid #D8D3CB}
+.r-item{display:flex;gap:3mm;align-items:flex-start}
+.r-num{font-family:'Raleway',sans-serif;font-size:10px;font-weight:800;
+       color:#B8892A;flex-shrink:0;width:14px;line-height:1.5}
+.r-dot{width:6px;height:6px;border-radius:50%;background:#9B1C1C;flex-shrink:0;margin-top:4px}
+.r-body{font-size:9px;color:#3D4F5E;line-height:1.6}
+.r-body b{color:#0D1F2D;font-weight:600}
+.box{border-radius:6px;padding:4mm}
+.box.dark{background:#002D4A}
+.box.light{background:#fff;border:1px solid #D0CBCA}
+.box p{font-size:9px;line-height:1.65}
+.box.dark p{color:rgba(255,255,255,.85)}
+.box.light p{color:#14532D}
+.box .lbl{margin-bottom:2mm}
+.box.dark .lbl{color:#B8892A}
+.box.light .lbl{color:#15803D}
+.p3-body{flex:1;padding:6mm 11mm 5mm;display:flex;flex-direction:column;gap:4mm;overflow:hidden}
+.fg{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;flex:1}
+.fc{border:1px solid #DDD9D2;border-radius:6px;padding:4mm 4.5mm;display:flex;flex-direction:column;background:#fff}
+.fc.a{background:#002D4A;border-color:#002D4A}
+.fc .cat{margin-bottom:1.5mm;font-size:7px;font-weight:700;letter-spacing:2px;
+         text-transform:uppercase;color:#8FA4B0}
+.fc.a .cat{color:rgba(184,137,42,.7)}
+.fc .fn{font-family:'Raleway',sans-serif;font-size:9px;font-weight:800;
+        color:#0D1F2D;line-height:1.3;margin-bottom:2mm}
+.fc.a .fn{color:#fff}
+.fc .fd{font-size:7.8px;color:#4D6070;line-height:1.62;flex:1}
+.fc.a .fd{color:rgba(255,255,255,.72)}
+.fc .ft{margin-top:3mm;font-size:7px;font-weight:700;letter-spacing:2px;
+        text-transform:uppercase;color:#B8892A;border-top:1px solid #EAE6DF;padding-top:2.5mm}
+.fc.a .ft{color:rgba(184,137,42,.85);border-top-color:rgba(255,255,255,.15)}
+.tb{background:#F6F2EB;border-radius:6px;padding:3.5mm 5mm;flex-shrink:0;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;border-top:2px solid #B8892A}
+.tb-i b{display:block;font-family:'Raleway',sans-serif;font-size:8px;
+         font-weight:700;color:#0D1F2D;margin-bottom:1px}
+.tb-i{font-size:7.5px;color:#4D6070;line-height:1.5}
+.ft-bar{background:#002D4A;padding:3.5mm 13mm;display:flex;align-items:center;
+        justify-content:space-between;flex-shrink:0}
+.ft-bar span{font-size:8px;font-weight:400;letter-spacing:1.5px;
+             text-transform:uppercase;color:rgba(255,255,255,.45)}
+.ft-bar b{font-family:'Raleway',sans-serif;font-size:8.5px;font-weight:700;
+          color:rgba(255,255,255,.85)}
+.gold{color:#B8892A}
+</style></head>
+<body>
+
+<div class="page">
+  <div style="background:#002D4A;padding:10mm 14mm 12mm;flex-shrink:0;position:relative;overflow:hidden">
+    <div style="position:absolute;right:-20px;top:-20px;width:160px;height:160px;border-radius:50%;background:rgba(184,137,42,.1)"></div>
+    
+    <div class="label gold" style="margin-bottom:5mm">Gestão de Escalas Automatizada · 2026</div>
+    <div class="ral" style="font-size:46px;font-weight:800;color:#fff;line-height:.92;letter-spacing:-1.5px;margin-bottom:7mm">
+      Tertianum App<br><span style="color:#B8892A">Schedule</span>
+    </div>
+    <p style="font-size:11.5px;color:rgba(255,255,255,.7);line-height:1.7;max-width:145mm;font-weight:300">Uma plataforma web para a gestão completa e digitalizada das escalas mensais. Geração, validação de regras, gestão de ausências e relatórios num único sistema integrado.</p>
+  </div>
+  <div class="cover-rule"></div>
+
+  <div style="flex:1;background:#F6F2EB;display:flex;flex-direction:column;justify-content:space-between;padding:10mm 14mm 8mm">
+    <div>
+      <div class="label gold" style="margin-bottom:4mm">Contexto</div>
+      <h2 class="ral" style="font-size:14px;font-weight:800;color:#002D4A;margin-bottom:4.5mm;line-height:1.3">Para que foi desenvolvida a Tertianum App Schedule?</h2>
+      <p style="font-size:9.5px;color:#445060;line-height:1.75;margin-bottom:3.5mm">A criação manual de uma escala mensal ocupa normalmente várias horas de trabalho. As regras de qualificação, os regimes de trabalho individuais, as ausências aprovadas e as restrições legais de turno têm de ser considerados em simultâneo. Os erros passam frequentemente despercebidos até à publicação e obrigam a correcções de última hora que perturbam o funcionamento da equipa.</p>
+      <p style="font-size:9.5px;color:#445060;line-height:1.75">A Tertianum App Schedule automatiza este processo na totalidade. O sistema analisa todas as condições enquadrantes e gera em poucos minutos uma escala mensal conforme com as regras. Os gestores verificam, ajustam e publicam, sem precisar de construir o plano de raiz.</p>
+    </div>
+    <div class="stat-row"><div class="stat"><div class="n">2<span class="u">min</span></div><div class="d">Escala mensal completa gerada automaticamente</div></div><div class="stat"><div class="n">0</div><div class="d">Erros de qualificação na geração automática</div></div><div class="stat"><div class="n">5</div><div class="d">Idiomas disponíveis DE · PT · EN · FR · IT</div></div><div class="stat"><div class="n">100<span class="u">%</span></div><div class="d">Ausências e percentagens consideradas automaticamente</div></div></div>
+  </div>
+
+  <div style="background:#002D4A;padding:3.5mm 14mm;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+    <span class="label" style="color:rgba(255,255,255,.35)">Tertianum Management AG</span>
+    <span class="label" style="color:rgba(255,255,255,.35)">Gestão de Escalas Automatizada · 2026</span>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pg-hd">
+    
+    <div class="label" style="color:rgba(255,255,255,.4)">Situação actual e resposta</div>
+    <div class="pg-num">02</div>
+  </div>
+  <div class="p2-intro">
+    <h2 class="ral" style="font-size:17px;font-weight:800;color:#002D4A;line-height:1.25;margin-bottom:3mm">Porque é que o planeamento manual já não é suficiente?</h2>
+    <p style="font-size:9px;color:#4D6070;line-height:1.65;max-width:170mm">Com equipas maiores e requisitos de qualificação mais complexos, os métodos manuais chegam ao limite. A Tertianum App Schedule colmata estas lacunas de forma estruturada e reproduzível.</p>
+  </div>
+  <div class="p2-cols" style="flex:1">
+    <div class="p2-col lft">
+      <div class="col-hd">
+        <div class="label" style="color:#9B1C1C;margin-bottom:2.5mm">Dificuldades actuais</div>
+        <h3 class="ral" style="font-size:13px;font-weight:800;color:#0D1F2D;line-height:1.25">O que pesa na operação hoje</h3>
+      </div>
+      <div class="r-item"><div class="r-dot"></div><div class="r-body"><b>Tempo excessivo:</b> A criação manual de uma escala mensal completa demora várias horas. Qualquer alteração obriga a rever manualmente uma grande parte do plano já construído.</div></div><div class="r-item"><div class="r-dot"></div><div class="r-body"><b>Riscos de qualificação:</b> É difícil garantir que cada turno tem a composição certa de HF, FAGE, SRK e Lernende. Os erros surgem frequentemente só na revisão final.</div></div><div class="r-item"><div class="r-dot"></div><div class="r-body"><b>Sem visibilidade das horas:</b> Sem sistema centralizado, é quase impossível comparar horas reais com horas previstas por colaborador em tempo real.</div></div><div class="r-item"><div class="r-dot"></div><div class="r-body"><b>Distribuição desigual de carga:</b> A distribuição justa de fins de semana e serviços mais exigentes requer acompanhamento manual, que é propenso a erros.</div></div><div class="r-item"><div class="r-dot"></div><div class="r-body"><b>Ausências geridas em separado:</b> Pedidos de férias, baixas e pedidos de folga vivem em tabelas ou emails diferentes, o que origina sobreposições e informação inconsistente.</div></div><div class="r-item"><div class="r-dot"></div><div class="r-body"><b>Sem rastreabilidade:</b> As alterações à escala não ficam registadas. Não é claro quem alterou o quê nem quando.</div></div><div class="r-item"><div class="r-dot"></div><div class="r-body"><b>Comunicação morosa:</b> A escala chega por email ou papel. Qualquer mudança obriga a nova comunicação, gerando confusão na equipa.</div></div>
+      <div class="box dark" style="margin-top:auto">
+        <div class="label lbl gold">Consequência</div>
+        <p>O tempo dedicado ao planeamento administrativo não está disponível para o acompanhamento dos residentes. O planeamento manual não é uma tarefa secundária; é uma sobrecarga real sobre as equipas de gestão.</p>
+      </div>
+    </div>
+    <div class="p2-col rgt">
+      <div class="col-hd">
+        <div class="label" style="color:#15803D;margin-bottom:2.5mm">O que a App Schedule resolve</div>
+        <h3 class="ral" style="font-size:13px;font-weight:800;color:#0D1F2D;line-height:1.25">Automatizado, validado, rastreável</h3>
+      </div>
+      <div class="r-item"><div class="r-num">01</div><div class="r-body"><b>Geração automática:</b> O sistema cria a escala mensal completa. As regras HF/FAGE/SRK, os regimes de trabalho, os tipos de turno e as ausências conhecidas são considerados em simultâneo.</div></div><div class="r-item"><div class="r-num">02</div><div class="r-body"><b>Validação de regras em tempo real:</b> Cada turno é verificado imediatamente: o turno S requer FAGE e SRK; os Lernende só podem ter turnos F e F9. As violações aparecem no instante em que ocorrem.</div></div><div class="r-item"><div class="r-num">03</div><div class="r-body"><b>Dashboard de Equidade:</b> Visão em tempo real das horas trabalhadas, horas previstas e desvio por colaborador. A equidade torna-se visível e verificável antes de qualquer publicação.</div></div><div class="r-item"><div class="r-num">04</div><div class="r-body"><b>Sugestões da IA:</b> O sistema propõe trocas de turno ou turnos adicionais e verifica automaticamente a composição dos turnos afectados antes de apresentar cada sugestão.</div></div><div class="r-item"><div class="r-num">05</div><div class="r-body"><b>Gestão central de ausências:</b> Férias, pedidos de folga e baixas num único sistema. As ausências aprovadas entram directamente na próxima escala gerada.</div></div><div class="r-item"><div class="r-num">06</div><div class="r-body"><b>Exportação PDF sem esforço:</b> A escala e o relatório de horas são exportados como PDFs profissionais, no idioma pretendido, sem qualquer formatação manual.</div></div>
+      <div class="box light" style="margin-top:auto">
+        <div class="label lbl" style="color:#15803D">Resultado mensurável</div>
+        <p>O esforço manual na criação de uma escala mensal passa de várias horas para menos de 10 minutos. Os erros de qualificação são eliminados antes da publicação.</p>
+      </div>
+    </div>
+  </div>
+  <div class="ft-bar">
+    <span>Tertianum Management AG · 2026</span>
+    <b>Tertianum App Schedule</b>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pg-hd">
+    
+    <div class="label" style="color:rgba(255,255,255,.4)">Visão geral das funcionalidades</div>
+    <div class="pg-num">03</div>
+  </div>
+  <div class="p3-body">
+    <div style="padding-bottom:4mm;border-bottom:1px solid #E2DDD6">
+      <h2 class="ral" style="font-size:15px;font-weight:800;color:#002D4A;margin-bottom:2mm">Todas as funcionalidades</h2>
+      <p style="font-size:9px;color:#4D6070;line-height:1.65;max-width:175mm">A Tertianum App Schedule cobre o ciclo de vida completo de uma escala. Todos os módulos estão integrados numa única plataforma, sem ferramentas externas e sem transferência manual de dados.</p>
+    </div>
+    <div class="fg"><div class="fc a"><div class="cat">Módulo central</div><div class="fn">Geração de Escala por IA</div><div class="fd">O núcleo da plataforma. A inteligência artificial cria com um clique uma escala mensal completa e conforme com as regras. Qualificações, regimes, tipos de turno e ausências são considerados em simultâneo.</div><div class="ft">Automatizado</div></div><div class="fc"><div class="cat">Planeamento</div><div class="fn">Ajuste manual por editor de células</div><div class="fd">Após a geração, cada célula pode ser editada directamente. Cada alteração é verificada imediatamente quanto a violações de regras e guardada na base de dados.</div><div class="ft">Tempo real</div></div><div class="fc"><div class="cat">Planeamento</div><div class="fn">Vistas mensal, semanal e diária</div><div class="fd">A escala pode ser consultada em três modos. A vista semanal serve para verificações detalhadas; a mensal oferece o panorama geral; a diária responde a questões operacionais concretas.</div><div class="ft">Flexível</div></div><div class="fc"><div class="cat">Qualidade</div><div class="fn">Validação de regras e alertas</div><div class="fd">Verificação contínua da composição do turno S (FAGE e SRK), restrições dos Lernende, sequências S seguido de F e máximo de cinco dias consecutivos. Violações apresentadas por dia.</div><div class="ft">Automático</div></div><div class="fc"><div class="cat">Equidade</div><div class="fn">Dashboard de Equidade</div><div class="fd">Mostra horas trabalhadas, horas previstas pelo regime, desvio acumulado e fins de semana em serviço por colaborador. Permite verificar a equidade antes de cada publicação.</div><div class="ft">Transparência</div></div><div class="fc"><div class="cat">Assistente IA</div><div class="fn">Sugestões de optimização</div><div class="fd">A IA analisa o balanço de horas e propõe trocas ou turnos adicionais. Cada sugestão é verificada contra as regras de composição dos turnos antes de ser apresentada ao gestor.</div><div class="ft">Inteligente</div></div><div class="fc"><div class="cat">Ausências</div><div class="fn">Pedidos de férias e aprovação</div><div class="fd">Os colaboradores submetem pedidos digitalmente. Os gestores aprovam ou recusam. As ausências aprovadas aparecem automaticamente na próxima escala gerada.</div><div class="ft">Integrado</div></div><div class="fc"><div class="cat">Ausências</div><div class="fn">Pedidos de folga (Wunschfrei)</div><div class="fd">Os colaboradores pedem dias livres específicos dentro da plataforma. Os pedidos são analisados pelo gestor e considerados automaticamente no planeamento seguinte.</div><div class="ft">Colaborador</div></div><div class="fc"><div class="cat">Chat IA</div><div class="fn">Assistente interactivo por chat</div><div class="fd">Chat de IA integrado para perguntas directas sobre a escala: horas de um colaborador, ausências em aberto, conflitos de regras. O assistente conhece o contexto completo do planeamento.</div><div class="ft">Contextual</div></div><div class="fc"><div class="cat">Relatórios</div><div class="fn">Exportação PDF automática</div><div class="fd">A escala mensal e o relatório de horas são exportados como PDFs profissionais. Idioma, layout e branding são aplicados automaticamente, sem pós-processamento manual.</div><div class="ft">Profissional</div></div><div class="fc"><div class="cat">Acesso</div><div class="fn">Acesso por função</div><div class="fd">Os gestores acedem a todas as funções de planeamento e administração. Os colaboradores consultam a sua própria escala, submetem pedidos e recebem informações relevantes.</div><div class="ft">Seguro</div></div><div class="fc a"><div class="cat">Plataforma</div><div class="fn">Multilingue e independente de dispositivo</div><div class="fd">Disponível em cinco idiomas: DE, PT, EN, FR, IT. Funciona no browser sem instalação, sem actualizações, sem infraestrutura informática própria.</div><div class="ft">DE / PT / EN / FR / IT</div></div></div>
+    <div class="tb"><div class="tb-i"><b>Acesso</b>Browser web, sem instalação</div><div class="tb-i"><b>Dados</b>Base de dados central, segura</div><div class="tb-i"><b>Idiomas</b>DE, PT, EN, FR, IT</div><div class="tb-i"><b>Estado</b>Em produção, 2026</div></div>
+  </div>
+  <div class="ft-bar">
+    <span>Tertianum Management AG · 2026</span>
+    <b>Tertianum App Schedule</b>
+  </div>
+</div>
+
+</body></html>

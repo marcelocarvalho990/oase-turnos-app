@@ -1,19 +1,22 @@
 import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
 import { type NextRequest } from 'next/server'
 
 export async function GET() {
+  await requireAuth()
   try {
     const shiftTypes = await prisma.shiftType.findMany({
       orderBy: { sortOrder: 'asc' },
     })
     return Response.json(shiftTypes)
   } catch (error) {
-    console.error('[GET /api/shift-types]', error)
+    console.error('[GET /api/shift-types]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to fetch shift types' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  await requireAuth('MANAGER')
   try {
     const body = await request.json()
     const {
@@ -67,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     return Response.json(shiftType, { status: 201 })
   } catch (error) {
-    console.error('[POST /api/shift-types]', error)
+    console.error('[POST /api/shift-types]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to create shift type' }, { status: 500 })
   }
 }

@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'fallback-secret-change-me'
-)
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET ?? '')
 
 async function getSession(token: string) {
   try {
@@ -15,12 +13,12 @@ async function getSession(token: string) {
   }
 }
 
-const MANAGER_PATHS = ['/schedule', '/staff', '/shifts', '/coverage', '/fairness', '/gerente']
+const MANAGER_PATHS = ['/schedule', '/staff', '/shifts', '/coverage', '/fairness', '/gerente', '/definicoes']
 const EMPLOYEE_PATHS = ['/colaborador']
 const PUBLIC_PATHS = ['/login']
 const PUBLIC_API_PREFIXES = ['/api/auth/']
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Static assets and Next.js internals — always allow
@@ -58,6 +56,10 @@ export async function proxy(request: NextRequest) {
 
   // All other routes require auth
   if (!session) {
+    // For API routes return 401 instead of redirect
+    if (pathname.startsWith('/api/')) {
+      return Response.json({ error: 'Não autenticado' }, { status: 401 })
+    }
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

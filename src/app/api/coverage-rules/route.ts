@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
 import { type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
+  await requireAuth('MANAGER')
   try {
     const { searchParams } = request.nextUrl
     const team = searchParams.get('team')
@@ -13,12 +15,13 @@ export async function GET(request: NextRequest) {
 
     return Response.json(rules)
   } catch (error) {
-    console.error('[GET /api/coverage-rules]', error)
+    console.error('[GET /api/coverage-rules]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to fetch coverage rules' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  await requireAuth('MANAGER')
   try {
     const body = await request.json()
     const { team, shiftCode, dayType, minStaff, idealStaff } = body
@@ -30,7 +33,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upsert by the unique composite key (team + shiftCode + dayType)
     const rule = await prisma.coverageRule.upsert({
       where: {
         team_shiftCode_dayType: { team, shiftCode, dayType },
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     return Response.json(rule)
   } catch (error) {
-    console.error('[POST /api/coverage-rules]', error)
+    console.error('[POST /api/coverage-rules]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to create/update coverage rule' }, { status: 500 })
   }
 }

@@ -1,10 +1,12 @@
 import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
 import { type NextRequest } from 'next/server'
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await requireAuth('MANAGER')
   try {
     const { id } = await params
     const employee = await prisma.employee.findUnique({ where: { id } })
@@ -15,7 +17,7 @@ export async function GET(
 
     return Response.json(employee)
   } catch (error) {
-    console.error('[GET /api/staff/[id]]', error)
+    console.error('[GET /api/staff/[id]]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to fetch employee' }, { status: 500 })
   }
 }
@@ -24,6 +26,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await requireAuth('MANAGER')
   try {
     const { id } = await params
     const body = await request.json()
@@ -46,7 +49,7 @@ export async function PUT(
 
     return Response.json(employee)
   } catch (error) {
-    console.error('[PUT /api/staff/[id]]', error)
+    console.error('[PUT /api/staff/[id]]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to update employee' }, { status: 500 })
   }
 }
@@ -55,6 +58,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await requireAuth('MANAGER')
   try {
     const { id } = await params
 
@@ -65,7 +69,7 @@ export async function DELETE(
 
     return Response.json(employee)
   } catch (error) {
-    console.error('[DELETE /api/staff/[id]]', error)
+    console.error('[DELETE /api/staff/[id]]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to deactivate employee' }, { status: 500 })
   }
 }

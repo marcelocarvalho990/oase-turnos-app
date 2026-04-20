@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
 import { type NextRequest } from 'next/server'
 
 function isWeekend(dateStr: string): boolean {
@@ -7,27 +8,15 @@ function isWeekend(dateStr: string): boolean {
   return dow === 0 || dow === 6
 }
 
-/**
- * Returns the ISO week number for a given date string.
- * ISO week: Monday is first day. A week belongs to the year containing its Thursday.
- */
 function isoWeekKey(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
-  // Copy date so don't modify original
   const date = new Date(d.valueOf())
-  // ISO week: set to nearest Thursday
   date.setDate(date.getDate() + 4 - (date.getDay() || 7))
-  // Get first day of year
   const yearStart = new Date(date.getFullYear(), 0, 1)
-  // Calculate full weeks to nearest Thursday
   const weekNo = Math.ceil((((date.valueOf() - yearStart.valueOf()) / 86400000) + 1) / 7)
   return `${date.getFullYear()}-W${String(weekNo).padStart(2, '0')}`
 }
 
-/**
- * Count the number of calendar week-pairs in which the employee worked at least
- * one weekend shift (Saturday OR Sunday). This is what "fins de semana" means.
- */
 function countWeekendPairs(weekendDates: string[]): number {
   const weekKeys = new Set<string>()
   for (const dateStr of weekendDates) {
@@ -48,6 +37,7 @@ interface FairnessMetric {
 }
 
 export async function GET(request: NextRequest) {
+  await requireAuth('MANAGER')
   try {
     const { searchParams } = request.nextUrl
     const year = Number(searchParams.get('year'))
@@ -61,7 +51,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Find the schedule
     const schedule = await prisma.schedule.findUnique({
       where: { year_month_team: { year, month, team } },
     })
@@ -73,7 +62,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Load employees, assignments, shiftTypes, and team settings
     const [employees, assignments, shiftTypes, teamSettings] = await Promise.all([
       prisma.employee.findMany({
         where: { isActive: true, team },
@@ -87,8 +75,6 @@ export async function GET(request: NextRequest) {
     ])
 
     const baseMonthlyHours = teamSettings?.baseMonthlyHours ?? 160
-
-    // Build a lookup map for shift types
     const shiftTypeMap = new Map(shiftTypes.map((st) => [st.code, st]))
 
     const metrics: FairnessMetric[] = employees.map((employee) => {
@@ -102,7 +88,6 @@ export async function GET(request: NextRequest) {
       for (const assignment of empAssignments) {
         const shiftType = shiftTypeMap.get(assignment.shiftCode)
 
-        // Skip absence shifts for totalShifts and workedHours
         if (shiftType && shiftType.isAbsence) {
           continue
         }
@@ -110,9 +95,7 @@ export async function GET(request: NextRequest) {
         totalShifts++
 
         if (shiftType) {
-          // F and S shifts have a mandatory 36-min break not counted as work time
-          const breakDeduction = 36
-          workedMinutes += shiftType.durationMinutes - breakDeduction
+          workedMinutes += shiftType.durationMinutes - 36
         }
 
         if (isWeekend(assignment.date)) {
@@ -124,11 +107,8 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Count weekend PAIRS (ISO weeks where at least 1 weekend day was worked)
       const weekendsWorked = countWeekendPairs(weekendShiftDates)
-
       const workedHours = workedMinutes / 60
-      // targetHours uses global baseMonthlyHours (default 160h = 100%)
       const targetHours = (employee.workPercentage / 100) * baseMonthlyHours
 
       return {
@@ -145,7 +125,7 @@ export async function GET(request: NextRequest) {
 
     return Response.json(metrics)
   } catch (error) {
-    console.error('[GET /api/fairness]', error)
+    console.error('[GET /api/fairness]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to compute fairness metrics' }, { status: 500 })
   }
 }

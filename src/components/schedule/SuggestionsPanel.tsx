@@ -333,13 +333,6 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
               {tx.title}
             </span>
 
-            <span style={{
-              fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 8,
-              background: qualityBg, color: qualityColour,
-            }}>
-              {tx.qualityLabel[quality] ?? quality.toUpperCase()}
-            </span>
-
             <button
               onClick={refreshSuggestions}
               disabled={isRefreshing}

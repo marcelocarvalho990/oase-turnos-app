@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
 import { type NextRequest } from 'next/server'
 
-// DELETE /api/schedules/clear?scheduleId=xxx
-// Deletes all AUTO assignments and resets schedule status to DRAFT
 export async function DELETE(request: NextRequest) {
+  await requireAuth('MANAGER')
   try {
     const { searchParams } = request.nextUrl
     const scheduleId = searchParams.get('scheduleId')
@@ -23,7 +23,7 @@ export async function DELETE(request: NextRequest) {
 
     return Response.json({ ok: true })
   } catch (error) {
-    console.error('[DELETE /api/schedules/clear]', error)
+    console.error('[DELETE /api/schedules/clear]', error instanceof Error ? error.message : 'unknown')
     return Response.json({ error: 'Failed to clear schedule' }, { status: 500 })
   }
 }
