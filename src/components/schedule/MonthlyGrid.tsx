@@ -402,6 +402,14 @@ const EmployeeRow = memo(function EmployeeRow({
           >
             {assignment?.shiftCode ? (
               (() => {
+                // Frei (assigned) → render as grey dot, same as empty cell
+                if (assignment.shiftCode === 'Frei') {
+                  return <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#CBD5E1' }} />
+                }
+                // Wunschfrei (assigned) → render as ✕ symbol
+                if (assignment.shiftCode === 'Wunschfrei') {
+                  return <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', lineHeight: 1, userSelect: 'none' }}>✕</span>
+                }
                 // Half shift rendering
                 if (assignment.halfOf && assignment.halfOf !== 'FULL') {
                   const shiftPart = (

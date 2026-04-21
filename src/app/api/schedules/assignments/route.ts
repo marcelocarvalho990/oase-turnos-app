@@ -8,7 +8,7 @@ export async function PATCH(request: NextRequest) {
   await requireAuth('MANAGER')
   try {
     const body = await request.json()
-    const { scheduleId, employeeId, date, shiftCode } = body
+    const { scheduleId, employeeId, date, shiftCode, halfOf } = body
 
     if (!scheduleId || !employeeId || !date) {
       return Response.json(
@@ -20,6 +20,8 @@ export async function PATCH(request: NextRequest) {
     if (!DATE_RE.test(date)) {
       return Response.json({ error: 'date format must be YYYY-MM-DD' }, { status: 400 })
     }
+
+    const halfOfValue = ['FULL', 'FIRST', 'SECOND'].includes(halfOf) ? halfOf : 'FULL'
 
     // Empty shiftCode means delete the assignment
     if (shiftCode === '' || shiftCode === null || shiftCode === undefined) {
@@ -39,10 +41,12 @@ export async function PATCH(request: NextRequest) {
         employeeId,
         date,
         shiftCode,
+        halfOf: halfOfValue,
         origin: 'MANUAL',
       },
       update: {
         shiftCode,
+        halfOf: halfOfValue,
         origin: 'MANUAL',
       },
     })

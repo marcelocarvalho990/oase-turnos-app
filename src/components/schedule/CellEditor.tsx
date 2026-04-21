@@ -14,6 +14,66 @@ interface Props {
   onClose: () => void
 }
 
+const HALF_SHIFT_CODES = ['HF', 'HS']
+
+function HalfShiftButton({
+  st,
+  isActive,
+  onClick,
+}: {
+  st: ShiftType
+  isActive: boolean
+  onClick: () => void
+}) {
+  const isHF = st.code === 'HF'
+
+  const shiftHalf = (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
+      background: st.bgColor, borderBottom: isHF ? `1px solid ${st.borderColor}` : undefined,
+      borderTop: !isHF ? `1px solid ${st.borderColor}` : undefined,
+    }}>
+      <span style={{ fontSize: 9, fontWeight: 800, color: st.textColor }}>{st.code}</span>
+      <span style={{ fontSize: 8, color: st.textColor, opacity: 0.7 }}>{st.startTime1}</span>
+    </div>
+  )
+
+  const emptyHalf = (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: '#F8FAFC',
+    }}>
+      <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#94A3B8' }} />
+    </div>
+  )
+
+  return (
+    <button
+      onClick={onClick}
+      title={st.name}
+      style={{
+        width: 52,
+        height: 38,
+        border: `1.5px solid ${st.borderColor}`,
+        borderRadius: 7,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        cursor: 'pointer',
+        outline: isActive ? `2px solid ${st.borderColor}` : undefined,
+        outlineOffset: isActive ? 2 : undefined,
+        boxShadow: isActive ? `0 0 0 3px ${st.bgColor}` : undefined,
+        transition: 'transform 0.1s, box-shadow 0.1s',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
+    >
+      {isHF ? shiftHalf : emptyHalf}
+      {isHF ? emptyHalf : shiftHalf}
+    </button>
+  )
+}
+
 export default function CellEditor({ date, currentCode, shiftTypes, onSelect, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const [closing, setClosing] = useState(false)
@@ -39,7 +99,8 @@ export default function CellEditor({ date, currentCode, shiftTypes, onSelect, on
     }
   }, [handleClose])
 
-  const workShifts = shiftTypes.filter(s => !s.isAbsence)
+  const workShifts = shiftTypes.filter(s => !s.isAbsence && !HALF_SHIFT_CODES.includes(s.code))
+  const halfShifts = shiftTypes.filter(s => HALF_SHIFT_CODES.includes(s.code))
   const absenceShifts = shiftTypes.filter(s => s.isAbsence)
 
   const dateDisplay = new Date(date + 'T00:00:00').toLocaleDateString('de-DE', {
@@ -96,6 +157,25 @@ export default function CellEditor({ date, currentCode, shiftTypes, onSelect, on
             ))}
           </div>
         </div>
+
+        {/* Half shifts */}
+        {halfShifts.length > 0 && (
+          <div className="mb-3">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Halbe Dienste</div>
+            <div className="flex gap-2 items-start">
+              {halfShifts.map(st => (
+                <div key={st.code} className="flex flex-col items-center gap-1">
+                  <HalfShiftButton
+                    st={st}
+                    isActive={currentCode === st.code}
+                    onClick={() => onSelect(st.code)}
+                  />
+                  <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600 }}>{st.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Absences */}
         <div className="mb-3">

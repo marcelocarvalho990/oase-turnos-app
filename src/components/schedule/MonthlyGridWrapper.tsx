@@ -196,16 +196,18 @@ export default function MonthlyGridWrapper({
   const dayLabel = useMemo(() => focusDate.toLocaleString(locale, { weekday: 'long', day: 'numeric', month: 'long' }), [focusDate, locale])
 
   const handleCellChange = useCallback(async (employeeId: string, date: string, shiftCode: string | null) => {
+    const halfOf: 'FULL' | 'FIRST' | 'SECOND' =
+      shiftCode === 'HF' ? 'FIRST' : shiftCode === 'HS' ? 'SECOND' : 'FULL'
     setAssignmentMap(prev => {
       const next = { ...prev, [employeeId]: { ...prev[employeeId] } }
       if (!shiftCode) { delete next[employeeId][date] }
-      else { next[employeeId][date] = { id: '', scheduleId: schedule.id, employeeId, date, shiftCode, halfOf: 'FULL', isExternal: false, origin: 'MANUAL' } as Assignment }
+      else { next[employeeId][date] = { id: '', scheduleId: schedule.id, employeeId, date, shiftCode, halfOf, isExternal: false, origin: 'MANUAL' } as Assignment }
       return next
     })
     try {
       const res = await fetch('/api/schedules/assignments', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduleId: schedule.id, employeeId, date, shiftCode: shiftCode ?? '' }),
+        body: JSON.stringify({ scheduleId: schedule.id, employeeId, date, shiftCode: shiftCode ?? '', halfOf }),
       })
       if (!res.ok) setAssignmentMap(initialMap)
     } catch { setAssignmentMap(initialMap) }

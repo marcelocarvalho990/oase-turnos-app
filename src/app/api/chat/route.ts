@@ -10,6 +10,81 @@ interface ChatMessage {
   content: string
 }
 
+interface RawAction {
+  type: 'UPSERT' | 'REMOVE'
+  shortName: string
+  date: string
+  shiftCode?: string
+}
+
+export interface ResolvedAction {
+  type: 'UPSERT' | 'REMOVE'
+  scheduleId: string
+  employeeId: string
+  date: string
+  shiftCode: string
+  employeeName: string
+}
+
+const ACTIONS_RE = /<!--\s*ACTIONS\s*([\s\S]*?)\s*END_ACTIONS\s*-->/
+const DATE_RE_ACTION = /^\d{4}-\d{2}-\d{2}$/
+
+function extractActions(text: string): { reply: string; rawActions: RawAction[] } {
+  const match = ACTIONS_RE.exec(text)
+  if (!match) return { reply: text, rawActions: [] }
+  const reply = text.replace(ACTIONS_RE, '').trim()
+  try {
+    const parsed = JSON.parse(match[1].trim())
+    return { reply, rawActions: Array.isArray(parsed) ? (parsed as RawAction[]) : [] }
+  } catch {
+    return { reply, rawActions: [] }
+  }
+}
+
+async function resolveActions(
+  rawActions: RawAction[],
+  team: string,
+  shortNameMap: Map<string, { id: string; name: string }>,
+): Promise<ResolvedAction[]> {
+  const scheduleCache = new Map<string, string | null>()
+  const resolved: ResolvedAction[] = []
+
+  for (const action of rawActions) {
+    if (!action.shortName || !action.date || !DATE_RE_ACTION.test(action.date)) continue
+    if (action.type === 'UPSERT' && !action.shiftCode) continue
+
+    const [yearStr, monthStr] = action.date.split('-')
+    const year = parseInt(yearStr)
+    const month = parseInt(monthStr)
+    const cacheKey = `${year}-${month}`
+
+    if (!scheduleCache.has(cacheKey)) {
+      const schedule = await prisma.schedule.findUnique({
+        where: { year_month_team: { year, month, team } },
+        select: { id: true },
+      })
+      scheduleCache.set(cacheKey, schedule?.id ?? null)
+    }
+
+    const scheduleId = scheduleCache.get(cacheKey)
+    if (!scheduleId) continue
+
+    const emp = shortNameMap.get(action.shortName)
+    if (!emp) continue
+
+    resolved.push({
+      type: action.type,
+      scheduleId,
+      employeeId: emp.id,
+      date: action.date,
+      shiftCode: action.shiftCode ?? '',
+      employeeName: emp.name,
+    })
+  }
+
+  return resolved
+}
+
 function isWeekend(dateStr: string): boolean {
   const d = new Date(dateStr + 'T00:00:00').getDay()
   return d === 0 || d === 6
@@ -226,6 +301,22 @@ ${shiftLines}
 ${absenceSection}
 ${scheduleSection}
 
+=== APLICAÇÃO AUTOMÁTICA DE ALTERAÇÕES ===
+Quando a pergunta ou pedido implica uma alteração concreta e realizável à escala — seja sugestão espontânea tua OU pergunta direta como "não dava para o João fazer turno N no dia 15?" — e tens todos os dados necessários (nome curto do colaborador, data exata, código do turno), inclui NO FINAL da tua resposta um bloco ACTIONS:
+
+<!-- ACTIONS
+[{"type":"UPSERT","shortName":"<NOME_CURTO>","date":"<YYYY-MM-DD>","shiftCode":"<CÓDIGO>"}]
+END_ACTIONS -->
+
+Para remover um turno: {"type":"REMOVE","shortName":"<NOME_CURTO>","date":"<YYYY-MM-DD>","shiftCode":"qualquer"}
+O "shortName" é o nome curto entre parênteses na lista de colaboradores, ex: "MS" para "Maria Silva (MS)".
+Podes incluir múltiplas ações no array JSON.
+REGRAS IMPORTANTES:
+- Só inclui o bloco ACTIONS se a alteração for concretamente realizável com os dados que tens
+- Se a pergunta é só informativa (sem ação concreta), NÃO incluas o bloco
+- O bloco não é mostrado ao utilizador — é processado automaticamente pelo sistema
+- Após o bloco, pergunta confirmação: "Posso aplicar estas alterações?"
+
 Se precisares de dados não disponíveis aqui (como escalas de outros anos ou outras equipas), diz-o claramente.`
 
     const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
@@ -254,9 +345,16 @@ Se precisares de dados não disponíveis aqui (como escalas de outros anos ou ou
     }
 
     const json = await res.json() as { choices: Array<{ message: { content: string } }> }
-    const reply = json.choices?.[0]?.message?.content ?? ''
+    const rawReply = json.choices?.[0]?.message?.content ?? ''
 
-    return Response.json({ reply })
+    const { reply, rawActions } = extractActions(rawReply)
+
+    const shortNameMap = new Map(employees.map(e => [e.shortName, { id: e.id, name: e.name }]))
+    const actions = rawActions.length > 0
+      ? await resolveActions(rawActions, team, shortNameMap)
+      : []
+
+    return Response.json({ reply, ...(actions.length > 0 && { actions }) })
   } catch (error) {
     console.error('[POST /api/chat]', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
