@@ -172,6 +172,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
   const [expanded, setExpanded] = useState(true)
   const [tab, setTab] = useState<Tab>('resumo')
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [activeReport, setActiveReport] = useState<GenerationReport | null>(report)
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [applying, setApplying] = useState<string | null>(null)
@@ -398,7 +399,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
           <div style={{ maxHeight: tab === 'chat' ? 440 : 400, overflowY: tab === 'chat' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
             {tab === 'chat' ? (
-              <MiniChatTab scheduleId={scheduleId} year={year} month={month} team={team} lang={lang} tx={tx} />
+              <MiniChatTab scheduleId={scheduleId} year={year} month={month} team={team} lang={lang} tx={tx} messages={chatMessages} setMessages={setChatMessages} onApplied={onApplied} />
             ) : !activeReport ? (
               <div style={{ padding: '24px 16px', textAlign: 'center', color: C.muted, fontSize: '0.82rem' }}>
                 {isRefreshing
@@ -688,12 +689,109 @@ function SugestoesTab({ suggestions, applying, onAccept, onDismiss, tx }: {
 
 // ── Mini Chat Tab ─────────────────────────────────────────────────────────────
 
-interface ChatMessage { role: 'user' | 'assistant'; content: string }
+interface ChatAction {
+  type: 'UPSERT' | 'REMOVE'
+  scheduleId: string
+  employeeId: string
+  date: string
+  shiftCode: string
+  employeeName: string
+}
 
-function MiniChatTab({ scheduleId, year, month, team, lang, tx }: {
-  scheduleId: string; year: number; month: number; team: string; lang: string; tx: TxType
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+  actions?: ChatAction[]
+  actionsApplied?: boolean
+  actionsCancelled?: boolean
+}
+
+function MiniActionCard({ actions, applied, cancelled, onApply, onCancel, lang }: {
+  actions: ChatAction[]
+  applied?: boolean
+  cancelled?: boolean
+  onApply: () => void
+  onCancel: () => void
+  lang: string
 }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [applying, setApplying] = useState(false)
+
+  if (cancelled) return null
+
+  const applyLabel: Record<string, string> = { de: 'Anwenden', pt: 'Aplicar', en: 'Apply', fr: 'Appliquer', it: 'Applica' }
+  const cancelLabel: Record<string, string> = { de: 'Abbrechen', pt: 'Cancelar', en: 'Cancel', fr: 'Annuler', it: 'Annulla' }
+  const appliedLabel: Record<string, string> = { de: 'Angewendet', pt: 'Aplicado', en: 'Applied', fr: 'Appliqué', it: 'Applicato' }
+  const upsertLabel: Record<string, string> = { de: 'Zuweisen', pt: 'Atribuir', en: 'Assign', fr: 'Attribuer', it: 'Assegna' }
+  const removeLabel: Record<string, string> = { de: 'Entfernen', pt: 'Remover', en: 'Remove', fr: 'Supprimer', it: 'Rimuovi' }
+
+  const fmt = (l: Record<string, string>) => l[lang] ?? l['de']
+
+  const formatDate = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
+
+  async function handleApply() {
+    setApplying(true)
+    try {
+      const res = await fetch('/api/chat/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actions }),
+      })
+      if (res.ok) onApply()
+    } finally {
+      setApplying(false)
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 4, border: `1.5px solid ${applied ? C.green : C.border}`, borderRadius: 8, background: applied ? C.greenBg : '#FAFCFD', overflow: 'hidden', fontSize: '0.73rem' }}>
+      <div style={{ padding: '5px 9px', background: applied ? C.green : C.bg, display: 'flex', alignItems: 'center', gap: 5 }}>
+        <Sparkles size={11} color={applied ? '#fff' : C.primary} />
+        <span style={{ fontWeight: 700, color: applied ? '#fff' : C.primary, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}>
+          {applied ? fmt(appliedLabel) : 'Actions'}
+        </span>
+      </div>
+      {!applied && (
+        <>
+          <div style={{ padding: '6px 9px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {actions.map((a, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#001E30' }}>
+                <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: a.type === 'UPSERT' ? C.greenBg : C.redBg, color: a.type === 'UPSERT' ? C.green : C.red, flexShrink: 0 }}>
+                  {a.type === 'UPSERT' ? fmt(upsertLabel) : fmt(removeLabel)}
+                </span>
+                <span style={{ fontWeight: 700, color: C.primary }}>{a.shiftCode}</span>
+                <span style={{ color: C.muted }}>→</span>
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.employeeName}</span>
+                <span style={{ color: C.muted, flexShrink: 0 }}>{formatDate(a.date)}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: '5px 9px', display: 'flex', gap: 5, borderTop: `1px solid ${C.border}` }}>
+            <button
+              onClick={handleApply}
+              disabled={applying}
+              style={{ flex: 1, padding: '5px 0', borderRadius: 5, border: 'none', background: applying ? '#86efac' : C.green, color: '#fff', fontSize: '0.7rem', fontWeight: 700, cursor: applying ? 'default' : 'pointer', fontFamily: "'IBM Plex Sans', sans-serif" }}
+            >
+              {applying ? '…' : fmt(applyLabel)}
+            </button>
+            <button
+              onClick={onCancel}
+              style={{ padding: '5px 10px', borderRadius: 5, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: '0.7rem', cursor: 'pointer', fontFamily: "'IBM Plex Sans', sans-serif" }}
+            >
+              {fmt(cancelLabel)}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function MiniChatTab({ scheduleId, year, month, team, lang, tx, messages, setMessages, onApplied }: {
+  scheduleId: string; year: number; month: number; team: string; lang: string; tx: TxType
+  messages: ChatMessage[]
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
+  onApplied: () => void
+}) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -707,7 +805,6 @@ function MiniChatTab({ scheduleId, year, month, team, lang, tx }: {
     const trimmed = text.trim()
     if (!trimmed || loading) return
     const userMsg: ChatMessage = { role: 'user', content: trimmed }
-    const history = messages
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setLoading(true)
@@ -718,19 +815,21 @@ function MiniChatTab({ scheduleId, year, month, team, lang, tx }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
-          history,
+          history: messages.map(m => ({ role: m.role, content: m.content })),
           year: year ?? now.getFullYear(),
           month: month ?? (now.getMonth() + 1),
           team,
           lang,
         }),
       })
-      const data = await res.json() as { reply?: string; error?: string }
+      const data = await res.json() as { reply?: string; actions?: ChatAction[]; error?: string }
       const reply = (data.reply ?? tx.chatErrConn)
         .replace(/\*\*(.+?)\*\*/g, '$1')
         .replace(/\*(.+?)\*/g, '$1')
         .replace(/^#{1,6}\s+/gm, '')
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      const assistantMsg: ChatMessage = { role: 'assistant', content: reply }
+      if (data.actions && data.actions.length > 0) assistantMsg.actions = data.actions
+      setMessages(prev => [...prev, assistantMsg])
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: tx.chatErrConn }])
     } finally {
@@ -760,14 +859,35 @@ function MiniChatTab({ scheduleId, year, month, team, lang, tx }: {
               <div style={{ width: 24, height: 24, borderRadius: '50%', background: isUser ? C.primary : '#E8F0F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
                 {isUser ? <User size={12} color="#fff" /> : <Bot size={12} color={C.primary} />}
               </div>
-              <div style={{
-                maxWidth: '80%', padding: '7px 10px', borderRadius: isUser ? '10px 3px 10px 10px' : '3px 10px 10px 10px',
-                background: isUser ? C.primary : C.white, color: isUser ? '#fff' : '#001E30',
-                fontSize: '0.78rem', lineHeight: 1.55, whiteSpace: 'pre-wrap',
-                border: isUser ? 'none' : `1px solid ${C.border}`,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-              }}>
-                {msg.content}
+              <div style={{ maxWidth: '82%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{
+                  padding: '7px 10px', borderRadius: isUser ? '10px 3px 10px 10px' : '3px 10px 10px 10px',
+                  background: isUser ? C.primary : C.white, color: isUser ? '#fff' : '#001E30',
+                  fontSize: '0.78rem', lineHeight: 1.55, whiteSpace: 'pre-wrap',
+                  border: isUser ? 'none' : `1px solid ${C.border}`,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                }}>
+                  {msg.content}
+                </div>
+                {!isUser && msg.actions && msg.actions.length > 0 && (
+                  <MiniActionCard
+                    actions={msg.actions}
+                    applied={msg.actionsApplied}
+                    cancelled={msg.actionsCancelled}
+                    lang={lang}
+                    onApply={() => {
+                      setMessages(prev => {
+                        const updated = prev.map((m, idx) => idx === i ? { ...m, actionsApplied: true } : m)
+                        const okLabel: Record<string, string> = { de: 'Änderungen erfolgreich angewendet.', pt: 'Alterações aplicadas com sucesso.', en: 'Changes applied successfully.', fr: 'Modifications appliquées.', it: 'Modifiche applicate.' }
+                        return [...updated, { role: 'assistant' as const, content: okLabel[lang] ?? okLabel['de'] }]
+                      })
+                      onApplied()
+                    }}
+                    onCancel={() => {
+                      setMessages(prev => prev.map((m, idx) => idx === i ? { ...m, actionsCancelled: true } : m))
+                    }}
+                  />
+                )}
               </div>
             </div>
           )
