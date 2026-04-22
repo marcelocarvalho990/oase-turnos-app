@@ -24,7 +24,7 @@ export async function register() {
         eligibleRoles: '["TEAMLEITUNG","FUNKTIONSSTUFE_3","FUNKTIONSSTUFE_2","FUNKTIONSSTUFE_1","LERNENDE"]',
       },
       {
-        code: 'HS',
+        code: 'SH',
         name: 'Halb Spätdienst',
         startTime1: '16:00',
         endTime1: '21:10',

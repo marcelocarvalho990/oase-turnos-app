@@ -197,7 +197,7 @@ export default function MonthlyGridWrapper({
 
   const handleCellChange = useCallback(async (employeeId: string, date: string, shiftCode: string | null) => {
     const halfOf: 'FULL' | 'FIRST' | 'SECOND' =
-      shiftCode === 'HF' ? 'FIRST' : shiftCode === 'HS' ? 'SECOND' : 'FULL'
+      shiftCode === 'HF' ? 'FIRST' : shiftCode === 'SH' ? 'SECOND' : 'FULL'
     setAssignmentMap(prev => {
       const next = { ...prev, [employeeId]: { ...prev[employeeId] } }
       if (!shiftCode) { delete next[employeeId][date] }
@@ -253,7 +253,7 @@ export default function MonthlyGridWrapper({
         else next[action.employeeId] = { ...next[action.employeeId] }
         if (action.type === 'UPSERT') {
           const halfOf: 'FULL' | 'FIRST' | 'SECOND' =
-            action.shiftCode === 'HF' ? 'FIRST' : action.shiftCode === 'HS' ? 'SECOND' : 'FULL'
+            action.shiftCode === 'HF' ? 'FIRST' : action.shiftCode === 'SH' ? 'SECOND' : 'FULL'
           next[action.employeeId][action.date] = {
             id: '', scheduleId: action.scheduleId, employeeId: action.employeeId,
             date: action.date, shiftCode: action.shiftCode, halfOf,

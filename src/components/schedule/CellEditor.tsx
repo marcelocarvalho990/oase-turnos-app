@@ -14,7 +14,7 @@ interface Props {
   onClose: () => void
 }
 
-const HALF_SHIFT_CODES = ['HF', 'HS']
+const HALF_SHIFT_CODES = ['HF', 'SH']
 
 function HalfShiftButton({
   st,
@@ -25,7 +25,7 @@ function HalfShiftButton({
   isActive: boolean
   onClick: () => void
 }) {
-  const isHF = st.code === 'HF'
+  const isHF = st.code === 'HF' // HF = top half, SH = bottom half
 
   const shiftHalf = (
     <div style={{

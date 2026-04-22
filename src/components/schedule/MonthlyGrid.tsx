@@ -410,6 +410,29 @@ const EmployeeRow = memo(function EmployeeRow({
                 if (assignment.shiftCode === 'Wunschfrei') {
                   return <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', lineHeight: 1, userSelect: 'none' }}>✕</span>
                 }
+                // Special absence icons
+                const ABSENCE_ICONS: Record<string, { icon: string; fontSize: number }> = {
+                  Ferien:     { icon: '🌴', fontSize: 15 },
+                  Krank30:    { icon: '🤒', fontSize: 14 },
+                  Krank31:    { icon: '🏥', fontSize: 13 },
+                  Geburtstag: { icon: '🎂', fontSize: 14 },
+                  WbExtern:   { icon: '🎓', fontSize: 13 },
+                }
+                const absIcon = ABSENCE_ICONS[assignment.shiftCode]
+                if (absIcon) {
+                  return (
+                    <div style={{
+                      width: 28, height: 24, borderRadius: 4,
+                      background: shiftType?.bgColor ?? '#F0F4F7',
+                      border: `1px solid ${shiftType?.borderColor ?? '#D8E2E8'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <span style={{ fontSize: absIcon.fontSize, lineHeight: 1, userSelect: 'none' }}>
+                        {absIcon.icon}
+                      </span>
+                    </div>
+                  )
+                }
                 // Half shift rendering
                 if (assignment.halfOf && assignment.halfOf !== 'FULL') {
                   const shiftPart = (
