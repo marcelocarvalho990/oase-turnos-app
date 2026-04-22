@@ -214,6 +214,20 @@ export async function downloadSchedulePDF(opts: {
     lx += doc.getTextWidth(label) + sz + 8
     if (lx > pageW - 30) { lx = 14; ly += 5 }
   }
+  // Frei — grey dot
+  doc.setFillColor(200, 210, 218)
+  doc.circle(lx + 1.6, ly - 0.5, 1.2, 'F')
+  doc.setTextColor(60, 60, 60)
+  doc.text('Frei', lx + 4.2, ly)
+  lx += doc.getTextWidth('Frei') + 8
+  if (lx > pageW - 30) { lx = 14; ly += 5 }
+  // Wunschfrei — ✕
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(71, 85, 105)
+  doc.text('\u2715', lx + 1.2, ly)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(60, 60, 60)
+  doc.text('Wunschfrei', lx + 4.2, ly)
 
   const tableTop = ly + 5
 
@@ -266,6 +280,8 @@ export async function downloadSchedulePDF(opts: {
   const emptyCells = new Set<string>() // "rowIdx:colIdx"
   // Track absence icon cells: "rowIdx:colIdx" → { emoji, bg }
   const emojiCells = new Map<string, { emoji: string; bg: [number, number, number] }>()
+  // Track Wunschfrei cells (✕ symbol)
+  const xCells = new Set<string>()
 
   const bodyRowToEmployee = new Map<number, Employee>()
   let bodyRowIdx = 0
@@ -298,6 +314,19 @@ export async function downloadSchedulePDF(opts: {
         cells.push({ content: '', styles: { fillColor: [252, 252, 252] as [number, number, number] } })
         continue
       }
+      // Frei → grey dot (treat as empty)
+      if (a.shiftCode === 'Frei') {
+        emptyCells.add(`${bodyRowIdx}:${di + 1}`)
+        cells.push({ content: '', styles: { fillColor: [252, 252, 252] as [number, number, number] } })
+        continue
+      }
+      // Wunschfrei → ✕ symbol
+      if (a.shiftCode === 'Wunschfrei') {
+        xCells.add(`${bodyRowIdx}:${di + 1}`)
+        cells.push({ content: '', styles: { fillColor: [252, 252, 252] as [number, number, number] } })
+        continue
+      }
+
       const s = shiftMap[a.shiftCode]
       if (!s) {
         cells.push({ content: a.shiftCode, styles: { halign: 'center' as const, fontSize: 6 } })
@@ -349,12 +378,24 @@ export async function downloadSchedulePDF(opts: {
       const colIdx = data.column.index
       const { x, y, width, height } = data.cell as { x: number; y: number; width: number; height: number }
 
-      // Draw gray dot for empty cells
+      // Draw gray dot for empty / Frei cells
       if (emptyCells.has(`${rowIdx}:${colIdx}`)) {
         const cx = x + width / 2
         const cy = y + height / 2
         doc.setFillColor(200, 210, 218)
         doc.circle(cx, cy, 0.8, 'F')
+        return
+      }
+
+      // Draw ✕ for Wunschfrei cells
+      if (xCells.has(`${rowIdx}:${colIdx}`)) {
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(71, 85, 105)
+        doc.text('\u2715', x + width / 2, y + height / 2 + 1, { align: 'center' as const })
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(7)
+        doc.setTextColor(0, 0, 0)
         return
       }
 
@@ -532,6 +573,20 @@ export async function downloadHoursPDF(opts: {
     llx += doc.getTextWidth(label) + sz + 8
     if (llx > 180) { llx = 28; lly += 5 }
   }
+  // Frei — grey dot
+  doc.setFillColor(200, 210, 218)
+  doc.circle(llx + 1.6, lly - 0.5, 1.2, 'F')
+  doc.setTextColor(60, 60, 60)
+  doc.text('Frei', llx + 4.2, lly)
+  llx += doc.getTextWidth('Frei') + 8
+  if (llx > 180) { llx = 28; lly += 5 }
+  // Wunschfrei — ✕
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(71, 85, 105)
+  doc.text('\u2715', llx + 1.2, lly)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(60, 60, 60)
+  doc.text('Wunschfrei', llx + 4.2, lly)
 
   doc.save(`hours_${year}_${String(month).padStart(2, '0')}_${team}.pdf`)
 }
