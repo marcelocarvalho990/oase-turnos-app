@@ -10,7 +10,7 @@ import { countTotalViolations } from '@/lib/schedule-violations'
 import MonthlyGrid from './MonthlyGrid'
 import CellEditor from './CellEditor'
 import TopBar from '../layout/TopBar'
-import SuggestionsPanel, { type GenerationReport } from './SuggestionsPanel'
+import SuggestionsPanel, { type GenerationReport, type ChatAction } from './SuggestionsPanel'
 import { useLang } from '@/hooks/useLang'
 import { formatMonthYear, addMonths } from '@/lib/date-utils'
 import type { Employee, ShiftType, Schedule, CoverageRule, AssignmentMap, DayInfo, Assignment } from '@/types'
@@ -244,6 +244,29 @@ export default function MonthlyGridWrapper({
     await fetch('/api/schedules/publish', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scheduleId: schedule.id }) })
     startTransition(() => router.refresh())
   }, [schedule.id, router])
+
+  const handleChatApplied = useCallback((actions: ChatAction[]) => {
+    setAssignmentMap(prev => {
+      const next = { ...prev }
+      for (const action of actions) {
+        if (!next[action.employeeId]) next[action.employeeId] = {}
+        else next[action.employeeId] = { ...next[action.employeeId] }
+        if (action.type === 'UPSERT') {
+          const halfOf: 'FULL' | 'FIRST' | 'SECOND' =
+            action.shiftCode === 'HF' ? 'FIRST' : action.shiftCode === 'HS' ? 'SECOND' : 'FULL'
+          next[action.employeeId][action.date] = {
+            id: '', scheduleId: action.scheduleId, employeeId: action.employeeId,
+            date: action.date, shiftCode: action.shiftCode, halfOf,
+            isExternal: false, origin: 'MANUAL',
+          } as Assignment
+        } else {
+          delete next[action.employeeId][action.date]
+        }
+      }
+      return next
+    })
+    startTransition(() => router.refresh())
+  }, [router])
 
   // Close PDF menu on outside click
   useEffect(() => {
@@ -514,6 +537,7 @@ export default function MonthlyGridWrapper({
         report={generationReport}
         fetchTrigger={suggestionsTrigger}
         onApplied={() => startTransition(() => router.refresh())}
+        onChatApplied={handleChatApplied}
         onReportChange={setGenerationReport}
       />
     </div>

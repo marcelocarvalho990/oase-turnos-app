@@ -222,3 +222,11 @@ model ShiftConfirmation {
   @@index([status])
   @@index([scheduleId])
 }
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}

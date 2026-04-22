@@ -43,6 +43,17 @@ export interface GenerationReport {
   managerNotes: string
 }
 
+// ── Chat types (declared early so Props can reference them) ──────────────────
+
+export interface ChatAction {
+  type: 'UPSERT' | 'REMOVE'
+  scheduleId: string
+  employeeId: string
+  date: string
+  shiftCode: string
+  employeeName: string
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -53,6 +64,7 @@ interface Props {
   report: GenerationReport | null
   fetchTrigger: number
   onApplied: () => void
+  onChatApplied?: (actions: ChatAction[]) => void
   onReportChange?: (report: GenerationReport) => void
 }
 
@@ -166,7 +178,7 @@ const C = {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function SuggestionsPanel({ scheduleId, year, month, team, report, fetchTrigger, onApplied, onReportChange }: Props) {
+export default function SuggestionsPanel({ scheduleId, year, month, team, report, fetchTrigger, onApplied, onChatApplied, onReportChange }: Props) {
   const [lang] = useLang()
   const tx = TX[lang]
 
@@ -399,7 +411,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
 
           <div style={{ maxHeight: tab === 'chat' ? 440 : 400, overflowY: tab === 'chat' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
             {tab === 'chat' ? (
-              <MiniChatTab scheduleId={scheduleId} year={year} month={month} team={team} lang={lang} tx={tx} messages={chatMessages} setMessages={setChatMessages} onApplied={onApplied} />
+              <MiniChatTab scheduleId={scheduleId} year={year} month={month} team={team} lang={lang} tx={tx} messages={chatMessages} setMessages={setChatMessages} onApplied={onApplied} onChatApplied={onChatApplied} />
             ) : !activeReport ? (
               <div style={{ padding: '24px 16px', textAlign: 'center', color: C.muted, fontSize: '0.82rem' }}>
                 {isRefreshing
@@ -689,15 +701,6 @@ function SugestoesTab({ suggestions, applying, onAccept, onDismiss, tx }: {
 
 // ── Mini Chat Tab ─────────────────────────────────────────────────────────────
 
-interface ChatAction {
-  type: 'UPSERT' | 'REMOVE'
-  scheduleId: string
-  employeeId: string
-  date: string
-  shiftCode: string
-  employeeName: string
-}
-
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
@@ -710,11 +713,12 @@ function MiniActionCard({ actions, applied, cancelled, onApply, onCancel, lang }
   actions: ChatAction[]
   applied?: boolean
   cancelled?: boolean
-  onApply: () => void
+  onApply: (actions: ChatAction[]) => void
   onCancel: () => void
   lang: string
 }) {
   const [applying, setApplying] = useState(false)
+  const [applyError, setApplyError] = useState(false)
 
   if (cancelled) return null
 
@@ -730,13 +734,25 @@ function MiniActionCard({ actions, applied, cancelled, onApply, onCancel, lang }
 
   async function handleApply() {
     setApplying(true)
+    setApplyError(false)
     try {
       const res = await fetch('/api/chat/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actions }),
       })
-      if (res.ok) onApply()
+      if (res.ok) {
+        const data = await res.json() as { ok: boolean; applied: number }
+        if (data.applied > 0) {
+          onApply(actions)
+        } else {
+          setApplyError(true)
+        }
+      } else {
+        setApplyError(true)
+      }
+    } catch {
+      setApplyError(true)
     } finally {
       setApplying(false)
     }
@@ -765,6 +781,11 @@ function MiniActionCard({ actions, applied, cancelled, onApply, onCancel, lang }
               </div>
             ))}
           </div>
+          {applyError && (
+            <div style={{ padding: '4px 9px', background: C.redBg, borderTop: `1px solid ${C.redBorder}`, fontSize: '0.68rem', color: C.red, fontWeight: 500 }}>
+              {{ de: 'Fehler – Schicht nicht gefunden.', pt: 'Erro – turno não encontrado.', en: 'Error – shift not found.', fr: 'Erreur – service introuvable.', it: 'Errore – turno non trovato.' }[lang] ?? 'Error applying changes.'}
+            </div>
+          )}
           <div style={{ padding: '5px 9px', display: 'flex', gap: 5, borderTop: `1px solid ${C.border}` }}>
             <button
               onClick={handleApply}
@@ -786,11 +807,12 @@ function MiniActionCard({ actions, applied, cancelled, onApply, onCancel, lang }
   )
 }
 
-function MiniChatTab({ scheduleId, year, month, team, lang, tx, messages, setMessages, onApplied }: {
+function MiniChatTab({ scheduleId, year, month, team, lang, tx, messages, setMessages, onApplied, onChatApplied }: {
   scheduleId: string; year: number; month: number; team: string; lang: string; tx: TxType
   messages: ChatMessage[]
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
   onApplied: () => void
+  onChatApplied?: (actions: ChatAction[]) => void
 }) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -875,12 +897,13 @@ function MiniChatTab({ scheduleId, year, month, team, lang, tx, messages, setMes
                     applied={msg.actionsApplied}
                     cancelled={msg.actionsCancelled}
                     lang={lang}
-                    onApply={() => {
+                    onApply={(appliedActions) => {
                       setMessages(prev => {
                         const updated = prev.map((m, idx) => idx === i ? { ...m, actionsApplied: true } : m)
                         const okLabel: Record<string, string> = { de: 'Änderungen erfolgreich angewendet.', pt: 'Alterações aplicadas com sucesso.', en: 'Changes applied successfully.', fr: 'Modifications appliquées.', it: 'Modifiche applicate.' }
                         return [...updated, { role: 'assistant' as const, content: okLabel[lang] ?? okLabel['de'] }]
                       })
+                      onChatApplied?.(appliedActions)
                       onApplied()
                     }}
                     onCancel={() => {
