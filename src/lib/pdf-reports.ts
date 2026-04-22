@@ -52,6 +52,40 @@ const WHITE: [number, number, number] = [255, 255, 255]
 const LIGHT: [number, number, number] = [230, 237, 244]
 const GREY:  [number, number, number] = [100, 100, 100]
 
+const ABSENCE_ICONS: Record<string, string> = {
+  Ferien:     '🌴',
+  Krank30:    '🤒',
+  Krank31:    '🏥',
+  Geburtstag: '🎂',
+  WbExtern:   '🎓',
+}
+
+const ABSENCE_NAMES: Record<string, string> = {
+  Ferien:     'Ferien',
+  Krank30:    'Krank bis 30 Tage',
+  Krank31:    'Krank ab 31. Tag',
+  Geburtstag: 'Geburtstagsfrei',
+  WbExtern:   'Weiterbildung extern',
+}
+
+const emojiUrlCache = new Map<string, string>()
+function emojiToDataUrl(emoji: string, sizePx = 48): string {
+  const key = `${emoji}_${sizePx}`
+  if (emojiUrlCache.has(key)) return emojiUrlCache.get(key)!
+  if (typeof document === 'undefined') return ''
+  const canvas = document.createElement('canvas')
+  canvas.width = sizePx; canvas.height = sizePx
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+  ctx.font = `${Math.round(sizePx * 0.72)}px serif`
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'center'
+  ctx.fillText(emoji, sizePx / 2, sizePx / 2)
+  const url = canvas.toDataURL('image/png')
+  emojiUrlCache.set(key, url)
+  return url
+}
+
 // ─── Schedule Grid PDF ────────────────────────────────────────────────────────
 
 export async function downloadSchedulePDF(opts: {
@@ -153,7 +187,7 @@ export async function downloadSchedulePDF(opts: {
   doc.setTextColor(...GREY)
   doc.text(new Date().toLocaleString(locale), 14, 20)
 
-  // Shift legend
+  // Shift legend — work shifts
   const workShifts = shiftTypes.filter(s => !s.isAbsence && s.isWorkTime)
   let lx = 14; let ly = 25
   doc.setFontSize(6.5)
@@ -165,6 +199,19 @@ export async function downloadSchedulePDF(opts: {
     const legendLabel = `${s.code} ${s.name}`
     doc.text(legendLabel, lx + 3.5, ly + 2)
     lx += doc.getTextWidth(legendLabel) + 9
+    if (lx > pageW - 30) { lx = 14; ly += 5 }
+  }
+
+  // Shift legend — absence icons
+  lx = 14; ly += 5
+  for (const [code, icon] of Object.entries(ABSENCE_ICONS)) {
+    const imgData = emojiToDataUrl(icon, 48)
+    const sz = 3.2
+    if (imgData) doc.addImage(imgData, 'PNG', lx, ly - sz * 0.82, sz, sz)
+    doc.setTextColor(60, 60, 60)
+    const label = ABSENCE_NAMES[code] ?? code
+    doc.text(label, lx + sz + 1, ly)
+    lx += doc.getTextWidth(label) + sz + 8
     if (lx > pageW - 30) { lx = 14; ly += 5 }
   }
 
@@ -217,6 +264,8 @@ export async function downloadSchedulePDF(opts: {
 
   // Track which cells are empty (for dot drawing)
   const emptyCells = new Set<string>() // "rowIdx:colIdx"
+  // Track absence icon cells: "rowIdx:colIdx" → { emoji, bg }
+  const emojiCells = new Map<string, { emoji: string; bg: [number, number, number] }>()
 
   const bodyRowToEmployee = new Map<number, Employee>()
   let bodyRowIdx = 0
@@ -256,6 +305,15 @@ export async function downloadSchedulePDF(opts: {
       }
       const bg = hexToRgb(s.bgColor)
       const tc = (lum(...bg) > 160 ? [30, 30, 30] : WHITE) as [number, number, number]
+
+      // Absence icon cell — leave content empty, draw emoji in didDrawCell
+      const emoji = ABSENCE_ICONS[a.shiftCode]
+      if (emoji) {
+        emojiCells.set(`${bodyRowIdx}:${di + 1}`, { emoji, bg })
+        cells.push({ content: '', styles: { fillColor: bg } })
+        continue
+      }
+
       const label = view === 'week' ? `${s.code}\n${s.startTime1}–${s.endTime1}` : s.code
       cells.push({
         content: label,
@@ -297,6 +355,15 @@ export async function downloadSchedulePDF(opts: {
         const cy = y + height / 2
         doc.setFillColor(200, 210, 218)
         doc.circle(cx, cy, 0.8, 'F')
+        return
+      }
+
+      // Draw emoji for absence icon cells
+      const emojiInfo = emojiCells.get(`${rowIdx}:${colIdx}`)
+      if (emojiInfo) {
+        const sz = Math.min(width * 0.68, height * 0.78)
+        const imgData = emojiToDataUrl(emojiInfo.emoji, 48)
+        if (imgData) doc.addImage(imgData, 'PNG', x + (width - sz) / 2, y + (height - sz) / 2, sz, sz)
         return
       }
 
@@ -444,6 +511,27 @@ export async function downloadHoursPDF(opts: {
     columnStyles: { 0: { cellWidth: 52 }, 1: { cellWidth: 36 }, 2: { cellWidth: 18 }, 3: { cellWidth: 18 }, 4: { cellWidth: 16 }, 5: { cellWidth: 'auto' } },
     theme: 'grid',
   })
+
+  // Absence icon legend below the table
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const legendY: number = (doc as any).lastAutoTable?.finalY ?? 200
+  let llx = 14; let lly = legendY + 8
+  doc.setFontSize(6.5)
+  doc.setTextColor(100, 100, 100)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Legende:', llx, lly)
+  llx += 14
+  doc.setFont('helvetica', 'normal')
+  for (const [code, icon] of Object.entries(ABSENCE_ICONS)) {
+    const imgData = emojiToDataUrl(icon, 48)
+    const sz = 3.2
+    if (imgData) doc.addImage(imgData, 'PNG', llx, lly - sz * 0.82, sz, sz)
+    doc.setTextColor(60, 60, 60)
+    const label = ABSENCE_NAMES[code] ?? code
+    doc.text(label, llx + sz + 1, lly)
+    llx += doc.getTextWidth(label) + sz + 8
+    if (llx > 180) { llx = 28; lly += 5 }
+  }
 
   doc.save(`hours_${year}_${String(month).padStart(2, '0')}_${team}.pdf`)
 }
