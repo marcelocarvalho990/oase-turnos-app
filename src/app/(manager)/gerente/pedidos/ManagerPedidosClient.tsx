@@ -221,7 +221,7 @@ export default function ManagerPedidosClient() {
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Page header */}
-      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#9B7353', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {tx.title}
@@ -230,8 +230,8 @@ export default function ManagerPedidosClient() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <select value={filter} onChange={e => setFilter(e.target.value as 'all' | 'pending')} style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 2, color: 'white', fontSize: '0.72rem', cursor: 'pointer' }}>
-            <option value="pending" style={{ background: '#003A5D' }}>{tx.filterPending}</option>
-            <option value="all" style={{ background: '#003A5D' }}>{tx.filterAll}</option>
+            <option value="pending" style={{ background: '#9B7353' }}>{tx.filterPending}</option>
+            <option value="all" style={{ background: '#9B7353' }}>{tx.filterAll}</option>
           </select>
         </div>
       </div>
@@ -245,8 +245,8 @@ export default function ManagerPedidosClient() {
             onClick={() => setTab(tabKey)}
             style={{
               padding: isMobile ? '10px 12px' : '10px 20px', background: 'transparent', border: 'none',
-              borderBottom: tab === tabKey ? '2px solid #003A5D' : '2px solid transparent',
-              color: tab === tabKey ? '#001E30' : '#7A9BAD',
+              borderBottom: tab === tabKey ? '2px solid #9B7353' : '2px solid transparent',
+              color: tab === tabKey ? '#5A3A1A' : '#7A9BAD',
               fontSize: '0.82rem', fontWeight: tab === tabKey ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
               display: 'flex', alignItems: 'center', gap: 6,
@@ -255,13 +255,13 @@ export default function ManagerPedidosClient() {
           >
             {tabKey === 'vacation' ? tx.vacation : tabKey === 'swap' ? tx.swap : tabKey === 'wunschfrei' ? tx.wunschfrei : tx.saldos}
             {tabKey === 'vacation' && pendingVacCount > 0 && (
-              <span style={{ padding: '1px 7px', background: '#003A5D', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingVacCount}</span>
+              <span style={{ padding: '1px 7px', background: '#9B7353', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingVacCount}</span>
             )}
             {tabKey === 'swap' && pendingSwapCount > 0 && (
-              <span style={{ padding: '1px 7px', background: '#003A5D', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingSwapCount}</span>
+              <span style={{ padding: '1px 7px', background: '#9B7353', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingSwapCount}</span>
             )}
             {tabKey === 'wunschfrei' && pendingWfCount > 0 && (
-              <span style={{ padding: '1px 7px', background: '#003A5D', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingWfCount}</span>
+              <span style={{ padding: '1px 7px', background: '#9B7353', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600 }}>{pendingWfCount}</span>
             )}
           </button>
         ))}
@@ -281,7 +281,7 @@ export default function ManagerPedidosClient() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{v.employee.name}</span>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5A3A1A' }}>{v.employee.name}</span>
                       <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
                         {s.label[lang]}
                       </span>
@@ -326,7 +326,7 @@ export default function ManagerPedidosClient() {
                           placeholder={tx.noteLabel}
                           value={notes[v.id] ?? ''}
                           onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))}
-                          style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
+                          style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#5A3A1A', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
                         />
                       </>
                     )}
@@ -360,7 +360,7 @@ export default function ManagerPedidosClient() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5A3A1A' }}>
                         {sw.requester.name} ↔ {sw.targetEmployee.name}
                       </span>
                       <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
@@ -408,7 +408,7 @@ export default function ManagerPedidosClient() {
                         placeholder={tx.noteLabel}
                         value={notes[sw.id] ?? ''}
                         onChange={e => setNotes(n => ({ ...n, [sw.id]: e.target.value }))}
-                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
+                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#5A3A1A', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
                       />
                     </div>
                   )}
@@ -433,7 +433,7 @@ export default function ManagerPedidosClient() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{wf.employee.name}</span>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5A3A1A' }}>{wf.employee.name}</span>
                       <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
                         {s.label[lang]}
                       </span>
@@ -474,7 +474,7 @@ export default function ManagerPedidosClient() {
                         placeholder={tx.noteLabel}
                         value={notes[wf.id] ?? ''}
                         onChange={e => setNotes(n => ({ ...n, [wf.id]: e.target.value }))}
-                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#001E30', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
+                        style={{ padding: '6px 10px', border: '1px solid #D8E2E8', borderRadius: 6, fontSize: '0.75rem', color: '#5A3A1A', outline: 'none', width: isMobile ? '100%' : 200, background: 'white' }}
                       />
                     </div>
                   )}
@@ -502,7 +502,7 @@ export default function ManagerPedidosClient() {
                   <div key={emp.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: '14px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5A3A1A' }}>{emp.name}</div>
                         <div style={{ fontSize: '0.7rem', color: '#7A9BAD' }}>{emp.workPercentage}%</div>
                       </div>
                       <span style={{ padding: '2px 8px', borderRadius: 12, background: low ? '#FEE2E2' : '#F4F6F8', color: low ? '#DC2626' : '#4A6878', fontSize: '0.78rem', fontWeight: 600 }}>
@@ -559,7 +559,7 @@ export default function ManagerPedidosClient() {
                       }}
                     >
                       <div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#001E30' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#5A3A1A' }}>{emp.name}</div>
                         <div style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{emp.workPercentage}%</div>
                       </div>
                       <div style={{ textAlign: 'center', fontSize: '0.82rem', color: '#4A6878' }}>{emp.entitlement}</div>
@@ -601,7 +601,7 @@ export default function ManagerPedidosClient() {
                 <AlertTriangle size={24} color="#DC2626" />
               </div>
               <div style={{ textAlign: 'center' }}>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#001E30' }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#5A3A1A' }}>
                   {tx.deleteConfirm}
                 </h3>
                 <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: '#7A9BAD', lineHeight: 1.5 }}>

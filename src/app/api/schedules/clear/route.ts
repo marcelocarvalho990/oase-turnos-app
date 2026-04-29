@@ -13,7 +13,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.assignment.deleteMany({
-      where: { scheduleId, origin: 'AUTO' },
+      where: { scheduleId },
     })
 
     await prisma.schedule.update({

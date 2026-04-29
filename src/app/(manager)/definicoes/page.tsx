@@ -124,7 +124,7 @@ interface EmployeeVacation {
   vacationDays: number
 }
 
-const AVATAR_COLORS = ['#003A5D', '#0F766E', '#7C3AED', '#B45309', '#0369A1', '#9D174D']
+const AVATAR_COLORS = ['#9B7353', '#0F766E', '#7C3AED', '#B45309', '#0369A1', '#9D174D']
 
 function getInitials(name: string) {
   return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
@@ -265,7 +265,7 @@ export default function DefinicoesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#003A5D] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#9B7353] flex items-center justify-center">
               <Settings size={18} className="text-white" />
             </div>
             <div>
@@ -311,13 +311,13 @@ export default function DefinicoesPage() {
                     step={0.5}
                     value={baseHours}
                     onChange={e => setBaseHours(e.target.value)}
-                    className="w-28 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#003A5D]/30 focus:border-[#003A5D]"
+                    className="w-28 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#9B7353]/30 focus:border-[#9B7353]"
                   />
                   <span className="text-sm text-slate-500">{dx.hoursUnit}</span>
                   <button
                     onClick={saveSettings}
                     disabled={saving}
-                    className="ml-auto flex items-center gap-2 bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] disabled:opacity-50 transition-colors"
+                    className="ml-auto flex items-center gap-2 bg-[#9B7353] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#7A5A3A] disabled:opacity-50 transition-colors"
                   >
                     <Save size={14} />
                     {saving ? dx.saving : dx.save}
@@ -389,14 +389,14 @@ export default function DefinicoesPage() {
                           onChange={e =>
                             setEmpVacDays(prev => ({ ...prev, [emp.id]: e.target.value }))
                           }
-                          className="w-20 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#003A5D]/30 focus:border-[#003A5D]"
+                          className="w-20 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#9B7353]/30 focus:border-[#9B7353]"
                         />
                       </div>
                       <div className="flex justify-center">
                         <button
                           onClick={() => saveEmployeeVacDays(emp.id)}
                           disabled={savingEmpId === emp.id}
-                          className="flex items-center gap-1 bg-slate-100 text-slate-700 hover:bg-[#003A5D] hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+                          className="flex items-center gap-1 bg-slate-100 text-slate-700 hover:bg-[#9B7353] hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
                         >
                           <Save size={11} />
                           {savingEmpId === emp.id ? '…' : dx.save}

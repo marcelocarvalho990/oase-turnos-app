@@ -46,7 +46,7 @@ export default function EmployeeSidebar({ employeeName }: Props) {
     borderRadius: 7,
     fontSize: '0.8rem',
     fontWeight: active ? 500 : 400,
-    color: active ? '#FAFAF9' : '#6AA3BF',
+    color: active ? '#FAFAF9' : 'rgba(255,255,255,0.55)',
     background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
     borderLeft: `2px solid ${active ? 'rgba(255,255,255,0.5)' : 'transparent'}`,
     transition: 'background 0.14s, color 0.14s, border-color 0.14s',
@@ -56,14 +56,14 @@ export default function EmployeeSidebar({ employeeName }: Props) {
   return (
     <aside
       className="w-52 shrink-0 flex flex-col h-full"
-      style={{ background: '#003A5D', borderRight: '1px solid #002040', fontFamily: "'IBM Plex Sans', sans-serif" }}
+      style={{ background: '#9B7353', borderRight: '1px solid #7A5A3A', fontFamily: "'IBM Plex Sans', sans-serif" }}
     >
       {/* Logo */}
       <div style={{ padding: '20px 16px 15px' }}>
         <img
-          src="/240513_tertianum_branding_marco-simonetti_2@2x.png"
-          alt="Tertianum"
-          style={{ width: '100%', maxWidth: 148, display: 'block' }}
+          src="/oase-logo.png"
+          alt="Oase"
+          style={{ width: '100%', maxWidth: 120, display: 'block', filter: 'brightness(0) invert(1)' }}
         />
         <div style={{ fontSize: '0.59rem', color: 'rgba(255,255,255,0.27)', marginTop: 7, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600 }}>
           Dienstplan · Colaborador
@@ -103,7 +103,7 @@ export default function EmployeeSidebar({ employeeName }: Props) {
               onMouseLeave={e => {
                 if (!active) {
                   (e.currentTarget as HTMLElement).style.background = 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.color = '#6AA3BF'
+                  ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'
                 }
               }}
             >
@@ -144,7 +144,7 @@ export default function EmployeeSidebar({ employeeName }: Props) {
               <div style={{ position: 'fixed', inset: 0, zIndex: 49 }} onClick={() => setLangOpen(false)} />
               <div style={{
                 position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0,
-                background: '#002D47', borderRadius: 8,
+                background: '#7A5A3A', borderRadius: 8,
                 border: '1px solid rgba(255,255,255,0.12)',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
                 overflow: 'hidden', zIndex: 50,

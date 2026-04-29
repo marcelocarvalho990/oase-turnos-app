@@ -87,14 +87,14 @@ export default function ManagerSidebar() {
   return (
     <aside
       className="w-52 shrink-0 flex flex-col h-full border-r"
-      style={{ background: '#003A5D', borderColor: '#002040', fontFamily: "'IBM Plex Sans', sans-serif" }}
+      style={{ background: '#9B7353', borderColor: '#7A5A3A', fontFamily: "'IBM Plex Sans', sans-serif" }}
     >
       {/* Logo */}
       <div style={{ padding: '20px 16px 15px' }}>
         <img
-          src="/240513_tertianum_branding_marco-simonetti_2@2x.png"
-          alt="Tertianum"
-          style={{ width: '100%', maxWidth: 148, display: 'block' }}
+          src="/oase-logo.png"
+          alt="Oase"
+          style={{ width: '100%', maxWidth: 120, display: 'block', filter: 'brightness(0) invert(1)' }}
         />
         <div style={{ fontSize: '0.59rem', color: 'rgba(255,255,255,0.27)', marginTop: 7, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600 }}>
           {SESSION_LABELS[lang]}
@@ -191,7 +191,7 @@ export default function ManagerSidebar() {
               <div style={{ position: 'fixed', inset: 0, zIndex: 49 }} onClick={() => setLangOpen(false)} />
               <div style={{
                 position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0,
-                background: '#002D47', borderRadius: 8,
+                background: '#7A5A3A', borderRadius: 8,
                 border: '1px solid rgba(255,255,255,0.12)',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
                 overflow: 'hidden', zIndex: 50,

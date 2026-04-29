@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --t-blue:       #003A5D;
-  --t-blue-dark:  #002D47;
-  --t-blue-deep:  #001E30;
+  --t-blue:       #9B7353;
+  --t-blue-dark:  #7A5A3A;
+  --t-blue-deep:  #5A3A1A;
   --t-white:      #FFFFFF;
-  --t-bg:         #F4F6F8;
-  --t-border:     #D8E2E8;
-  --t-muted:      #7A9BAD;
-  --t-text:       #001E30;
+  --t-bg:         #F8F5F1;
+  --t-border:     #E2D5C8;
+  --t-muted:      #B49A7A;
+  --t-text:       #3A2A1A;
 
   --font-head: 'Poppins', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 
-  --shadow-sm: 0 1px 3px rgba(0,58,93,0.07), 0 1px 2px rgba(0,58,93,0.04);
-  --shadow-md: 0 4px 12px rgba(0,58,93,0.09), 0 1px 4px rgba(0,58,93,0.05);
-  --shadow-lg: 0 8px 24px rgba(0,58,93,0.12), 0 2px 6px rgba(0,58,93,0.06);
+  --shadow-sm: 0 1px 3px rgba(90,58,26,0.07), 0 1px 2px rgba(90,58,26,0.04);
+  --shadow-md: 0 4px 12px rgba(90,58,26,0.09), 0 1px 4px rgba(90,58,26,0.05);
+  --shadow-lg: 0 8px 24px rgba(90,58,26,0.12), 0 2px 6px rgba(90,58,26,0.06);
   --radius-sm: 6px;
   --radius-md: 9px;
   --radius-lg: 14px;
@@ -90,7 +90,7 @@ body {
 }
 .t-input:focus {
   border-color: var(--t-blue);
-  box-shadow: 0 0 0 3px rgba(0,58,93,0.1);
+  box-shadow: 0 0 0 3px rgba(155,115,83,0.15);
 }
 .t-input:disabled {
   background: var(--t-bg);
@@ -160,7 +160,7 @@ body {
   letter-spacing: 0.025em;
   white-space: nowrap;
 }
-.t-badge-blue   { background: rgba(0,58,93,0.1);  color: var(--t-blue); }
+.t-badge-blue   { background: rgba(155,115,83,0.1);  color: var(--t-blue); }
 .t-badge-green  { background: #DCFCE7; color: #15803D; }
 .t-badge-amber  { background: #FEF3C7; color: #B45309; }
 .t-badge-red    { background: #FEE2E2; color: #DC2626; }
@@ -179,7 +179,7 @@ body {
   padding: 10px 14px;
   text-align: left;
   border-bottom: 1px solid var(--t-border);
-  background: #F7F9FB;
+  background: #F5F0EB;
   white-space: nowrap;
 }
 .t-table td {
@@ -190,7 +190,7 @@ body {
   vertical-align: middle;
 }
 .t-table tr:last-child td { border-bottom: none; }
-.t-table tbody tr:hover td { background: rgba(0,58,93,0.025); }
+.t-table tbody tr:hover td { background: rgba(155,115,83,0.04); }
 
 /* ── Empty states ────────────────────────────────────────────────────────── */
 .t-empty {

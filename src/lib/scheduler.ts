@@ -1,5 +1,5 @@
 /**
- * Tertianum 2.OG — Shift Scheduler (TypeScript fallback)
+ * Oase — Shift Scheduler (TypeScript fallback)
  *
  * ROLE TIERS
  *   HF   = TEAMLEITUNG

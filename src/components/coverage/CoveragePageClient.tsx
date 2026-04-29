@@ -177,7 +177,7 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
                 <th />
                 {DAY_TYPES.map(({ key }) => (
                   <>
-                    <th key={`${key}-min`} className="px-3 py-2 text-xs text-center font-medium text-[#003A5D] w-20">Min</th>
+                    <th key={`${key}-min`} className="px-3 py-2 text-xs text-center font-medium text-[#9B7353] w-20">Min</th>
                     <th key={`${key}-ideal`} className="px-3 py-2 text-xs text-center font-medium text-emerald-600 w-20">Ideal</th>
                   </>
                 ))}
@@ -216,15 +216,15 @@ export default function CoveragePageClient({ rules, workShifts }: Props) {
                                 max={99}
                                 value={cell.min}
                                 onChange={(e) => handleChange(code, key, 'min', e.target.value)}
-                                className={`w-14 text-center text-sm rounded-lg px-2 py-1.5 border focus:outline-none focus:ring-2 focus:ring-[#003A5D] transition-colors ${
+                                className={`w-14 text-center text-sm rounded-lg px-2 py-1.5 border focus:outline-none focus:ring-2 focus:ring-[#9B7353] transition-colors ${
                                   isActive && cell.min > 0
-                                    ? 'bg-[#F0F5F8] border-[#99BFCF] text-[#003A5D] font-semibold'
+                                    ? 'bg-[#F0F5F8] border-[#99BFCF] text-[#9B7353] font-semibold'
                                     : 'bg-slate-50 border-slate-200 text-slate-400'
                                 }`}
                               />
                               {cell.saving && (
                                 <span className="absolute -bottom-4 left-1/2 -translate-x-1/2">
-                                  <span className="w-2.5 h-2.5 border-2 border-[#003A5D]/40 border-t-blue-500 rounded-full animate-spin inline-block" />
+                                  <span className="w-2.5 h-2.5 border-2 border-[#9B7353]/40 border-t-blue-500 rounded-full animate-spin inline-block" />
                                 </span>
                               )}
                               {cell.saved && (

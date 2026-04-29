@@ -114,7 +114,13 @@ export default function MonthlyGridWrapper({
   })
   const isMobile = useIsMobile()
 
-  useEffect(() => { setAssignmentMap(initialMap) }, [initialMap])
+  // chatAppliedRef: when a chat apply has just run, skip the next initialMap reset
+  // (prevents router.refresh() from overwriting the optimistic update)
+  const chatAppliedRef = useRef(false)
+  useEffect(() => {
+    if (chatAppliedRef.current) { chatAppliedRef.current = false; return }
+    setAssignmentMap(initialMap)
+  }, [initialMap])
 
   // ── sessionStorage: restore last month on mount (redirect if URL has no params) ──
   useEffect(() => {
@@ -246,6 +252,7 @@ export default function MonthlyGridWrapper({
   }, [schedule.id, router])
 
   const handleChatApplied = useCallback((actions: ChatAction[]) => {
+    chatAppliedRef.current = true
     setAssignmentMap(prev => {
       const next = { ...prev }
       for (const action of actions) {
@@ -265,8 +272,7 @@ export default function MonthlyGridWrapper({
       }
       return next
     })
-    startTransition(() => router.refresh())
-  }, [router])
+  }, [])
 
   // Close PDF menu on outside click
   useEffect(() => {
@@ -305,10 +311,10 @@ export default function MonthlyGridWrapper({
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', background: '#F4F6F8', textAlign: 'center', gap: 20 }}>
         <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#E8EFF3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Monitor size={32} color="#003A5D" />
+          <Monitor size={32} color="#9B7353" />
         </div>
         <div>
-          <h2 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.05rem', fontWeight: 700, color: '#001E30', margin: '0 0 10px' }}>
+          <h2 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.05rem', fontWeight: 700, color: '#5A3A1A', margin: '0 0 10px' }}>
             Escala completa
           </h2>
           <p style={{ fontSize: '0.88rem', color: '#4A6878', lineHeight: 1.6, margin: 0, maxWidth: 280 }}>
@@ -342,7 +348,7 @@ export default function MonthlyGridWrapper({
               style={{
                 padding: '4px 14px', borderRadius: 4, border: 'none',
                 background: view === v ? 'white' : 'transparent',
-                color: view === v ? '#003A5D' : '#7A9BAD',
+                color: view === v ? '#9B7353' : '#7A9BAD',
                 fontSize: '0.75rem', fontWeight: view === v ? 600 : 400,
                 cursor: 'pointer', transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
                 boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
@@ -362,7 +368,7 @@ export default function MonthlyGridWrapper({
           return (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button onClick={() => handleMonthChange(prevM.year, prevM.month)} style={NAV_BTN}><ChevronLeft size={13} /></button>
-              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#001E30', minWidth: 110, textAlign: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#5A3A1A', minWidth: 110, textAlign: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 {formatMonthYear(year, month, locale)}
               </span>
               <button onClick={() => handleMonthChange(nextM.year, nextM.month)} style={NAV_BTN}><ChevronRight size={13} /></button>
@@ -372,7 +378,7 @@ export default function MonthlyGridWrapper({
         {view === 'week' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <button onClick={prevWeek} style={NAV_BTN}><ChevronLeft size={13} /></button>
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#001E30', minWidth: 110, textAlign: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#5A3A1A', minWidth: 110, textAlign: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
               {weekLabel}
             </span>
             <button onClick={nextWeek} style={NAV_BTN}><ChevronRight size={13} /></button>
@@ -381,7 +387,7 @@ export default function MonthlyGridWrapper({
         {view === 'day' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <button onClick={prevDay} style={NAV_BTN}><ChevronLeft size={13} /></button>
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#001E30', minWidth: 180, textAlign: 'center', textTransform: 'capitalize', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#5A3A1A', minWidth: 180, textAlign: 'center', textTransform: 'capitalize', fontFamily: "'IBM Plex Sans', sans-serif" }}>
               {dayLabel}
             </span>
             <button onClick={nextDay} style={NAV_BTN}><ChevronRight size={13} /></button>
@@ -399,7 +405,7 @@ export default function MonthlyGridWrapper({
             style={{
               padding: '4px 8px', borderRadius: 4, border: 'none',
               background: compact ? 'white' : 'transparent',
-              color: compact ? '#003A5D' : '#7A9BAD',
+              color: compact ? '#9B7353' : '#7A9BAD',
               cursor: 'pointer', transition: 'background 0.15s',
               boxShadow: compact ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
               display: 'flex', alignItems: 'center',
@@ -413,7 +419,7 @@ export default function MonthlyGridWrapper({
             style={{
               padding: '4px 8px', borderRadius: 4, border: 'none',
               background: !compact ? 'white' : 'transparent',
-              color: !compact ? '#003A5D' : '#7A9BAD',
+              color: !compact ? '#9B7353' : '#7A9BAD',
               cursor: 'pointer', transition: 'background 0.15s',
               boxShadow: !compact ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
               display: 'flex', alignItems: 'center',
@@ -435,14 +441,14 @@ export default function MonthlyGridWrapper({
               padding: '5px 10px', borderRadius: 6,
               border: '1px solid #D8E2E8',
               background: isPdfBusy ? '#F0F4F7' : showPdfMenu ? '#F0F4F7' : 'white',
-              color: isPdfBusy ? '#7A9BAD' : '#003A5D',
+              color: isPdfBusy ? '#7A9BAD' : '#9B7353',
               cursor: isPdfBusy ? 'default' : 'pointer',
               fontSize: '0.72rem', fontWeight: 600,
               fontFamily: "'IBM Plex Sans', sans-serif",
             }}
           >
             {isPdfBusy
-              ? <span style={{ width: 13, height: 13, border: '2px solid #7A9BAD', borderTopColor: '#003A5D', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+              ? <span style={{ width: 13, height: 13, border: '2px solid #7A9BAD', borderTopColor: '#9B7353', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
               : <Download size={13} />}
             PDF
           </button>
@@ -450,7 +456,7 @@ export default function MonthlyGridWrapper({
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 4px)',
               background: 'white', border: '1px solid #D8E2E8', borderRadius: 8,
-              boxShadow: '0 4px 16px rgba(0,58,93,0.12)', zIndex: 50,
+              boxShadow: '0 4px 16px rgba(155,115,83,0.12)', zIndex: 50,
               overflow: 'hidden', minWidth: 200,
             }}>
               <button
@@ -458,7 +464,7 @@ export default function MonthlyGridWrapper({
                 style={{
                   width: '100%', textAlign: 'left', padding: '10px 14px',
                   background: 'transparent', border: 'none', cursor: 'pointer',
-                  fontSize: '0.78rem', color: '#001E30', fontFamily: "'IBM Plex Sans', sans-serif",
+                  fontSize: '0.78rem', color: '#5A3A1A', fontFamily: "'IBM Plex Sans', sans-serif",
                   display: 'flex', alignItems: 'center', gap: 8,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#F0F5F8')}
@@ -475,7 +481,7 @@ export default function MonthlyGridWrapper({
                 style={{
                   width: '100%', textAlign: 'left', padding: '10px 14px',
                   background: 'transparent', border: 'none', cursor: 'pointer',
-                  fontSize: '0.78rem', color: '#001E30', fontFamily: "'IBM Plex Sans', sans-serif",
+                  fontSize: '0.78rem', color: '#5A3A1A', fontFamily: "'IBM Plex Sans', sans-serif",
                   display: 'flex', alignItems: 'center', gap: 8,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#F0F5F8')}
@@ -599,13 +605,13 @@ function WeeklyView({ employees, assignmentMap, shiftTypes, coverageRules, days,
               key={day.date}
               className={`sticky top-0 z-20 border-b border-l border-slate-200 flex flex-col items-center justify-end pb-2 pt-2 text-center
                 ${isWeekend ? 'bg-[#F0F5F8]' : 'bg-white'}
-                ${day.isToday ? 'bg-[#E6EEF3] border-b-2 border-b-[#003A5D]' : ''}
+                ${day.isToday ? 'bg-[#E6EEF3] border-b-2 border-b-[#9B7353]' : ''}
               `}
             >
-              <span className={`text-[11px] font-semibold uppercase tracking-wide ${isWeekend ? 'text-[#003A5D]' : 'text-slate-400'}`}>
+              <span className={`text-[11px] font-semibold uppercase tracking-wide ${isWeekend ? 'text-[#9B7353]' : 'text-slate-400'}`}>
                 {day.weekdayLabel}
               </span>
-              <span className={`text-xl font-bold leading-none mt-1 ${day.isToday ? 'text-[#003A5D]' : isWeekend ? 'text-[#003A5D]' : 'text-slate-800'}`}>
+              <span className={`text-xl font-bold leading-none mt-1 ${day.isToday ? 'text-[#9B7353]' : isWeekend ? 'text-[#9B7353]' : 'text-slate-800'}`}>
                 {day.day}
               </span>
             </div>
@@ -666,7 +672,7 @@ function WeeklyView({ employees, assignmentMap, shiftTypes, coverageRules, days,
                         key={`${emp.id}-${day.date}`}
                         className={`border-b border-l border-slate-100 flex flex-col items-center justify-center cursor-pointer transition-colors px-1
                           ${isWeekend ? 'bg-[#F8FAFB]' : 'bg-white'}
-                          ${isOpen ? 'bg-[#E6EEF3] ring-1 ring-inset ring-[#003A5D]' : 'hover:bg-slate-50'}
+                          ${isOpen ? 'bg-[#E6EEF3] ring-1 ring-inset ring-[#9B7353]' : 'hover:bg-slate-50'}
                           ${assignment?.isExternal ? 'ring-1 ring-inset ring-red-400' : ''}
                         `}
                         style={{ minHeight: ROW_H }}
@@ -801,7 +807,7 @@ function DayView({ employees, assignmentMap, shiftTypes, day, onCellChange, lang
                 return (
                   <div key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'white', border: '1px solid #D8E2E8', borderRadius: 8, padding: '10px 16px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#001E30', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{emp.name}</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#5A3A1A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{emp.name}</div>
                       <div style={{ fontSize: '0.68rem', color: '#7A9BAD', fontFamily: "'IBM Plex Mono', monospace" }}>{emp.workPercentage}%</div>
                     </div>
                     {a?.shiftCode && st ? (

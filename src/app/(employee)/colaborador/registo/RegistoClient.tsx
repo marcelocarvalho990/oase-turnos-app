@@ -172,7 +172,7 @@ export default function RegistoClient() {
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Header */}
-      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#9B7353', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {REG_TX[lang].title}
@@ -247,20 +247,20 @@ export default function RegistoClient() {
             const TypeIcon = typeStyle?.icon
 
             return (
-              <div key={row.date} style={{ background: 'white', border: `1px solid ${isOpen ? '#003A5D' : '#D8E2E8'}`, borderRadius: 8, overflow: 'hidden', transition: 'border-color 0.15s' }}>
+              <div key={row.date} style={{ background: 'white', border: `1px solid ${isOpen ? '#9B7353' : '#D8E2E8'}`, borderRadius: 8, overflow: 'hidden', transition: 'border-color 0.15s' }}>
                 {/* Main row */}
                 <div
                   style={{ padding: '12px 16px', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, cursor: canRegister ? 'pointer' : 'default', flexWrap: isMobile ? 'wrap' : 'nowrap' }}
                   onClick={() => canRegister ? openRow(row.date, conf) : undefined}
                 >
                   {/* Date */}
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.78rem', fontWeight: isToday ? 700 : 500, color: isToday ? '#003A5D' : isPast ? '#4A6878' : '#94A3B8', minWidth: 60 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.78rem', fontWeight: isToday ? 700 : 500, color: isToday ? '#9B7353' : isPast ? '#4A6878' : '#94A3B8', minWidth: 60 }}>
                     {fmtDate(row.date, lang)}
                   </div>
 
                   {/* Shift badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 8px', background: row.shift.color + '18', borderLeft: `3px solid ${row.shift.color}`, borderRadius: '0 4px 4px 0', minWidth: isMobile ? 0 : 80 }}>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.78rem', fontWeight: 700, color: '#001E30' }}>{row.shift.code}</span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.78rem', fontWeight: 700, color: '#5A3A1A' }}>{row.shift.code}</span>
                     <span style={{ fontSize: '0.68rem', color: '#7A9BAD' }}>{row.shift.startTime1}–{row.shift.endTime1}</span>
                   </div>
 
@@ -331,7 +331,7 @@ export default function RegistoClient() {
                             {REG_TX[lang].leaveTime}
                           </label>
                           <input type="time" value={confActualEnd} onChange={e => setConfActualEnd(e.target.value)}
-                            style={{ padding: '7px 10px', border: '1.5px solid #D8E2E8', borderRadius: 6, fontSize: '0.85rem', color: '#001E30', outline: 'none', background: '#F8FAFC', width: 140 }} />
+                            style={{ padding: '7px 10px', border: '1.5px solid #D8E2E8', borderRadius: 6, fontSize: '0.85rem', color: '#5A3A1A', outline: 'none', background: '#F8FAFC', width: 140 }} />
                         </div>
                       )}
 
@@ -341,7 +341,7 @@ export default function RegistoClient() {
                             {REG_TX[lang].reason(confType === 'ABSENT')}
                           </label>
                           <textarea value={confReason} onChange={e => setConfReason(e.target.value)} rows={2}
-                            style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', border: '1.5px solid #D8E2E8', borderRadius: 6, fontSize: '0.82rem', color: '#001E30', outline: 'none', resize: 'none', background: '#F8FAFC', fontFamily: "'IBM Plex Sans', sans-serif' " }}
+                            style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', border: '1.5px solid #D8E2E8', borderRadius: 6, fontSize: '0.82rem', color: '#5A3A1A', outline: 'none', resize: 'none', background: '#F8FAFC', fontFamily: "'IBM Plex Sans', sans-serif' " }}
                             placeholder={REG_TX[lang].reasonPlaceholder} />
                         </div>
                       )}
@@ -359,7 +359,7 @@ export default function RegistoClient() {
                         <button
                           onClick={() => saveConf(row.date, row.shift.code)}
                           disabled={saving}
-                          style={{ padding: '7px 16px', background: saving ? '#7AA8C0' : '#003A5D', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, flex: isMobile ? 1 : 'unset' }}
+                          style={{ padding: '7px 16px', background: saving ? '#C4A47A' : '#9B7353', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, flex: isMobile ? 1 : 'unset' }}
                         >
                           {saving ? REG_TX[lang].saving : REG_TX[lang].saveBtn}
                         </button>

@@ -121,7 +121,7 @@ export default function ConfirmacoesClient() {
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Header */}
-      <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ background: '#9B7353', padding: '20px 28px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {ctx.title}
@@ -139,11 +139,11 @@ export default function ConfirmacoesClient() {
             onChange={e => setEmployeeFilter(e.target.value)}
             style={SELECT_STYLE}
           >
-            <option value="ALL" style={{ background: '#003A5D' }}>
+            <option value="ALL" style={{ background: '#9B7353' }}>
               {ctx.allEmployees}
             </option>
             {employeeOptions.map(name => (
-              <option key={name} value={name} style={{ background: '#003A5D' }}>{name}</option>
+              <option key={name} value={name} style={{ background: '#9B7353' }}>{name}</option>
             ))}
           </select>
 
@@ -159,11 +159,11 @@ export default function ConfirmacoesClient() {
               onChange={e => setMonthFilter(e.target.value)}
               style={SELECT_STYLE}
             >
-              <option value="ALL" style={{ background: '#003A5D' }}>
+              <option value="ALL" style={{ background: '#9B7353' }}>
                 {ctx.allMonths}
               </option>
               {monthOptions.map(ym => (
-                <option key={ym} value={ym} style={{ background: '#003A5D' }}>{monthLabel(ym, lang)}</option>
+                <option key={ym} value={ym} style={{ background: '#9B7353' }}>{monthLabel(ym, lang)}</option>
               ))}
             </select>
             {monthFilter !== 'ALL' && (
@@ -179,10 +179,10 @@ export default function ConfirmacoesClient() {
             onChange={e => setTypeFilter(e.target.value as typeof typeFilter)}
             style={SELECT_STYLE}
           >
-            <option value="ALL" style={{ background: '#003A5D' }}>{ctx.allTypes}</option>
-            <option value="WORKED" style={{ background: '#003A5D' }}>{ctx.worked}</option>
-            <option value="EARLY_DEPARTURE" style={{ background: '#003A5D' }}>{ctx.leftEarly}</option>
-            <option value="ABSENT" style={{ background: '#003A5D' }}>{ctx.absent}</option>
+            <option value="ALL" style={{ background: '#9B7353' }}>{ctx.allTypes}</option>
+            <option value="WORKED" style={{ background: '#9B7353' }}>{ctx.worked}</option>
+            <option value="EARLY_DEPARTURE" style={{ background: '#9B7353' }}>{ctx.leftEarly}</option>
+            <option value="ABSENT" style={{ background: '#9B7353' }}>{ctx.absent}</option>
           </select>
 
         </div>
@@ -228,7 +228,7 @@ export default function ConfirmacoesClient() {
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{item.employee.name}</span>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5A3A1A' }}>{item.employee.name}</span>
                     <span style={{ padding: '2px 8px', borderRadius: 20, background: cfg.bg, color: cfg.color, fontSize: '0.68rem', fontWeight: 500 }}>
                       {cfg.label[lang]}
                     </span>

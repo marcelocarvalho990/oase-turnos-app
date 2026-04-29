@@ -124,17 +124,17 @@ export default function MonthlyGrid({ employees, assignmentMap, shiftTypes, cove
               ref={day.isToday ? todayRef : undefined}
               className={`sticky top-0 z-20 border-b border-slate-200 flex flex-col items-center justify-end pb-1 text-center overflow-hidden
                 ${isWeekend ? 'bg-[#F0F5F8]' : 'bg-white'}
-                ${day.isToday ? 'bg-[#E6EEF3] border-b-2 border-b-[#003A5D]' : ''}
+                ${day.isToday ? 'bg-[#E6EEF3] border-b-2 border-b-[#9B7353]' : ''}
               `}
             >
               {/* Red stripe at top for problem days */}
               {hasViol && (
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#EF4444' }} />
               )}
-              <span className={`text-[10px] font-medium mt-1 ${hasViol ? 'text-red-600' : isWeekend ? 'text-[#003A5D]' : 'text-slate-500'}`}>
+              <span className={`text-[10px] font-medium mt-1 ${hasViol ? 'text-red-600' : isWeekend ? 'text-[#9B7353]' : 'text-slate-500'}`}>
                 {day.weekdayLabel}
               </span>
-              <span className={`text-xs font-bold ${hasViol ? 'text-red-600' : day.isToday ? 'text-[#003A5D]' : isWeekend ? 'text-[#003A5D]' : 'text-slate-800'}`}>
+              <span className={`text-xs font-bold ${hasViol ? 'text-red-600' : day.isToday ? 'text-[#9B7353]' : isWeekend ? 'text-[#9B7353]' : 'text-slate-800'}`}>
                 {day.day}
               </span>
             </div>
@@ -392,7 +392,7 @@ const EmployeeRow = memo(function EmployeeRow({
             key={day.date}
             className={`border-b border-slate-100 flex items-center justify-center cursor-pointer transition-colors relative
               ${isWeekend ? 'bg-[#F0F5F8]/50' : 'bg-white'}
-              ${isOpen ? 'bg-[#E6EEF3] ring-1 ring-inset ring-[#003A5D]' : 'hover:bg-slate-50'}
+              ${isOpen ? 'bg-[#E6EEF3] ring-1 ring-inset ring-[#9B7353]' : 'hover:bg-slate-50'}
               ${assignment?.isExternal ? 'ring-1 ring-inset ring-red-400' : ''}
             `}
             style={{ height: compact ? 30 : 42 }}
@@ -459,7 +459,7 @@ const EmployeeRow = memo(function EmployeeRow({
                     {(isFTV || isSTV) && (
                       <span
                         className="absolute -top-1 -right-1 text-[7px] font-black leading-none px-[3px] py-[1px] rounded-sm text-white"
-                        style={{ background: isFTV ? '#003A5D' : '#6B21A8' }}
+                        style={{ background: isFTV ? '#9B7353' : '#6B21A8' }}
                       >
                         TV
                       </span>

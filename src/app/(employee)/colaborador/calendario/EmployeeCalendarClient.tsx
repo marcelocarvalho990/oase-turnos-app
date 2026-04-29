@@ -221,7 +221,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
 
       {/* Header */}
-      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '16px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 8 : 0 }}>
+      <div style={{ background: '#9B7353', padding: isMobile ? '14px 16px' : '16px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 8 : 0 }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {CAL_TX[lang].title}
@@ -240,7 +240,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                 style={{
                   padding: isMobile ? '4px 8px' : '3px 10px', borderRadius: 3, border: 'none',
                   background: view === v ? 'rgba(255,255,255,0.9)' : 'transparent',
-                  color: view === v ? '#003A5D' : 'rgba(255,255,255,0.65)',
+                  color: view === v ? '#9B7353' : 'rgba(255,255,255,0.65)',
                   fontSize: '0.68rem', fontWeight: view === v ? 700 : 400,
                   cursor: 'pointer', transition: 'all 0.15s',
                   fontFamily: "'IBM Plex Sans', sans-serif",
@@ -282,7 +282,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
             </div>
             <div style={{ display: 'flex', gap: 0 }}>
               <div style={{ flex: 1, padding: '0 16px 0 0', borderRight: '1px solid #F0F4F6' }}>
-                <div style={{ fontSize: '1.4rem', fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", color: '#001E30', lineHeight: 1 }}>{fmtHours(hours.workedMinutes)}</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", color: '#5A3A1A', lineHeight: 1 }}>{fmtHours(hours.workedMinutes)}</div>
                 <div style={{ fontSize: '0.7rem', color: '#7A9BAD', marginTop: 4 }}>{CAL_TX[lang].worked}</div>
               </div>
               <div style={{ flex: 1, padding: '0 16px', borderRight: '1px solid #F0F4F6' }}>
@@ -301,7 +301,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
             </div>
             <div style={{ marginTop: 12 }}>
               <div style={{ height: 5, background: '#F0F4F6', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: pct >= 100 ? '#059669' : pct >= 80 ? '#003A5D' : '#D97706', borderRadius: 3, transition: 'width 0.4s' }} />
+                <div style={{ height: '100%', width: `${pct}%`, background: pct >= 100 ? '#059669' : pct >= 80 ? '#9B7353' : '#D97706', borderRadius: 3, transition: 'width 0.4s' }} />
               </div>
               <div style={{ fontSize: '0.62rem', color: '#7A9BAD', marginTop: 3, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace" }}>{pct}%</div>
             </div>
@@ -312,7 +312,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
         {view === 'month' && (assignments.length > 0 || absences.length > 0) && (
           <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
             {assignments.length > 0 && (
-              <div style={{ padding: '4px 12px', background: '#003A5D', color: 'white', fontSize: '0.72rem', letterSpacing: '0.04em', fontFamily: "'IBM Plex Mono', monospace" }}>
+              <div style={{ padding: '4px 12px', background: '#9B7353', color: 'white', fontSize: '0.72rem', letterSpacing: '0.04em', fontFamily: "'IBM Plex Mono', monospace" }}>
                 {assignments.length} {CAL_TX[lang].shifts}
               </div>
             )}
@@ -320,7 +320,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
               const st = shiftTypes.find(s => s.code === code)
               if (!st) return null
               return (
-                <div key={code} style={{ padding: '4px 12px', background: 'white', border: '2px solid #003A5D', fontSize: '0.72rem', color: '#003A5D', fontFamily: "'IBM Plex Mono', monospace", display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div key={code} style={{ padding: '4px 12px', background: 'white', border: '2px solid #9B7353', fontSize: '0.72rem', color: '#9B7353', fontFamily: "'IBM Plex Mono', monospace", display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 8, height: 8, background: st.color, display: 'inline-block', flexShrink: 0 }} />
                   {code} · {count}
                 </div>
@@ -352,7 +352,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
         {/* ── MONTHLY VIEW ── */}
         {view === 'month' && (
           <div style={{ background: 'white', border: '1px solid #D8E2E8', overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#001E30' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#5A3A1A' }}>
               {weekdays.map(d => (
                 <div key={d} style={{ padding: '8px 0', textAlign: 'center', fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>
                   {d}
@@ -370,7 +370,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                 const isWE = new Date(year, month - 1, day).getDay() === 0 || new Date(year, month - 1, day).getDay() === 6
                 return (
                   <div key={day} style={{ minHeight: isMobile ? 54 : 82, padding: isMobile ? '4px 3px' : '7px', borderRight: '1px solid #F0F4F6', borderBottom: '1px solid #F0F4F6', background: absenceType ? '#F0FDF4' : isToday ? '#E8EFF3' : isWE && !assignment ? '#F8FAFB' : 'white' }}>
-                    <div style={{ width: isMobile ? 18 : 22, height: isMobile ? 18 : 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '0.6rem' : '0.7rem', fontWeight: isToday ? 700 : 400, fontFamily: "'IBM Plex Mono', monospace", color: isToday ? 'white' : isWE ? '#7A9BAD' : '#001E30', background: isToday ? '#003A5D' : 'transparent', marginBottom: isMobile ? 2 : 4 }}>
+                    <div style={{ width: isMobile ? 18 : 22, height: isMobile ? 18 : 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '0.6rem' : '0.7rem', fontWeight: isToday ? 700 : 400, fontFamily: "'IBM Plex Mono', monospace", color: isToday ? 'white' : isWE ? '#7A9BAD' : '#5A3A1A', background: isToday ? '#9B7353' : 'transparent', marginBottom: isMobile ? 2 : 4 }}>
                       {day}
                     </div>
                     {absenceType && !isMobile && (
@@ -386,14 +386,14 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                     )}
                     {assignment?.shiftType && !absenceType && !isMobile && (
                       <div style={{ padding: '3px 6px', background: assignment.shiftType.color + '18', borderLeft: `3px solid ${assignment.shiftType.color}`, marginBottom: 3 }}>
-                        <div style={{ fontSize: '0.68rem', color: '#001E30', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{assignment.shiftType.code}</div>
+                        <div style={{ fontSize: '0.68rem', color: '#5A3A1A', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{assignment.shiftType.code}</div>
                         <div style={{ fontSize: '0.6rem', color: '#4A6878', fontWeight: 500, lineHeight: 1.2 }}>{assignment.shiftType.name}</div>
                         <div style={{ fontSize: '0.55rem', color: '#7A9BAD', fontFamily: "'IBM Plex Mono', monospace" }}>{assignment.shiftType.startTime1}–{assignment.shiftType.endTime1}</div>
                       </div>
                     )}
                     {assignment?.shiftType && !absenceType && isMobile && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 14, background: assignment.shiftType.color + '25', borderRadius: 2, fontSize: '0.58rem', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: '#001E30' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 14, background: assignment.shiftType.color + '25', borderRadius: 2, fontSize: '0.58rem', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: '#5A3A1A' }}>
                           {assignment.shiftType.code}
                         </span>
                       </div>
@@ -426,7 +426,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
         {view === 'week' && (
           <div style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, overflow: 'hidden' }}>
             {/* Week header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#001E30' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#5A3A1A' }}>
               {weekDays.map((d, i) => {
                 const isWE = d.getDay() === 0 || d.getDay() === 6
                 const isToday = toDateStr(d) === todayStr
@@ -483,7 +483,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
 
                     {assignment?.shiftType && !absenceType && inMonth && (
                       <div style={{ padding: '8px 10px', background: assignment.shiftType.color + '15', borderLeft: `3px solid ${assignment.shiftType.color}`, borderRadius: 4 }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#001E30', fontFamily: "'IBM Plex Mono', monospace", marginBottom: 3 }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#5A3A1A', fontFamily: "'IBM Plex Mono', monospace", marginBottom: 3 }}>
                           {assignment.shiftType.code}
                         </div>
                         <div style={{ fontSize: '0.72rem', color: '#4A6878', fontWeight: 500, marginBottom: 4, lineHeight: 1.2 }}>
@@ -535,7 +535,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                   {dayLabelLong}
                 </div>
                 {isToday && (
-                  <span style={{ display: 'inline-block', padding: '2px 12px', background: '#003A5D', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.08em' }}>
+                  <span style={{ display: 'inline-block', padding: '2px 12px', background: '#9B7353', color: 'white', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.08em' }}>
                     {CAL_TX[lang].today}
                   </span>
                 )}
@@ -563,7 +563,7 @@ export default function EmployeeCalendarClient({ shiftTypes }: Props) {
                       </span>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#001E30', marginBottom: 6 }}>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#5A3A1A', marginBottom: 6 }}>
                         {assignment.shiftType.name}
                       </div>
                       <div style={{ fontSize: '0.85rem', color: '#4A6878', fontFamily: "'IBM Plex Mono', monospace", marginBottom: 4 }}>

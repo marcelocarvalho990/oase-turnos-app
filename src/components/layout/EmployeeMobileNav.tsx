@@ -58,7 +58,7 @@ export default function EmployeeMobileNav() {
               justifyContent: 'center',
               gap: 3,
               textDecoration: 'none',
-              color: isActive ? '#003A5D' : '#94A3B8',
+              color: isActive ? '#9B7353' : '#94A3B8',
               minWidth: 0,
             }}
           >

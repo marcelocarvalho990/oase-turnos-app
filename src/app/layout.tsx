@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Tertianum Schedule App',
+  title: 'Oase Schedule App',
   description: 'Sistema inteligente de planeamento de turnos',
 }
 

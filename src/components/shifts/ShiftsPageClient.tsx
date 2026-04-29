@@ -108,17 +108,17 @@ function ShiftCard({ shift, onEdit, onDelete, absLabel, deleting }: { shift: Shi
     <div
       className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col"
       style={{
-        boxShadow: '0 1px 3px rgba(0,58,93,0.07)',
+        boxShadow: '0 1px 3px rgba(155,115,83,0.07)',
         transition: 'transform 0.15s ease, box-shadow 0.15s ease',
         cursor: 'default',
       }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(0,58,93,0.13)'
+        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(155,115,83,0.13)'
       }}
       onMouseLeave={e => {
         (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,58,93,0.07)'
+        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(155,115,83,0.07)'
       }}
     >
       {/* Colored header */}
@@ -353,7 +353,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
             </div>
           </div>
           <button
-            className="bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] flex items-center gap-2"
+            className="bg-[#9B7353] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#7A5A3A] flex items-center gap-2"
             onClick={openCreate}
           >
             <Plus size={16} />
@@ -420,7 +420,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                   required
                   value={form.name}
                   onChange={(e) => setForm((f) => f ? { ...f, name: e.target.value } : f)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]"
                 />
               </div>
               <div>
@@ -429,7 +429,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                   type="text"
                   value={form.description}
                   onChange={(e) => setForm((f) => f ? { ...f, description: e.target.value } : f)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]"
                 />
               </div>
               {editingShift.isWorkTime && (
@@ -442,7 +442,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                         required
                         value={form.startTime1}
                         onChange={(e) => setForm((f) => f ? { ...f, startTime1: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]"
                       />
                     </div>
                     <div>
@@ -452,7 +452,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                         required
                         value={form.endTime1}
                         onChange={(e) => setForm((f) => f ? { ...f, endTime1: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]"
                       />
                     </div>
                   </div>
@@ -465,7 +465,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                       max={1440}
                       value={form.durationMinutes}
                       onChange={(e) => setForm((f) => f ? { ...f, durationMinutes: Number(e.target.value) } : f)}
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]"
                     />
                   </div>
 
@@ -482,7 +482,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] disabled:opacity-60 flex items-center gap-2"
+                  className="bg-[#9B7353] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#7A5A3A] disabled:opacity-60 flex items-center gap-2"
                 >
                   {saving ? (
                     <>
@@ -516,20 +516,20 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                   <input type="text" required maxLength={4} value={createForm.code}
                     onChange={(e) => setCreateForm((f) => f ? { ...f, code: e.target.value } : f)}
                     placeholder="ex: F2"
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#003A5D]" />
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#9B7353]" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Nome *</label>
                   <input type="text" required value={createForm.name}
                     onChange={(e) => setCreateForm((f) => f ? { ...f, name: e.target.value } : f)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]" />
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Descrição</label>
                 <input type="text" value={createForm.description}
                   onChange={(e) => setCreateForm((f) => f ? { ...f, description: e.target.value } : f)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]" />
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]" />
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="isAbsence" checked={createForm.isAbsence}
@@ -544,20 +544,20 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                       <label className="block text-xs font-medium text-slate-700 mb-1">Início *</label>
                       <input type="time" required value={createForm.startTime1}
                         onChange={(e) => setCreateForm((f) => f ? { ...f, startTime1: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]" />
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]" />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-700 mb-1">Fim *</label>
                       <input type="time" required value={createForm.endTime1}
                         onChange={(e) => setCreateForm((f) => f ? { ...f, endTime1: e.target.value } : f)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]" />
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]" />
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">Duração (minutos)</label>
                     <input type="number" min={1} max={1440} value={createForm.durationMinutes}
                       onChange={(e) => setCreateForm((f) => f ? { ...f, durationMinutes: Number(e.target.value) } : f)}
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003A5D]" />
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B7353]" />
                   </div>
 
                 </>
@@ -585,7 +585,7 @@ export default function ShiftsPageClient({ shiftTypes: initial }: Props) {
                   Cancelar
                 </button>
                 <button type="submit" disabled={createSaving}
-                  className="bg-[#003A5D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#002D47] disabled:opacity-60 flex items-center gap-2">
+                  className="bg-[#9B7353] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#7A5A3A] disabled:opacity-60 flex items-center gap-2">
                   {createSaving ? (
                     <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />A criar...</>
                   ) : 'Criar turno'}

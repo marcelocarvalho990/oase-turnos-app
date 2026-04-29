@@ -86,6 +86,25 @@ function emojiToDataUrl(emoji: string, sizePx = 48): string {
   return url
 }
 
+let xDataUrl: string | null = null
+function xMarkToDataUrl(sizePx = 48): string {
+  if (xDataUrl) return xDataUrl
+  if (typeof document === 'undefined') return ''
+  const canvas = document.createElement('canvas')
+  canvas.width = sizePx; canvas.height = sizePx
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+  const r = sizePx * 0.32
+  const cx = sizePx / 2, cy = sizePx / 2
+  ctx.strokeStyle = '#475569'
+  ctx.lineWidth = sizePx * 0.13
+  ctx.lineCap = 'round'
+  ctx.beginPath(); ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(cx + r, cy - r); ctx.lineTo(cx - r, cy + r); ctx.stroke()
+  xDataUrl = canvas.toDataURL('image/png')
+  return xDataUrl
+}
+
 // ─── Schedule Grid PDF ────────────────────────────────────────────────────────
 
 export async function downloadSchedulePDF(opts: {
@@ -221,11 +240,12 @@ export async function downloadSchedulePDF(opts: {
   doc.text('Frei', lx + 4.2, ly)
   lx += doc.getTextWidth('Frei') + 8
   if (lx > pageW - 30) { lx = 14; ly += 5 }
-  // Wunschfrei — ✕
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(71, 85, 105)
-  doc.text('\u2715', lx + 1.2, ly)
-  doc.setFont('helvetica', 'normal')
+  // Wunschfrei — ✕ (canvas PNG)
+  {
+    const sz = 3.2
+    const imgData = xMarkToDataUrl(48)
+    if (imgData) doc.addImage(imgData, 'PNG', lx, ly - sz * 0.82, sz, sz)
+  }
   doc.setTextColor(60, 60, 60)
   doc.text('Wunschfrei', lx + 4.2, ly)
 
@@ -387,15 +407,11 @@ export async function downloadSchedulePDF(opts: {
         return
       }
 
-      // Draw ✕ for Wunschfrei cells
+      // Draw ✕ for Wunschfrei cells (canvas PNG, same approach as emojis)
       if (xCells.has(`${rowIdx}:${colIdx}`)) {
-        doc.setFontSize(7)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(71, 85, 105)
-        doc.text('\u2715', x + width / 2, y + height / 2 + 1, { align: 'center' as const })
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(7)
-        doc.setTextColor(0, 0, 0)
+        const sz = Math.min(width * 0.55, height * 0.65)
+        const imgData = xMarkToDataUrl(48)
+        if (imgData) doc.addImage(imgData, 'PNG', x + (width - sz) / 2, y + (height - sz) / 2, sz, sz)
         return
       }
 
@@ -580,11 +596,12 @@ export async function downloadHoursPDF(opts: {
   doc.text('Frei', llx + 4.2, lly)
   llx += doc.getTextWidth('Frei') + 8
   if (llx > 180) { llx = 28; lly += 5 }
-  // Wunschfrei — ✕
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(71, 85, 105)
-  doc.text('\u2715', llx + 1.2, lly)
-  doc.setFont('helvetica', 'normal')
+  // Wunschfrei — ✕ (canvas PNG)
+  {
+    const sz = 3.2
+    const imgData = xMarkToDataUrl(48)
+    if (imgData) doc.addImage(imgData, 'PNG', llx, lly - sz * 0.82, sz, sz)
+  }
   doc.setTextColor(60, 60, 60)
   doc.text('Wunschfrei', llx + 4.2, lly)
 

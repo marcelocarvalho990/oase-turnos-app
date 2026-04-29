@@ -154,9 +154,9 @@ function ActionCard({
       }}>
         {applied
           ? <CheckCircle2 size={13} color="#fff" />
-          : <Sparkles size={13} color="#003A5D" strokeWidth={1.8} />
+          : <Sparkles size={13} color="#9B7353" strokeWidth={1.8} />
         }
-        <span style={{ fontWeight: 700, color: applied ? '#fff' : '#003A5D', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.7rem' }}>
+        <span style={{ fontWeight: 700, color: applied ? '#fff' : '#9B7353', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.7rem' }}>
           {applied ? T.actionsDone[lang] : T.actionsTitle[lang]}
         </span>
       </div>
@@ -166,7 +166,7 @@ function ActionCard({
           {/* Actions list */}
           <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 5 }}>
             {actions.map((a, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#001E30' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#5A3A1A' }}>
                 <span style={{
                   fontWeight: 700,
                   fontSize: '0.68rem',
@@ -178,7 +178,7 @@ function ActionCard({
                 }}>
                   {a.type === 'UPSERT' ? T.actionUpsert[lang] : T.actionRemove[lang]}
                 </span>
-                <span style={{ fontWeight: 700, color: '#003A5D' }}>{a.shiftCode}</span>
+                <span style={{ fontWeight: 700, color: '#9B7353' }}>{a.shiftCode}</span>
                 <span style={{ color: '#7A9BAD' }}>→</span>
                 <span>{a.employeeName}</span>
                 <span style={{ color: '#7A9BAD', marginLeft: 'auto', flexShrink: 0 }}>{formatActionDate(a.date)}</span>
@@ -258,11 +258,11 @@ function MessageBubble({
   const isUser = msg.role === 'user'
   return (
     <div style={{ display: 'flex', gap: 12, flexDirection: isUser ? 'row-reverse' : 'row', alignItems: 'flex-start' }}>
-      <div style={{ width: 32, height: 32, borderRadius: '50%', background: isUser ? '#003A5D' : '#E8F0F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-        {isUser ? <User size={15} color="#fff" /> : <Bot size={15} color="#003A5D" />}
+      <div style={{ width: 32, height: 32, borderRadius: '50%', background: isUser ? '#9B7353' : '#E8F0F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+        {isUser ? <User size={15} color="#fff" /> : <Bot size={15} color="#9B7353" />}
       </div>
       <div style={{ maxWidth: '72%', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ padding: '10px 14px', borderRadius: isUser ? '14px 4px 14px 14px' : '4px 14px 14px 14px', background: isUser ? '#003A5D' : '#fff', color: isUser ? '#fff' : '#001E30', fontSize: '0.875rem', lineHeight: 1.6, fontFamily: "'IBM Plex Sans', sans-serif", boxShadow: '0 1px 3px rgba(0,0,0,0.06)', whiteSpace: 'pre-wrap', border: isUser ? 'none' : '1px solid #E0E8EE' }}>
+        <div style={{ padding: '10px 14px', borderRadius: isUser ? '14px 4px 14px 14px' : '4px 14px 14px 14px', background: isUser ? '#9B7353' : '#fff', color: isUser ? '#fff' : '#5A3A1A', fontSize: '0.875rem', lineHeight: 1.6, fontFamily: "'IBM Plex Sans', sans-serif", boxShadow: '0 1px 3px rgba(0,0,0,0.06)', whiteSpace: 'pre-wrap', border: isUser ? 'none' : '1px solid #E0E8EE' }}>
           {msg.content}
         </div>
         {!isUser && msg.actions && msg.actions.length > 0 && onApply && onCancel && (
@@ -363,13 +363,13 @@ export default function ChatPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Header */}
-      <div style={{ background: '#003A5D', padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+      <div style={{ background: '#9B7353', padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <Sparkles size={20} color="#7BBFE0" strokeWidth={1.8} />
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
             {T.title[lang]}
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#6AA3BF', marginTop: 1 }}>
+          <div style={{ fontSize: '0.72rem', color: '#C4A47A', marginTop: 1 }}>
             {T.subtitle[lang]}
           </div>
         </div>
@@ -393,10 +393,10 @@ export default function ChatPage() {
         {isEmpty ? (
           <div style={{ margin: 'auto', width: '100%', maxWidth: 560 }}>
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#003A5D', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#9B7353', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <Bot size={26} color="#fff" />
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: 600, color: '#001E30', marginBottom: 6 }}>
+              <div style={{ fontSize: '1rem', fontWeight: 600, color: '#5A3A1A', marginBottom: 6 }}>
                 {T.intro[lang]}
               </div>
               <div style={{ fontSize: '0.82rem', color: '#7A9BAD', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
@@ -408,9 +408,9 @@ export default function ChatPage() {
                 <button
                   key={i}
                   onClick={() => sendMessage(s)}
-                  style={{ padding: '8px 14px', borderRadius: 20, background: '#fff', border: '1px solid #D8E2E8', color: '#003A5D', fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'IBM Plex Sans', sans-serif", transition: 'all 0.15s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#003A5D'; (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.borderColor = '#003A5D' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; (e.currentTarget as HTMLElement).style.color = '#003A5D'; (e.currentTarget as HTMLElement).style.borderColor = '#D8E2E8' }}
+                  style={{ padding: '8px 14px', borderRadius: 20, background: '#fff', border: '1px solid #D8E2E8', color: '#9B7353', fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'IBM Plex Sans', sans-serif", transition: 'all 0.15s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#9B7353'; (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.borderColor = '#9B7353' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; (e.currentTarget as HTMLElement).style.color = '#9B7353'; (e.currentTarget as HTMLElement).style.borderColor = '#D8E2E8' }}
                 >
                   {s}
                 </button>
@@ -445,7 +445,7 @@ export default function ChatPage() {
         {loading && (
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#E8F0F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Bot size={15} color="#003A5D" />
+              <Bot size={15} color="#9B7353" />
             </div>
             <div style={{ padding: '10px 14px', borderRadius: '4px 14px 14px 14px', background: '#fff', border: '1px solid #E0E8EE', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Loader2 size={14} color="#7A9BAD" style={{ animation: 'spin 1s linear infinite' }} />
@@ -461,7 +461,7 @@ export default function ChatPage() {
       <div style={{ padding: '16px 28px 20px', background: '#fff', borderTop: '1px solid #D8E2E8', flexShrink: 0 }}>
         <div
           style={{ display: 'flex', gap: 10, alignItems: 'flex-end', background: '#F4F6F8', border: '1.5px solid #D8E2E8', borderRadius: 12, padding: '10px 12px 10px 16px', transition: 'border-color 0.15s' }}
-          onFocusCapture={e => (e.currentTarget.style.borderColor = '#003A5D')}
+          onFocusCapture={e => (e.currentTarget.style.borderColor = '#9B7353')}
           onBlurCapture={e => (e.currentTarget.style.borderColor = '#D8E2E8')}
         >
           <textarea
@@ -472,13 +472,13 @@ export default function ChatPage() {
             placeholder={T.placeholder[lang]}
             disabled={loading}
             rows={1}
-            style={{ flex: 1, resize: 'none', border: 'none', background: 'transparent', outline: 'none', fontFamily: "'IBM Plex Sans', sans-serif", fontSize: '0.875rem', color: '#001E30', lineHeight: 1.5, maxHeight: 120, overflowY: 'auto' }}
+            style={{ flex: 1, resize: 'none', border: 'none', background: 'transparent', outline: 'none', fontFamily: "'IBM Plex Sans', sans-serif", fontSize: '0.875rem', color: '#5A3A1A', lineHeight: 1.5, maxHeight: 120, overflowY: 'auto' }}
             onInput={e => { const t = e.currentTarget; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px' }}
           />
           <button
             onClick={() => sendMessage(input)}
             disabled={loading || !input.trim()}
-            style={{ width: 34, height: 34, borderRadius: 8, background: loading || !input.trim() ? '#D8E2E8' : '#003A5D', border: 'none', cursor: loading || !input.trim() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
+            style={{ width: 34, height: 34, borderRadius: 8, background: loading || !input.trim() ? '#D8E2E8' : '#9B7353', border: 'none', cursor: loading || !input.trim() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
           >
             <Send size={15} color="#fff" />
           </button>

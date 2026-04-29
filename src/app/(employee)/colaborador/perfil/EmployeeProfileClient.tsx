@@ -39,7 +39,7 @@ interface Props {
 }
 
 const TIER_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  TEAMLEITUNG:      { label: 'HF', bg: '#EFF6FF', color: '#003A5D' },
+  TEAMLEITUNG:      { label: 'HF', bg: '#EFF6FF', color: '#9B7353' },
   FUNKTIONSSTUFE_3: { label: 'FAGE', bg: '#F0FDF4', color: '#15803D' },
   FUNKTIONSSTUFE_2: { label: 'FAGE', bg: '#F0FDF4', color: '#15803D' },
   FUNKTIONSSTUFE_1: { label: 'SRK', bg: '#FFF7ED', color: '#C2410C' },
@@ -100,7 +100,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Page header */}
-      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px' }}>
+      <div style={{ background: '#9B7353', padding: isMobile ? '14px 16px' : '20px 28px' }}>
         <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
           {tx.title}
         </h1>
@@ -112,7 +112,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
       <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #003A5D' }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #9B7353' }}>
         {([
           { key: 'info', label: tx.infoTab, icon: User },
           { key: 'pin',  label: tx.pinTab,  icon: Lock },
@@ -127,8 +127,8 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
               padding: '8px 16px',
               background: 'transparent',
               border: 'none',
-              borderBottom: tab === key ? '2px solid #003A5D' : '2px solid transparent',
-              color: tab === key ? '#003A5D' : '#7A9BAD',
+              borderBottom: tab === key ? '2px solid #9B7353' : '2px solid transparent',
+              color: tab === key ? '#9B7353' : '#7A9BAD',
               fontFamily: "'IBM Plex Sans', sans-serif",
               fontSize: '0.82rem',
               fontWeight: tab === key ? 600 : 400,
@@ -163,7 +163,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 width: 56,
                 height: 56,
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #003A5D, #004E7A)',
+                background: 'linear-gradient(135deg, #9B7353, #004E7A)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -176,7 +176,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
               {employee.name.charAt(0)}
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '1rem', color: '#001E30' }}>{employee.name}</div>
+              <div style={{ fontWeight: 600, fontSize: '1rem', color: '#5A3A1A' }}>{employee.name}</div>
               <div style={{ fontSize: '0.78rem', color: '#7A9BAD', marginTop: 2 }}>{employee.shortName}</div>
             </div>
             {tier && (
@@ -222,7 +222,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 }}
               >
                 <span style={{ fontSize: '0.78rem', color: '#7A9BAD' }}>{label}</span>
-                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: '#001E30' }}>{value}</span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: '#5A3A1A' }}>{value}</span>
               </div>
             ))}
           </div>
@@ -244,8 +244,8 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 marginBottom: 14,
               }}
             >
-              <Building2 size={15} color="#003A5D" />
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#001E30' }}>{tx.floorsTitle}</span>
+              <Building2 size={15} color="#9B7353" />
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#5A3A1A' }}>{tx.floorsTitle}</span>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -255,7 +255,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   padding: '5px 12px',
                   borderRadius: 20,
                   background: '#EFF6FF',
-                  color: '#003A5D',
+                  color: '#9B7353',
                   fontSize: '0.75rem',
                   fontWeight: 500,
                   border: '1px solid #BFDBFE',
@@ -319,10 +319,10 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                   justifyContent: 'center',
                 }}
               >
-                <Lock size={16} color="#003A5D" />
+                <Lock size={16} color="#9B7353" />
               </div>
               <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30' }}>{tx.changePinTitle}</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5A3A1A' }}>{tx.changePinTitle}</div>
                 <div style={{ fontSize: '0.72rem', color: '#7A9BAD' }}>{tx.changePinSub}</div>
               </div>
             </div>
@@ -359,7 +359,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                       fontFamily: 'monospace',
                       boxSizing: 'border-box',
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = '#003A5D' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#9B7353' }}
                     onBlur={e => { e.currentTarget.style.borderColor = '#D8E2E8' }}
                   />
                 </div>
@@ -406,7 +406,7 @@ export default function EmployeeProfileClient({ employee, otherTeams }: Props) {
                 disabled={pinStatus === 'loading'}
                 style={{
                   padding: '11px',
-                  background: pinStatus === 'loading' ? '#7AA8C0' : '#003A5D',
+                  background: pinStatus === 'loading' ? '#C4A47A' : '#9B7353',
                   color: 'white',
                   border: 'none',
                   borderRadius: 8,

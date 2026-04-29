@@ -167,7 +167,7 @@ const TX: Record<Lang, {
 // ── Colours ───────────────────────────────────────────────────────────────────
 
 const C = {
-  primary: '#003A5D', accent: '#0066A1', border: '#D8E2E8',
+  primary: '#9B7353', accent: '#0066A1', border: '#D8E2E8',
   muted: '#7A9BAD', bg: '#F0F4F7', white: '#fff',
   green: '#15803D', greenBg: '#ECFDF5', greenBorder: '#BBF7D0',
   red: '#DC2626', redBg: '#FEF2F2', redBorder: '#FECACA',
@@ -324,13 +324,13 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
       width: expanded ? 380 : 'auto',
       zIndex: 200,
       fontFamily: "'IBM Plex Sans', sans-serif",
-      filter: 'drop-shadow(0 4px 24px rgba(0,58,93,0.22))',
+      filter: 'drop-shadow(0 4px 24px rgba(155,115,83,0.22))',
     }}>
       {/* ── Header ── */}
       <div
         onClick={() => !expanded && setExpanded(true)}
         style={{
-          background: 'linear-gradient(135deg, #003A5D 0%, #0066A1 100%)',
+          background: 'linear-gradient(135deg, #9B7353 0%, #0066A1 100%)',
           borderRadius: expanded ? '12px 12px 0 0' : '20px',
           padding: expanded ? '10px 14px' : '7px 11px',
           display: 'flex', alignItems: 'center', gap: expanded ? 8 : 6,
@@ -454,7 +454,7 @@ export default function SuggestionsPanel({ scheduleId, year, month, team, report
             onClick={e => e.stopPropagation()}
             style={{
               background: C.white, borderRadius: 16, padding: '28px 28px 24px',
-              width: 340, boxShadow: '0 20px 60px rgba(0,58,93,0.22)',
+              width: 340, boxShadow: '0 20px 60px rgba(155,115,83,0.22)',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
             }}
           >
@@ -770,7 +770,7 @@ function MiniActionCard({ actions, applied, cancelled, onApply, onCancel, lang }
         <>
           <div style={{ padding: '6px 9px', display: 'flex', flexDirection: 'column', gap: 3 }}>
             {actions.map((a, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#001E30' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#5A3A1A' }}>
                 <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: a.type === 'UPSERT' ? C.greenBg : C.redBg, color: a.type === 'UPSERT' ? C.green : C.red, flexShrink: 0 }}>
                   {a.type === 'UPSERT' ? fmt(upsertLabel) : fmt(removeLabel)}
                 </span>
@@ -884,7 +884,7 @@ function MiniChatTab({ scheduleId, year, month, team, lang, tx, messages, setMes
               <div style={{ maxWidth: '82%', display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{
                   padding: '7px 10px', borderRadius: isUser ? '10px 3px 10px 10px' : '3px 10px 10px 10px',
-                  background: isUser ? C.primary : C.white, color: isUser ? '#fff' : '#001E30',
+                  background: isUser ? C.primary : C.white, color: isUser ? '#fff' : '#5A3A1A',
                   fontSize: '0.78rem', lineHeight: 1.55, whiteSpace: 'pre-wrap',
                   border: isUser ? 'none' : `1px solid ${C.border}`,
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
@@ -943,7 +943,7 @@ function MiniChatTab({ scheduleId, year, month, team, lang, tx, messages, setMes
             placeholder={tx.chatPlaceholder}
             disabled={loading}
             rows={1}
-            style={{ flex: 1, resize: 'none', border: 'none', background: 'transparent', outline: 'none', fontFamily: "'IBM Plex Sans', sans-serif", fontSize: '0.8rem', color: '#001E30', lineHeight: 1.45, maxHeight: 80, overflowY: 'auto' }}
+            style={{ flex: 1, resize: 'none', border: 'none', background: 'transparent', outline: 'none', fontFamily: "'IBM Plex Sans', sans-serif", fontSize: '0.8rem', color: '#5A3A1A', lineHeight: 1.45, maxHeight: 80, overflowY: 'auto' }}
             onInput={e => { const t = e.currentTarget; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 80) + 'px' }}
           />
           <button

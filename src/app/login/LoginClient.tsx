@@ -27,7 +27,7 @@ const t: Record<Lang, {
     entering: 'A entrar...',
     error: 'Credenciais inválidas',
     forgot: 'Esqueceu a palavra-passe?',
-    footer: '© 2026 Tertianum AG',
+    footer: '© 2026 Oase',
   },
   de: {
     system: 'Dienstplan-System',
@@ -42,7 +42,7 @@ const t: Record<Lang, {
     entering: 'Wird angemeldet...',
     error: 'Ungültige Anmeldedaten',
     forgot: 'Passwort vergessen?',
-    footer: '© 2026 Tertianum AG',
+    footer: '© 2026 Oase',
   },
   en: {
     system: 'Dienstplan-System',
@@ -57,7 +57,7 @@ const t: Record<Lang, {
     entering: 'Signing in...',
     error: 'Invalid credentials',
     forgot: 'Forgot password?',
-    footer: '© 2026 Tertianum AG',
+    footer: '© 2026 Oase',
   },
   fr: {
     system: 'Dienstplan-System',
@@ -72,7 +72,7 @@ const t: Record<Lang, {
     entering: 'Connexion en cours...',
     error: 'Identifiants invalides',
     forgot: 'Mot de passe oublié ?',
-    footer: '© 2026 Tertianum AG',
+    footer: '© 2026 Oase',
   },
   it: {
     system: 'Dienstplan-System',
@@ -87,7 +87,7 @@ const t: Record<Lang, {
     entering: 'Accesso in corso...',
     error: 'Credenziali non valide',
     forgot: 'Password dimenticata?',
-    footer: '© 2026 Tertianum AG',
+    footer: '© 2026 Oase',
   },
 }
 
@@ -113,10 +113,9 @@ export default function LoginClient() {
 
   const tx = t[lang]
 
-  // Tertianum primary blue
-  const BLUE = '#003A5D'
-  const BLUE_BTN = '#003A5D'
-  const BLUE_BTN_HOVER = '#002D47'
+  const BLUE = '#9B7353'
+  const BLUE_BTN = '#9B7353'
+  const BLUE_BTN_HOVER = '#7A5A3A'
 
   function handlePinChange(i: number, val: string) {
     const digit = val.replace(/\D/g, '').slice(-1)
@@ -160,11 +159,11 @@ export default function LoginClient() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
-      {/* Left panel — Tertianum brand */}
+      {/* Left panel — Oase brand */}
       <div
         style={{
           flex: '1 1 0',
-          background: '#003A5D',
+          background: '#9B7353',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -176,9 +175,9 @@ export default function LoginClient() {
         {/* Logo */}
         <div style={{ position: 'relative' }}>
           <img
-            src="/240513_tertianum_branding_marco-simonetti_2@2x.png"
-            alt="Tertianum"
-            style={{ width: 200, display: 'block' }}
+            src="/oase-logo.png"
+            alt="Oase"
+            style={{ width: 160, display: 'block', filter: 'brightness(0) invert(1)' }}
           />
         </div>
 
@@ -231,7 +230,7 @@ export default function LoginClient() {
       <div style={{
         width: 400,
         flexShrink: 0,
-        background: '#F4F6F9',
+        background: '#F8F5F1',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -250,7 +249,7 @@ export default function LoginClient() {
             display: 'flex',
             borderRadius: 6,
             overflow: 'hidden',
-            border: '1px solid #D8E0EA',
+            border: '1px solid #E2D5C8',
             marginBottom: 28,
           }}>
             {(['manager', 'employee'] as Tab[]).map(t => (
@@ -279,7 +278,7 @@ export default function LoginClient() {
             <div key={tab} style={{ animation: 'loginTabFade 0.18s ease-out both' }}>
             {tab === 'manager' ? (
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#1C3050', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#3A2A1A', marginBottom: 6 }}>
                   {tx.password}
                 </label>
                 <input
@@ -292,22 +291,22 @@ export default function LoginClient() {
                   style={{
                     width: '100%',
                     padding: '10px 12px',
-                    border: '1px solid #C8D6E5',
+                    border: '1px solid #E2D5C8',
                     borderRadius: 5,
                     fontSize: '0.9rem',
-                    color: '#1C3050',
+                    color: '#3A2A1A',
                     outline: 'none',
                     boxSizing: 'border-box',
                     background: 'white',
                   }}
                   onFocus={e => { e.currentTarget.style.borderColor = BLUE_BTN }}
-                  onBlur={e => { e.currentTarget.style.borderColor = '#C8D6E5' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = '#E2D5C8' }}
                 />
               </div>
             ) : (
               <>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#1C3050', marginBottom: 6 }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#3A2A1A', marginBottom: 6 }}>
                     {tx.tabEmployee}
                   </label>
                   <select
@@ -317,17 +316,17 @@ export default function LoginClient() {
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      border: '1px solid #C8D6E5',
+                      border: '1px solid #E2D5C8',
                       borderRadius: 5,
                       fontSize: '0.85rem',
-                      color: selectedEmployee ? '#1C3050' : '#8A9BB0',
+                      color: selectedEmployee ? '#3A2A1A' : '#B49A7A',
                       outline: 'none',
                       cursor: 'pointer',
                       boxSizing: 'border-box',
                       background: 'white',
                     }}
                     onFocus={e => { e.currentTarget.style.borderColor = BLUE_BTN }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#C8D6E5' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#E2D5C8' }}
                   >
                     <option value="">{tx.selectEmployee}</option>
                     {employees.map(emp => (
@@ -337,7 +336,7 @@ export default function LoginClient() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#1C3050', marginBottom: 6 }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#3A2A1A', marginBottom: 6 }}>
                     {tx.pin}
                   </label>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -355,16 +354,16 @@ export default function LoginClient() {
                           width: 52,
                           height: 52,
                           textAlign: 'center',
-                          border: '1px solid #C8D6E5',
+                          border: '1px solid #E2D5C8',
                           borderRadius: 5,
                           fontSize: '1.3rem',
                           fontWeight: 600,
-                          color: '#1C3050',
+                          color: '#3A2A1A',
                           outline: 'none',
                           background: 'white',
                         }}
                         onFocus={e => { e.currentTarget.style.borderColor = BLUE_BTN }}
-                        onBlur={e => { e.currentTarget.style.borderColor = '#C8D6E5' }}
+                        onBlur={e => { e.currentTarget.style.borderColor = '#E2D5C8' }}
                       />
                     ))}
                   </div>
@@ -391,7 +390,7 @@ export default function LoginClient() {
               style={{
                 width: '100%',
                 padding: '12px',
-                background: loading ? '#7AA8C0' : BLUE_BTN,
+                background: loading ? '#C4A47A' : BLUE_BTN,
                 border: 'none',
                 borderRadius: 5,
                 color: 'white',
@@ -412,7 +411,7 @@ export default function LoginClient() {
               <div style={{ textAlign: 'center' }}>
                 <button
                   type="button"
-                  style={{ background: 'none', border: 'none', color: '#5A7089', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
+                  style={{ background: 'none', border: 'none', color: '#B49A7A', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
                 >
                   {tx.forgot}
                 </button>
@@ -421,7 +420,7 @@ export default function LoginClient() {
           </form>
         </div>
 
-        <div style={{ marginTop: 20, fontSize: '0.7rem', color: '#9AAABB' }}>{tx.footer}</div>
+        <div style={{ marginTop: 20, fontSize: '0.7rem', color: '#B49A7A' }}>{tx.footer}</div>
       </div>
     </div>
   )

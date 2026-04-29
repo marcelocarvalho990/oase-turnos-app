@@ -339,8 +339,8 @@ async function generateWithLLM(userMessage: string, lang = 'de'): Promise<LLMGen
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://turnos-tertianum.vercel.app',
-        'X-Title': 'Turnos Tertianum',
+        'HTTP-Referer': 'https://turnos-oase.vercel.app',
+        'X-Title': 'Turnos Oase',
       },
       body: JSON.stringify({
         model: 'anthropic/claude-sonnet-4-5',

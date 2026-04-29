@@ -23,7 +23,7 @@ interface Props {
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   DRAFT:     { bg: '#F1F5F9', color: '#64748B' },
-  GENERATED: { bg: '#E6EEF3', color: '#003A5D' },
+  GENERATED: { bg: '#E6EEF3', color: '#9B7353' },
   PUBLISHED: { bg: '#DCFCE7', color: '#16A34A' },
   LOCKED:    { bg: '#FEF3C7', color: '#D97706' },
 }
@@ -195,7 +195,7 @@ export default function TopBar({
     <>
       <header
         className="shrink-0 border-b px-5 py-3 flex items-center gap-3"
-        style={{ background: '#fff', borderColor: '#D8E2E8', boxShadow: '0 1px 4px rgba(0,58,93,0.06)' }}
+        style={{ background: '#fff', borderColor: '#D8E2E8', boxShadow: '0 1px 4px rgba(155,115,83,0.06)' }}
       >
         {/* Month navigation — hidden in week/day view (handled in the bar below) */}
         {!hideMonthNav && (
@@ -208,7 +208,7 @@ export default function TopBar({
             >
               <ChevronLeft size={17} />
             </button>
-            <h1 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#001E30', width: 148, textAlign: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <h1 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#5A3A1A', width: 148, textAlign: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
               {formatMonthYear(year, month, 'de-DE')}
             </h1>
             <button
@@ -326,14 +326,14 @@ export default function TopBar({
           title={isPublished ? tx.disabledTitle : undefined}
           style={{
             display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px',
-            background: isGenerating || isPublished ? '#7AA8C0' : '#003A5D', color: '#fff',
+            background: isGenerating || isPublished ? '#C4A47A' : '#9B7353', color: '#fff',
             border: 'none', borderRadius: 8, fontSize: '0.82rem', fontWeight: 600,
             cursor: isGenerating || isPublished ? 'not-allowed' : 'pointer',
             fontFamily: "'IBM Plex Sans', sans-serif", transition: 'background 0.15s',
             opacity: isGenerating ? 0.7 : 1,
           }}
-          onMouseEnter={e => { if (!isGenerating) (e.currentTarget as HTMLElement).style.background = '#002D47' }}
-          onMouseLeave={e => { if (!isGenerating) (e.currentTarget as HTMLElement).style.background = '#003A5D' }}
+          onMouseEnter={e => { if (!isGenerating) (e.currentTarget as HTMLElement).style.background = '#7A5A3A' }}
+          onMouseLeave={e => { if (!isGenerating) (e.currentTarget as HTMLElement).style.background = '#9B7353' }}
         >
           {isGenerating ? (
             <>
@@ -370,7 +370,7 @@ export default function TopBar({
             {/* Modal header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#003A5D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#9B7353', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   {tx.modalTitle}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#7A9BAD', marginTop: 2 }}>
@@ -386,7 +386,7 @@ export default function TopBar({
             </div>
 
             {/* Instructions field */}
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#001E30', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#5A3A1A', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {tx.instructionsLabel}
             </label>
             <textarea
@@ -398,11 +398,11 @@ export default function TopBar({
               autoFocus
               style={{
                 width: '100%', boxSizing: 'border-box', resize: 'none', border: '1.5px solid #D8E2E8',
-                borderRadius: 8, padding: '10px 14px', fontSize: '0.85rem', color: '#001E30',
+                borderRadius: 8, padding: '10px 14px', fontSize: '0.85rem', color: '#5A3A1A',
                 fontFamily: "'IBM Plex Sans', sans-serif", outline: 'none', lineHeight: 1.6,
                 background: '#F4F6F8',
               }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#003A5D')}
+              onFocus={e => (e.currentTarget.style.borderColor = '#9B7353')}
               onBlur={e => (e.currentTarget.style.borderColor = '#D8E2E8')}
             />
             <p style={{ fontSize: '0.7rem', color: '#7A9BAD', marginTop: 6 }}>
@@ -425,12 +425,12 @@ export default function TopBar({
                 onClick={handleGenerate}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px',
-                  background: '#003A5D', color: '#fff', border: 'none', borderRadius: 8,
+                  background: '#9B7353', color: '#fff', border: 'none', borderRadius: 8,
                   fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
                   fontFamily: "'IBM Plex Sans', sans-serif",
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#002D47')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#003A5D')}
+                onMouseEnter={e => (e.currentTarget.style.background = '#7A5A3A')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#9B7353')}
               >
                 <Zap size={14} />
                 {tx.generate2}
@@ -458,7 +458,7 @@ export default function TopBar({
               fontFamily: "'IBM Plex Sans', sans-serif",
             }}
           >
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#001E30', marginBottom: 10 }}>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#5A3A1A', marginBottom: 10 }}>
               {tx.clearTitle}
             </div>
             <p style={{ fontSize: '0.85rem', color: '#7A9BAD', lineHeight: 1.6, marginBottom: 22 }}>
@@ -523,7 +523,7 @@ export default function TopBar({
                   <TriangleAlert size={22} color="#EF4444" />
                 </div>
                 <div>
-                  <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#001E30', marginBottom: 6 }}>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#5A3A1A', marginBottom: 6 }}>
                     {tx.publishWarningTitle}
                   </div>
                   <p style={{ fontSize: '0.84rem', color: '#64748B', lineHeight: 1.6, margin: 0 }}>
@@ -646,7 +646,7 @@ export default function TopBar({
                         fontWeight: 500, color: '#64748B', fontFamily: "'IBM Plex Sans', sans-serif",
                         justifyContent: 'center',
                       }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F1F5F9'; (e.currentTarget as HTMLElement).style.color = '#003A5D' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F1F5F9'; (e.currentTarget as HTMLElement).style.color = '#9B7353' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#64748B' }}
                     >
                       <Phone size={11} />

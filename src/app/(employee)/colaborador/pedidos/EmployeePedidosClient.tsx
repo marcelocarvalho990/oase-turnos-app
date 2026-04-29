@@ -281,7 +281,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px 12px', background: 'white',
     border: '1px solid #D8E2E8', borderRadius: 6,
-    color: '#001E30', fontSize: '0.85rem', outline: 'none',
+    color: '#5A3A1A', fontSize: '0.85rem', outline: 'none',
     boxSizing: 'border-box',
   }
 
@@ -290,7 +290,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: '#F4F6F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* Page header */}
-      <div style={{ background: '#003A5D', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#9B7353', padding: isMobile ? '14px 16px' : '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
             {tx.title}
@@ -312,7 +312,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               { label: tx.entitlement, value: summary.entitlement, color: '#4A6878', bg: '#F4F6F8' },
               { label: tx.approved,    value: summary.approved,    color: '#059669', bg: '#D1FAE5' },
               { label: tx.pending,     value: summary.pending,     color: '#D97706', bg: '#FEF3C7' },
-              { label: tx.remaining,   value: summary.remaining,   color: summary.remaining <= 2 ? '#DC2626' : '#003A5D', bg: summary.remaining <= 2 ? '#FEE2E2' : '#FFF0EB' },
+              { label: tx.remaining,   value: summary.remaining,   color: summary.remaining <= 2 ? '#DC2626' : '#9B7353', bg: summary.remaining <= 2 ? '#FEE2E2' : '#FFF0EB' },
             ] as { label: string; value: number; color: string; bg: string }[]).map(item => (
               <div key={item.label} style={{ background: item.bg, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                 <div style={{ fontSize: '1.5rem', fontWeight: 700, color: item.color, lineHeight: 1, fontFamily: "'Poppins', sans-serif" }}>
@@ -336,8 +336,8 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
             onClick={() => setTab(tabKey)}
             style={{
               padding: isMobile ? '10px 14px' : '10px 20px', background: 'transparent', border: 'none',
-              borderBottom: tab === tabKey ? '2px solid #003A5D' : '2px solid transparent',
-              color: tab === tabKey ? '#001E30' : '#7A9BAD',
+              borderBottom: tab === tabKey ? '2px solid #9B7353' : '2px solid transparent',
+              color: tab === tabKey ? '#5A3A1A' : '#7A9BAD',
               fontSize: '0.82rem', fontWeight: tab === tabKey ? 500 : 400,
               cursor: 'pointer', marginBottom: -1,
               flexShrink: 0, whiteSpace: 'nowrap',
@@ -354,7 +354,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
           onClick={() => setForm(tab as 'vacation' | 'swap')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            padding: '9px 16px', background: '#003A5D', border: 'none',
+            padding: '9px 16px', background: '#9B7353', border: 'none',
             borderRadius: 6, color: 'white', fontSize: '0.8rem',
             cursor: 'pointer', marginBottom: 20,
           }}
@@ -368,7 +368,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
       {form === 'vacation' && tab === 'vacation' && (
         <div style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#001E30' }}>{tx.newVacation}</h3>
+            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#5A3A1A' }}>{tx.newVacation}</h3>
             <button onClick={() => { setForm(null); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7A9BAD' }}>
               <X size={16} />
             </button>
@@ -388,12 +388,12 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.message}</label>
               <textarea value={vMessage} onChange={e => setVMessage(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
-            {error && <div style={{ color: '#003A5D', fontSize: '0.78rem' }}>{error}</div>}
+            {error && <div style={{ color: '#9B7353', fontSize: '0.78rem' }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" onClick={() => { setForm(null); setError('') }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #D8E2E8', borderRadius: 6, color: '#4A6878', fontSize: '0.8rem', cursor: 'pointer' }}>
                 {tx.cancel}
               </button>
-              <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#003A5D', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
+              <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#9B7353', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
                 {submitting ? tx.submitting : tx.submit}
               </button>
             </div>
@@ -405,7 +405,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
       {form === 'swap' && tab === 'swap' && (
         <div style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 10, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#001E30' }}>{tx.newSwap}</h3>
+            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#5A3A1A' }}>{tx.newSwap}</h3>
             <button onClick={() => { setForm(null); setError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7A9BAD' }}>
               <X size={16} />
             </button>
@@ -432,12 +432,12 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               <label style={{ display: 'block', fontSize: '0.68rem', color: '#7A9BAD', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tx.message}</label>
               <textarea value={sMessage} onChange={e => setSMessage(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
-            {error && <div style={{ color: '#003A5D', fontSize: '0.78rem' }}>{error}</div>}
+            {error && <div style={{ color: '#9B7353', fontSize: '0.78rem' }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" onClick={() => { setForm(null); setError('') }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #D8E2E8', borderRadius: 6, color: '#4A6878', fontSize: '0.8rem', cursor: 'pointer' }}>
                 {tx.cancel}
               </button>
-              <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#003A5D', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
+              <button type="submit" disabled={submitting} style={{ padding: '8px 16px', background: '#9B7353', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
                 {submitting ? tx.submitting : tx.submit}
               </button>
             </div>
@@ -457,7 +457,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               <div key={v.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#001E30' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#5A3A1A' }}>
                       {v.startDate} {tx.to} {v.endDate}
                     </span>
                     <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>
@@ -539,12 +539,12 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
                 <div style={{
                   height: '100%',
                   width: `${Math.min(100, (activeWfCount / 4) * 100)}%`,
-                  background: activeWfCount >= 4 ? '#DC2626' : activeWfCount >= 3 ? '#D97706' : '#003A5D',
+                  background: activeWfCount >= 4 ? '#DC2626' : activeWfCount >= 3 ? '#D97706' : '#9B7353',
                   borderRadius: 4,
                   transition: 'width 0.3s',
                 }} />
               </div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: activeWfCount >= 4 ? '#DC2626' : '#001E30', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: activeWfCount >= 4 ? '#DC2626' : '#5A3A1A', whiteSpace: 'nowrap' }}>
                 {tx.wunschfreiCounter(activeWfCount)}
               </span>
             </div>
@@ -560,13 +560,13 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
                     type="date"
                     value={wfDate}
                     onChange={e => { setWfDate(e.target.value); setWfError('') }}
-                    style={{ width: '100%', padding: '8px 12px', background: 'white', border: '1px solid #D8E2E8', borderRadius: 6, color: '#001E30', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 12px', background: 'white', border: '1px solid #D8E2E8', borderRadius: 6, color: '#5A3A1A', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={wfSubmitting || !wfDate}
-                  style={{ padding: '8px 16px', background: '#003A5D', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: wfSubmitting || !wfDate ? 'not-allowed' : 'pointer', opacity: wfSubmitting || !wfDate ? 0.6 : 1, whiteSpace: 'nowrap', flexShrink: 0 }}
+                  style={{ padding: '8px 16px', background: '#9B7353', border: 'none', borderRadius: 6, color: 'white', fontSize: '0.8rem', cursor: wfSubmitting || !wfDate ? 'not-allowed' : 'pointer', opacity: wfSubmitting || !wfDate ? 0.6 : 1, whiteSpace: 'nowrap', flexShrink: 0 }}
                 >
                   <Plus size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
                   {tx.wunschfreiAdd}
@@ -586,7 +586,7 @@ export default function EmployeePedidosClient({ employeeId, colleagues }: Props)
               <div key={wf.id} style={{ background: 'white', border: '1px solid #D8E2E8', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#001E30', fontFamily: "'IBM Plex Mono', monospace" }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5A3A1A', fontFamily: "'IBM Plex Mono', monospace" }}>
                       {wf.date}
                     </span>
                     <span style={{ padding: '2px 8px', borderRadius: 20, background: s.bg, color: s.color, fontSize: '0.68rem', fontWeight: 500 }}>

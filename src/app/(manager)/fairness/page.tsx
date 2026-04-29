@@ -97,7 +97,7 @@ const FX: Record<Lang, {
 function Spinner({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-32 gap-3">
-      <span className="w-8 h-8 border-4 border-[#C5D9E3] border-t-[#003A5D] rounded-full animate-spin" />
+      <span className="w-8 h-8 border-4 border-[#C5D9E3] border-t-[#9B7353] rounded-full animate-spin" />
       <span className="text-sm text-slate-500">{label}</span>
     </div>
   )
@@ -196,7 +196,7 @@ export default function FairnessPage() {
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-4 flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[#E6EEF3] flex items-center justify-center">
-              <Calendar size={16} className="text-[#003A5D]" />
+              <Calendar size={16} className="text-[#9B7353]" />
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-900">{totalShifts}</p>
